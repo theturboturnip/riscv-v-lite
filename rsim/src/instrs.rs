@@ -6,16 +6,17 @@ use anyhow::Result;
 pub enum Opcode {
     Load,
     Store,
+    LoadFP,
+    StoreFP,
     OpImm,
     Op,
     AddUpperImmPC,
     LoadUpperImm,
-    // LoadFP,
-    // StoreFP,
     JumpAndLink,
     JumpAndLinkRegister,
     MiscMem,
     Branch,
+    Vector
 }
 
 impl TryInto<Opcode> for u8 {
@@ -25,8 +26,8 @@ impl TryInto<Opcode> for u8 {
         Ok(match self {
             0b00_000_11 => Opcode::Load,
             0b01_000_11 => Opcode::Store,
-            // 0b00_001_11 => Opcode::LoadFP,
-            // 0b01_001_11 => Opcode::StoreFP,
+            0b00_001_11 => Opcode::LoadFP,
+            0b01_001_11 => Opcode::StoreFP,
 
             0b00_100_11 => Opcode::OpImm,
             0b01_100_11 => Opcode::Op,
@@ -38,6 +39,8 @@ impl TryInto<Opcode> for u8 {
             0b11_011_11 => Opcode::JumpAndLink,
             0b11_000_11 => Opcode::Branch,
             0b00_011_11 => Opcode::MiscMem,
+
+            0b10_101_11 => Opcode::Vector,
 
             _ => bail!("unhandled opcode {:07b}", self),
         })
@@ -79,6 +82,35 @@ pub enum Instruction {
         rs2: u8,
         imm: u32
     },
+    VType {
+        funct3: u8,
+        rs1: u8,
+        rs2: u8,
+        rd: u8,
+
+        // Only for use in arithmetic
+        funct6: u8,
+        vm: bool,
+
+        // Only for use in configuration
+        zimm11: u16,
+        zimm10: u16
+    },
+    FLdStType {
+        rd: u8,
+        width: u8,
+        rs1: u8,
+        rs2: u8,
+
+        // Float only
+        funct7: u8,
+
+        // Vector only
+        vm: bool,
+        mew: bool,
+        mop: u8,
+        nf: u8,
+    }
 }
 
 impl Instruction {
@@ -152,6 +184,41 @@ impl Instruction {
             imm:    (sign_extend32(imm.into(), 12) as u32),
         }
     }
+
+    pub fn from_v(inst: u32) -> Instruction {
+        Instruction::VType {
+            rd:     ((bits!(inst, 7:11) as u8)),
+            funct3: ((bits!(inst, 12:14) as u8)),
+            rs1:    ((bits!(inst, 15:19) as u8)),
+            rs2:    ((bits!(inst, 20:24) as u8)),
+
+            // arithmetic
+            funct6: ((bits!(inst, 26:31) as u8)),
+            vm: bits!(inst, 25:25) == 1,
+
+            // configuration
+            zimm11: bits!(inst, 20:30) as u16,
+            zimm10: bits!(inst, 20:29) as u16,
+        }
+    }
+
+    pub fn from_f_ld_st(inst: u32) -> Instruction {
+        Instruction::FLdStType {
+            rd:     ((bits!(inst, 7:11) as u8)),
+            width: ((bits!(inst, 12:14) as u8)),
+            rs1:    ((bits!(inst, 15:19) as u8)),
+            rs2:    ((bits!(inst, 20:24) as u8)),
+            
+            // Float only
+            funct7: ((bits!(inst, 25:31) as u8)),
+
+            // Vector only
+            vm: bits!(inst, 25:25) == 1,
+            mop: bits!(inst, 26:27) as u8,
+            mew: bits!(inst, 28:28) == 1,
+            nf: bits!(inst, 29:31) as u8
+        }
+    }
 }
 
 pub fn decode(inst: u32) -> Result<(Opcode, Instruction)> {
@@ -161,6 +228,8 @@ pub fn decode(inst: u32) -> Result<(Opcode, Instruction)> {
     match opcode {
         Load => Ok((opcode, Instruction::from_i(inst))),
         Store => Ok((opcode, Instruction::from_s(inst))),
+        LoadFP => Ok((opcode, Instruction::from_f_ld_st(inst))),
+        StoreFP => Ok((opcode, Instruction::from_f_ld_st(inst))),
         OpImm => Ok((opcode, Instruction::from_i(inst))),
         Op => Ok((opcode, Instruction::from_r(inst))),
         AddUpperImmPC => Ok((opcode, Instruction::from_u(inst))),
@@ -168,6 +237,7 @@ pub fn decode(inst: u32) -> Result<(Opcode, Instruction)> {
         JumpAndLink => Ok((opcode, Instruction::from_j(inst))),
         JumpAndLinkRegister => Ok((opcode, Instruction::from_i(inst))),
         Branch => Ok((opcode, Instruction::from_b(inst))),
+        Vector => Ok((opcode, Instruction::from_v(inst))),
 
         _ => bail!("opcode {:?} not decoded yet", opcode)
     }

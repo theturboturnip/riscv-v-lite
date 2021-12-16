@@ -4,6 +4,7 @@ extern crate bitutils;
 #[macro_use]
 extern crate anyhow;
 
+use std::cmp::min;
 use std::fmt;
 use std::fmt::{Display};
 use thiserror::Error;
@@ -144,15 +145,15 @@ type uELEN = u32;
 static VLEN: usize = 128; // ELEN * 4
 type uVLEN = u128;
 
-#[derive(Debug,PartialEq,Eq)]
-enum Sel {
+#[derive(Debug,PartialEq,Eq,Copy,Clone)]
+enum Sew {
     e8,
     e16,
     e32,
     e64
 }
 
-#[derive(Debug,PartialEq,Eq)]
+#[derive(Debug,PartialEq,Eq,Copy,Clone)]
 enum Lmul {
     eEighth,
     eQuarter,
@@ -161,6 +162,38 @@ enum Lmul {
     e2,
     e4,
     e8
+}
+
+fn elements_in(s: Sew, l: Lmul) -> u32 {
+    let mut bits_per_group: u32 = VLEN as u32;
+    match l {
+        Lmul::eEighth => {
+            bits_per_group /= 8;
+        },
+        Lmul::eQuarter => {
+            bits_per_group /= 4;
+        },
+        Lmul::eHalf => {
+            bits_per_group /= 2;
+        },
+        Lmul::e1 => {},
+        Lmul::e2 => {
+            bits_per_group *= 2;
+        },
+        Lmul::e4 => {
+            bits_per_group *= 4;
+        },
+        Lmul::e8 => {
+            bits_per_group *= 8;
+        },
+    };
+    
+    bits_per_group / match s {
+        Sew::e8 => 8,
+        Sew::e16 => 16,
+        Sew::e32 => 32,
+        Sew::e64 => 64,
+    }
 }
 
 #[derive(Debug,PartialEq,Eq)]
@@ -189,8 +222,10 @@ struct Processor {
     sreg: [uXLEN; 32],
     vreg: [uVLEN; 32],
 
-    sel: Sel,
+    sew: Sew,
     lmul: Lmul,
+    vl: u32,
+    vtype_reg: u32,
     // VMA, VTA not required.
     // agnostic = undisturbed || overwrite with ones, so just assume undisturbed
     // vma: bool,
@@ -208,8 +243,10 @@ impl Processor {
             sreg: [0; 32],
             vreg: [0; 32],
 
-            sel: Sel::e64,
+            sew: Sew::e64,
             lmul: Lmul::e1,
+            vl: 0,
+            vtype_reg: 0,
         }
     }
 
@@ -220,8 +257,10 @@ impl Processor {
         self.sreg = [0; 32];
         self.vreg = [0; 32];
 
-        self.sel = Sel::e64;
+        self.sew = Sew::e64;
         self.lmul = Lmul::e1;
+        self.vl = 0;
+        self.vtype_reg = 0;
     }
 
     fn exec_step(&mut self) -> Result<()> {
@@ -359,6 +398,86 @@ impl Processor {
                 }
             }
 
+            (Vector, Instruction::VType{rd, funct3, rs1, rs2, vm, funct6, zimm11, zimm10}) => {
+                match funct3 {
+                    0b111 => {
+                        // Configuration
+                        let avl = match bits!(inst_bits, 30:31) {
+                            0b00 | 0b01 | 0b10 => { // vsetvli, vsetvl
+                                if rs1 != 0 {
+                                    self.sreg[rs1 as usize]
+                                } else {
+                                    if rd != 0 {
+                                        bail!("vsetvl{{i}} called with rd != 0, rs1 == 0, which requires VMAX. Haven't thought about that yet.");
+                                    } else {
+                                        self.vl
+                                    }
+                                }
+                            } ,
+                            0b11 => { // vsetivli
+                                rs1 as u32 // Use rs1 as a 5-bit immediate
+                            },
+                            invalid => panic!("impossible top 2 bits {:2b}", invalid)
+                        };
+                        let vtype = match bits!(inst_bits, 30:31) {
+                            0b00 | 0b01 => {
+                                // vsetvli
+                                zimm11 as u32
+                            },
+                            0b11 => {
+                                // vsetivli
+                                zimm10 as u32
+                            },
+                            0b10 => {
+                                self.sreg[rs2 as usize] 
+                            },
+                            invalid => panic!("impossible top 2 bits {:2b}", invalid)
+                        };
+
+                        let req_sew = match bits!(vtype, 3:5) {
+                            0b000 => Sew::e8,
+                            0b001 => Sew::e16,
+                            0b010 => Sew::e32,
+                            0b011 => Sew::e64,
+
+                            invalid => bail!("Bad vtype - invalid SEW selected {:b}", invalid)
+                        };
+                        let req_lmul = match bits!(vtype, 0:2) {
+                            0b000 => Lmul::e1,
+                            0b001 => Lmul::e2,
+                            0b010 => Lmul::e4,
+                            0b011 => Lmul::e8,
+
+                            0b101 => Lmul::eEighth,
+                            0b110 => Lmul::eQuarter,
+                            0b111 => Lmul::eHalf,
+
+                            invalid => bail!("Bad vtype - invalid Lmul selected {:b}", invalid),
+                        };
+
+                        let vector_elements = elements_in(req_sew, req_lmul);
+                        let vtype_valid = vector_elements > 0 && 
+                            req_sew != Sew::e64 && match req_lmul {
+                            Lmul::eHalf | Lmul::eQuarter | Lmul::eEighth => false,
+                            _ => true
+                        };
+                        if vtype_valid {
+                            self.vtype_reg = vtype;
+                            self.sew = req_sew;
+                            self.lmul = req_lmul;
+                            self.vl = min(vector_elements, avl);
+
+                            self.sreg[rd as usize] = self.vl;
+                        } else {
+                            self.vtype_reg = 0x8000_0000;
+                            bail!("Valid but unsupported vtype: {:b} -> {:?} {:?} elems {:}", vtype, req_sew, req_lmul, vector_elements);
+                        }
+                    }
+
+                    _ => bail!("Vector arithmetic currently not supported")
+                }
+            }
+
             _ => bail!("Unexpected opcode/instruction pair ({:?}, {:?})", opcode, inst)
         }
 
@@ -380,7 +499,7 @@ impl Processor {
         for i in 0..32 {
             println!("v{} = 0x{:032x}", i, self.vreg[i]);
         }
-        println!("sel: {:?}\nlmul: {:?}", self.sel, self.lmul);
+        println!("sew: {:?}\nlmul: {:?}\nvl: {}\nvtype_reg: {:08x}", self.sew, self.lmul, self.vl, self.vtype_reg);
     }
 }
 
