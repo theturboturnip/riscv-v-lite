@@ -1,4 +1,6 @@
+use std::convert::TryInto;
 use bitutils::sign_extend32;
+use anyhow::Result;
 
 #[derive(Debug,Clone,Copy)]
 pub enum Opcode {
@@ -16,9 +18,11 @@ pub enum Opcode {
     Branch,
 }
 
-impl From<u8> for Opcode {
-    fn from(code: u8) -> Opcode {
-        match code {
+impl TryInto<Opcode> for u8 {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<Opcode> {
+        Ok(match self {
             0b00_000_11 => Opcode::Load,
             0b01_000_11 => Opcode::Store,
             // 0b00_001_11 => Opcode::LoadFP,
@@ -35,20 +39,11 @@ impl From<u8> for Opcode {
             0b11_000_11 => Opcode::Branch,
             0b00_011_11 => Opcode::MiscMem,
 
-            _ => panic!("unhandled opcode {:07b}", code),
-        }
+            _ => bail!("unhandled opcode {:07b}", self),
+        })
     }
 }
 
-// pub struct Instruction {
-//     pub opcode: Opcode,
-//     pub imm: Option<u32>,
-//     pub rd: Option<u8>,
-//     pub rs1: Option<u8>,
-//     pub rs2: Option<u8>,
-//     pub funct3: Option<u8>,
-//     pub funct7: Option<u8>
-// }
 #[derive(Debug,Clone,Copy)]
 pub enum Instruction {
     RType {
@@ -87,8 +82,8 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    pub fn get_opcode(inst: u32) -> Opcode {
-        (bits!(inst, 0:6) as u8).into()
+    pub fn get_opcode(inst: u32) -> Result<Opcode> {
+        (bits!(inst, 0:6) as u8).try_into()
     }
 
     pub fn from_r(inst: u32) -> Instruction {
@@ -127,7 +122,6 @@ impl Instruction {
         Instruction::UType {
             rd:     ((bits!(inst, 7:11) as u8)),
             imm:    imm_bits << 12
-            //(sign_extend32((bits!(inst, 12:31) as u16).into(), 20) as u32),
         }
     }
 
@@ -160,21 +154,21 @@ impl Instruction {
     }
 }
 
-pub fn decode(inst: u32) -> (Opcode, Instruction) {
-    let opcode = Instruction::get_opcode(inst);
+pub fn decode(inst: u32) -> Result<(Opcode, Instruction)> {
+    let opcode = Instruction::get_opcode(inst)?;
 
     use Opcode::*;
     match opcode {
-        Load => (opcode, Instruction::from_i(inst)),
-        Store => (opcode, Instruction::from_s(inst)),
-        OpImm => (opcode, Instruction::from_i(inst)),
-        Op => (opcode, Instruction::from_r(inst)),
-        AddUpperImmPC => (opcode, Instruction::from_u(inst)),
-        LoadUpperImm => (opcode, Instruction::from_u(inst)),
-        JumpAndLink => (opcode, Instruction::from_j(inst)),
-        JumpAndLinkRegister => (opcode, Instruction::from_i(inst)),
-        Branch => (opcode, Instruction::from_b(inst)),
+        Load => Ok((opcode, Instruction::from_i(inst))),
+        Store => Ok((opcode, Instruction::from_s(inst))),
+        OpImm => Ok((opcode, Instruction::from_i(inst))),
+        Op => Ok((opcode, Instruction::from_r(inst))),
+        AddUpperImmPC => Ok((opcode, Instruction::from_u(inst))),
+        LoadUpperImm => Ok((opcode, Instruction::from_u(inst))),
+        JumpAndLink => Ok((opcode, Instruction::from_j(inst))),
+        JumpAndLinkRegister => Ok((opcode, Instruction::from_i(inst))),
+        Branch => Ok((opcode, Instruction::from_b(inst))),
 
-        _ => panic!("opcode {:?} not decoded yet", opcode)
+        _ => bail!("opcode {:?} not decoded yet", opcode)
     }
 }

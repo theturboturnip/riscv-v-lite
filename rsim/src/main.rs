@@ -1,20 +1,31 @@
 #[macro_use]
 extern crate bitutils;
 
+#[macro_use]
+extern crate anyhow;
+
+use std::fmt;
+use std::fmt::{Display};
+use thiserror::Error;
+use anyhow::{Context,Result};
+
 use bitutils::sign_extend32;
 use std::convert::TryInto;
 use std::io::Read;
 use std::path::Path;
 use std::fs::{File,metadata};
 
-mod bitpattern;
-use bitpattern::BitPattern;
-
 mod instrs;
-use instrs::{decode, Opcode, Instruction};
+use instrs::{decode, Instruction};
 
 struct Memory {
     _data: Vec<u8>,
+}
+
+#[derive(Error, Debug)]
+enum MemError {
+    #[error("Address {0:08x} misaligned or OOB")]
+    AddressInvalid(usize),
 }
 
 impl Memory {
@@ -48,47 +59,47 @@ impl Memory {
         self._data.len()
     }
 
-    fn load_u32(&self, addr: u32) -> Option<u32> {
-        let addr: usize = addr.try_into().unwrap();
+    fn load_u32(&self, addr: u32) -> Result<u32> {
+        let addr: usize = addr.try_into()?;
         if addr & 0x03 == 0 // Aligned address
             && addr + 3 < self._data.len() { // In-bounds
-            Some(
+            Ok(
                 ((self._data[addr+3] as u32) << 24) | 
                 ((self._data[addr+2] as u32) << 16) | 
                 ((self._data[addr+1] as u32) << 8) | 
                 ((self._data[addr+0] as u32))
             )
         } else {
-            None
+            Err(MemError::AddressInvalid(addr))?
         }
     }
-    fn load_u16(&self, addr: u32) -> Option<u16> {
-        let addr: usize = addr.try_into().unwrap();
+    fn load_u16(&self, addr: u32) -> Result<u16> {
+        let addr: usize = addr.try_into()?;
         if addr & 0x01 == 0 // Aligned address
             && addr + 1 < self._data.len() { // In-bounds
-                Some(
+                Ok(
                     ((self._data[addr+1] as u16) << 8) | 
                     ((self._data[addr+0] as u16))
                 )
         } else {
-            None
+            Err(MemError::AddressInvalid(addr))?
         }
     }
-    fn load_u8(&self, addr: u32) -> Option<u8> {
-        let addr: usize = addr.try_into().unwrap();
+    fn load_u8(&self, addr: u32) -> Result<u8> {
+        let addr: usize = addr.try_into()?;
         if addr < self._data.len() { // In-bounds
-            Some(self._data[addr])
+            Ok(self._data[addr])
         } else {
-            None
+            Err(MemError::AddressInvalid(addr))?
         }
     }
 
-    fn store_u32(&mut self, addr: u32, data: u32) -> Option<()> {
-        let addr: usize = addr.try_into().unwrap();
+    fn store_u32(&mut self, addr: u32, data: u32) -> Result<()> {
+        let addr: usize = addr.try_into()?;
         if addr == 0xf000_0000 {
             // Special case
             println!("RESULT = 0x{:08x} = {}", data, data);
-            Some(())
+            Ok(())
         } else if addr & 0x03 == 0 // Aligned address
             && addr + 3 < self._data.len() { // In-bounds
 
@@ -96,32 +107,32 @@ impl Memory {
             self._data[addr + 2] = ((data >> 16) & 0xff).try_into().unwrap();
             self._data[addr + 1] = ((data >> 8) & 0xff).try_into().unwrap();
             self._data[addr + 0] = ((data) & 0xff).try_into().unwrap();
-            Some(())
+            Ok(())
         } else {
-            None
+            Err(MemError::AddressInvalid(addr))?
         }
     }
 
-    fn store_u16(&mut self, addr: u32, data: u16) -> Option<()> {
-        let addr: usize = addr.try_into().unwrap();
+    fn store_u16(&mut self, addr: u32, data: u16) -> Result<()> {
+        let addr: usize = addr.try_into()?;
         if addr & 0x01 == 0 // Aligned address
             && addr + 1 < self._data.len() { // In-bounds
 
             self._data[addr + 1] = ((data >> 8) & 0xff).try_into().unwrap();
             self._data[addr + 0] = ((data) & 0xff).try_into().unwrap();
-            Some(())
+            Ok(())
         } else {
-            None
+            Err(MemError::AddressInvalid(addr))?
         }
     }
 
-    fn store_u8(&mut self, addr: u32, data: u8) -> Option<()> {
-        let addr: usize = addr.try_into().unwrap();
+    fn store_u8(&mut self, addr: u32, data: u8) -> Result<()> {
+        let addr: usize = addr.try_into()?;
         if addr < self._data.len() { // In-bounds
             self._data[addr] = data;
-            Some(())
+            Ok(())
         } else {
-            None
+            Err(MemError::AddressInvalid(addr))?
         }
     }
 }
@@ -213,15 +224,15 @@ impl Processor {
         self.lmul = Lmul::e1;
     }
 
-    fn exec_step(&mut self) {
+    fn exec_step(&mut self) -> Result<()> {
         self.state = ProcState::Running;
 
         // self.dump();
 
-        let inst_bits = self.memory.load_u32(self.pc).expect("Couldn't load next instruction");
+        let inst_bits = self.memory.load_u32(self.pc).context("Couldn't load next instruction")?;
         // dbg!(format!("0x{:08x}", self.pc));
         // dbg!(format!("{:08x}", inst_bits));
-        let (opcode, inst) = decode(inst_bits);
+        let (opcode, inst) = decode(inst_bits)?;
 
         // println!("executing {:?} {:?}", opcode, inst);
 
@@ -233,24 +244,24 @@ impl Processor {
                 let addr = self.sreg[rs1 as usize] + imm;
                 self.sreg[rd as usize] = match funct3 {
                     // LB, LH, LW sign-extend if necessary
-                    0b000 => sign_extend32(self.memory.load_u8(addr).unwrap() as u32, 8) as u32, // LB
-                    0b001 => sign_extend32(self.memory.load_u16(addr).unwrap() as u32, 16) as u32, // LH
-                    0b010 => self.memory.load_u32(addr).unwrap(), // LW
+                    0b000 => sign_extend32(self.memory.load_u8(addr)? as u32, 8) as u32, // LB
+                    0b001 => sign_extend32(self.memory.load_u16(addr)? as u32, 16) as u32, // LH
+                    0b010 => self.memory.load_u32(addr)?, // LW
                     // LBU, LHU don't sign-extend
-                    0b100 => self.memory.load_u8(addr).unwrap() as u32, // LBU
-                    0b101 => self.memory.load_u16(addr).unwrap() as u32, // LBU
+                    0b100 => self.memory.load_u8(addr)? as u32, // LBU
+                    0b101 => self.memory.load_u16(addr)? as u32, // LBU
 
-                    _ => panic!("Unexpected Load funct3 {:03b}", funct3)
+                    _ => bail!("Unexpected Load funct3 {:03b}", funct3)
                 };
             }
             (Store, Instruction::SType{funct3, rs1, rs2, imm}) => {
                 let addr = self.sreg[rs1 as usize] + imm;
                 match funct3 {
-                    0b000 => self.memory.store_u8(addr, (self.sreg[rs2 as usize] & 0xFF) as u8).unwrap(),
-                    0b001 => self.memory.store_u16(addr, (self.sreg[rs2 as usize] & 0xFFFF) as u16).unwrap(),
-                    0b010 => self.memory.store_u32(addr, self.sreg[rs2 as usize]).unwrap(),
+                    0b000 => self.memory.store_u8(addr, (self.sreg[rs2 as usize] & 0xFF) as u8)?,
+                    0b001 => self.memory.store_u16(addr, (self.sreg[rs2 as usize] & 0xFFFF) as u16)?,
+                    0b010 => self.memory.store_u32(addr, self.sreg[rs2 as usize])?,
                     
-                    _ => panic!("Unexpected Store funct3 {:03b}", funct3)
+                    _ => bail!("Unexpected Store funct3 {:03b}", funct3)
                 };
             }
 
@@ -280,7 +291,7 @@ impl Processor {
                         }
                     }
 
-                    _ => panic!("Unexpected OpImm funct3 {:03b}", funct3)
+                    _ => bail!("Unexpected OpImm funct3 {:03b}", funct3)
                 };
             }
 
@@ -303,7 +314,7 @@ impl Processor {
                     (0, 0b110) => x | y, // OR
                     (0, 0b111) => x & y, // AND
 
-                    _ => panic!("Unexpected Op funct7/3: {:07b}, {:03b}", funct7, funct3)
+                    _ => bail!("Unexpected Op funct7/3: {:07b}, {:03b}", funct7, funct3)
                 };
             }
 
@@ -340,7 +351,7 @@ impl Processor {
                     0b110 => (src1 as u32) < (src2 as u32), // BLTU
                     0b111 => (src1 as u32) > (src2 as u32), // BGEU
 
-                    _ => panic!("Unexpected funct3 for branch {:03b}", funct3)
+                    _ => bail!("Unexpected funct3 for branch {:03b}", funct3)
                 };
 
                 if take_branch {
@@ -348,25 +359,27 @@ impl Processor {
                 }
             }
 
-            _ => panic!("Unexpected opcode/instruction pair ({:?}, {:?})", opcode, inst)
+            _ => bail!("Unexpected opcode/instruction pair ({:?}, {:?})", opcode, inst)
         }
 
         self.sreg[0] = 0;
 
         if next_pc % 4 != 0 {
-            panic!("PC was set to a misaligned value {:?}", next_pc);
+            bail!("PC was set to a misaligned value {:?}", next_pc);
         }
         self.pc = next_pc;
+
+        Ok(())
     }
 
     fn dump(&self) {
-        println!("{:?}\npc:0x{:08x}", self.state, self.pc);
+        println!("{:?}\npc: 0x{:08x}", self.state, self.pc);
         for i in 0..32 {
             println!("x{} = {} = 0x{:08x}", i, register_names[i], self.sreg[i]);
         }
-        // for i in 0..32 {
-        //     println!("v{} = 0x{:032x}", i, self.vreg[i]);
-        // }
+        for i in 0..32 {
+            println!("v{} = 0x{:032x}", i, self.vreg[i]);
+        }
         println!("sel: {:?}\nlmul: {:?}", self.sel, self.lmul);
     }
 }
@@ -391,8 +404,16 @@ fn main() {
     let mut processor = Processor::new(mem);
 
     loop {
-        processor.exec_step();
+        let res = processor.exec_step();
 
+        match res {
+            Err(e) => {
+                processor.dump();
+                println!("Encountered error: {:#}", e);
+                break
+            },
+            Ok(()) => {}
+        }
         if processor.state == ProcState::Stopped {
             break
         }
