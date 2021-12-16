@@ -77,12 +77,18 @@ pub enum Instruction {
     JType {
         rd: u8,
         imm: u32
-    }
+    },
+    BType {
+        funct3: u8,
+        rs1: u8,
+        rs2: u8,
+        imm: u32
+    },
 }
 
 impl Instruction {
     pub fn get_opcode(inst: u32) -> Opcode {
-        dbg!((bits!(inst, 0:6) as u8)).into()
+        (bits!(inst, 0:6) as u8).into()
     }
 
     pub fn from_r(inst: u32) -> Instruction {
@@ -137,6 +143,21 @@ impl Instruction {
             imm:    (sign_extend32(imm, 20) as u32),
         }
     }
+
+    pub fn from_b(inst: u32) -> Instruction {
+        let imm = 
+            (bits!(inst, 8:11) << 1) |
+            (bits!(inst, 25:30) << 5) |
+            (bits!(inst, 7:7) << 11) |
+            (bits!(inst, 31:31) << 12);
+
+        Instruction::BType {
+            funct3: ((bits!(inst, 12:14) as u8)),
+            rs1:    ((bits!(inst, 15:19) as u8)),
+            rs2:    ((bits!(inst, 20:24) as u8)),
+            imm:    (sign_extend32(imm.into(), 12) as u32),
+        }
+    }
 }
 
 pub fn decode(inst: u32) -> (Opcode, Instruction) {
@@ -152,6 +173,7 @@ pub fn decode(inst: u32) -> (Opcode, Instruction) {
         LoadUpperImm => (opcode, Instruction::from_u(inst)),
         JumpAndLink => (opcode, Instruction::from_j(inst)),
         JumpAndLinkRegister => (opcode, Instruction::from_i(inst)),
+        Branch => (opcode, Instruction::from_b(inst)),
 
         _ => panic!("opcode {:?} not decoded yet", opcode)
     }

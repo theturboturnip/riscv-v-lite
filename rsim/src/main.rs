@@ -216,14 +216,14 @@ impl Processor {
     fn exec_step(&mut self) {
         self.state = ProcState::Running;
 
-        self.dump();
+        // self.dump();
 
         let inst_bits = self.memory.load_u32(self.pc).expect("Couldn't load next instruction");
         // dbg!(format!("0x{:08x}", self.pc));
-        dbg!(format!("{:08x}", inst_bits));
+        // dbg!(format!("{:08x}", inst_bits));
         let (opcode, inst) = decode(inst_bits);
 
-        println!("executing {:?} {:?}", opcode, inst);
+        // println!("executing {:?} {:?}", opcode, inst);
 
         let mut next_pc = self.pc + 4;
 
@@ -248,7 +248,7 @@ impl Processor {
                 match funct3 {
                     0b000 => self.memory.store_u8(addr, (self.sreg[rs2 as usize] & 0xFF) as u8).unwrap(),
                     0b001 => self.memory.store_u16(addr, (self.sreg[rs2 as usize] & 0xFFFF) as u16).unwrap(),
-                    0b010 => self.memory.store_u32(dbg!(addr), self.sreg[rs2 as usize]).unwrap(),
+                    0b010 => self.memory.store_u32(addr, self.sreg[rs2 as usize]).unwrap(),
                     
                     _ => panic!("Unexpected Store funct3 {:03b}", funct3)
                 };
@@ -326,6 +326,26 @@ impl Processor {
                 next_pc = next_pc & 0xFFFF_FFFE;
 
                 self.sreg[rd as usize] = self.pc + 4;
+            }
+
+            (Branch, Instruction::BType{funct3, rs1, rs2, imm}) => {
+                let src1 = self.sreg[rs1 as usize];
+                let src2 = self.sreg[rs2 as usize];
+
+                let take_branch = match funct3 {
+                    0b000 => src1 == src2, // BEQ
+                    0b001 => src1 != src2, // BNE
+                    0b100 => (src1 as i32) < (src2 as i32), // BLT
+                    0b101 => (src1 as i32) > (src2 as i32), // BGE
+                    0b110 => (src1 as u32) < (src2 as u32), // BLTU
+                    0b111 => (src1 as u32) > (src2 as u32), // BGEU
+
+                    _ => panic!("Unexpected funct3 for branch {:03b}", funct3)
+                };
+
+                if take_branch {
+                    next_pc = self.pc.wrapping_add(imm);
+                }
             }
 
             _ => panic!("Unexpected opcode/instruction pair ({:?}, {:?})", opcode, inst)
