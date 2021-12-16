@@ -1,0 +1,158 @@
+use bitutils::sign_extend32;
+
+#[derive(Debug,Clone,Copy)]
+pub enum Opcode {
+    Load,
+    Store,
+    OpImm,
+    Op,
+    AddUpperImmPC,
+    LoadUpperImm,
+    // LoadFP,
+    // StoreFP,
+    JumpAndLink,
+    JumpAndLinkRegister,
+    MiscMem,
+    Branch,
+}
+
+impl From<u8> for Opcode {
+    fn from(code: u8) -> Opcode {
+        match code {
+            0b00_000_11 => Opcode::Load,
+            0b01_000_11 => Opcode::Store,
+            // 0b00_001_11 => Opcode::LoadFP,
+            // 0b01_001_11 => Opcode::StoreFP,
+
+            0b00_100_11 => Opcode::OpImm,
+            0b01_100_11 => Opcode::Op,
+
+            0b00_101_11 => Opcode::AddUpperImmPC,
+            0b01_101_11 => Opcode::LoadUpperImm,
+
+            0b11_001_11 => Opcode::JumpAndLinkRegister,
+            0b11_011_11 => Opcode::JumpAndLink,
+            0b11_000_11 => Opcode::Branch,
+            0b00_011_11 => Opcode::MiscMem,
+
+            _ => panic!("unhandled opcode {:07b}", code),
+        }
+    }
+}
+
+// pub struct Instruction {
+//     pub opcode: Opcode,
+//     pub imm: Option<u32>,
+//     pub rd: Option<u8>,
+//     pub rs1: Option<u8>,
+//     pub rs2: Option<u8>,
+//     pub funct3: Option<u8>,
+//     pub funct7: Option<u8>
+// }
+#[derive(Debug,Clone,Copy)]
+pub enum Instruction {
+    RType {
+        rd: u8,
+        funct3: u8,
+        rs1: u8,
+        rs2: u8,
+        funct7: u8
+    },
+    IType {
+        rd: u8,
+        funct3: u8,
+        rs1: u8,
+        imm: u32
+    },
+    SType {
+        funct3: u8,
+        rs1: u8,
+        rs2: u8,
+        imm: u32
+    },
+    UType {
+        rd: u8,
+        imm: u32
+    },
+    JType {
+        rd: u8,
+        imm: u32
+    }
+}
+
+impl Instruction {
+    pub fn get_opcode(inst: u32) -> Opcode {
+        dbg!((bits!(inst, 0:6) as u8)).into()
+    }
+
+    pub fn from_r(inst: u32) -> Instruction {
+        Instruction::RType {
+            rd:     ((bits!(inst, 7:11) as u8)),
+            funct3: ((bits!(inst, 12:14) as u8)),
+            rs1:    ((bits!(inst, 15:19) as u8)),
+            rs2:    ((bits!(inst, 20:24) as u8)),
+            funct7: ((bits!(inst, 25:31) as u8)),
+        }
+    }
+
+    pub fn from_i(inst: u32) -> Instruction {
+        Instruction::IType {
+            rd:     ((bits!(inst, 7:11) as u8)),
+            funct3: ((bits!(inst, 12:14) as u8)),
+            rs1:    ((bits!(inst, 15:19) as u8)),
+            imm:    (sign_extend32((bits!(inst, 20:31) as u16).into(), 12) as u32),
+        }
+    }
+
+    pub fn from_s(inst: u32) -> Instruction {
+        let imm_bits: u16 = (bits!(inst, 7:11) as u16) | ((bits!(inst, 25:31) as u16) << 5);
+
+        Instruction::SType {
+            funct3: ((bits!(inst, 12:14) as u8)),
+            rs1:    ((bits!(inst, 15:19) as u8)),
+            rs2:    ((bits!(inst, 20:24) as u8)),
+            imm:    (sign_extend32(imm_bits.into(), 12) as u32),
+        }
+    }
+
+    pub fn from_u(inst: u32) -> Instruction {
+        let imm_bits = bits!(inst, 12:31);
+
+        Instruction::UType {
+            rd:     ((bits!(inst, 7:11) as u8)),
+            imm:    imm_bits << 12
+            //(sign_extend32((bits!(inst, 12:31) as u16).into(), 20) as u32),
+        }
+    }
+
+    pub fn from_j(inst: u32) -> Instruction {
+        let imm = 
+            (bits!(inst, 21:30) << 1) |
+            (bits!(inst, 20:20) << 11) |
+            (bits!(inst, 12:19) << 12) |
+            (bits!(inst, 31:31) << 20);
+
+        Instruction::JType {
+            rd:     ((bits!(inst, 7:11) as u8)),
+            imm:    (sign_extend32(imm, 20) as u32),
+        }
+    }
+}
+
+pub fn decode(inst: u32) -> (Opcode, Instruction) {
+    let opcode = Instruction::get_opcode(inst);
+
+    use Opcode::*;
+    match opcode {
+        Load => (opcode, Instruction::from_i(inst)),
+        Store => (opcode, Instruction::from_s(inst)),
+        OpImm => (opcode, Instruction::from_i(inst)),
+        Op => (opcode, Instruction::from_r(inst)),
+        AddUpperImmPC => (opcode, Instruction::from_u(inst)),
+        LoadUpperImm => (opcode, Instruction::from_u(inst)),
+        JumpAndLink => (opcode, Instruction::from_j(inst)),
+        JumpAndLinkRegister => (opcode, Instruction::from_i(inst)),
+
+        _ => panic!("opcode {:?} not decoded yet", opcode)
+    }
+}

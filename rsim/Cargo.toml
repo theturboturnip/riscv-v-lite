@@ -7,3 +7,5 @@ edition = "2018"
 
 [dependencies]
 clap = "2.34.0"
+# bitlab = "1.1.0"
+bitutils = "3.0.1"
