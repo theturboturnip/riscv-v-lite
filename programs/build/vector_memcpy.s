@@ -34,8 +34,7 @@ vector_memcpy_harness:
 	mv	a0, zero
 	lui	a1, %hi(vector_memcpy_harness.data)
 	addi	a1, a1, %lo(vector_memcpy_harness.data)
-	lui	a2, 1
-	addi	a2, a2, -2048
+	addi	a2, zero, 1003
 .LBB1_1:
 	sw	a0, 0(a1)
 	addi	a0, a0, 1
@@ -45,8 +44,7 @@ vector_memcpy_harness:
 	addi	s0, s2, %lo(vector_memcpy_harness.data)
 	lui	s3, %hi(vector_memcpy_harness.out_data)
 	addi	s1, s3, %lo(vector_memcpy_harness.out_data)
-	lui	a0, 1
-	addi	a0, a0, -2048
+	addi	a0, zero, 1003
 	mv	a1, s0
 	mv	a2, s1
 	call	vector_memcpy_e8
@@ -56,7 +54,7 @@ vector_memcpy_harness:
 	mv	a4, zero
 	addi	a0, s0, 4
 	addi	a1, s1, 4
-	addi	a3, zero, 2047
+	addi	a3, zero, 1002
 .LBB1_4:
 	mv	a2, a4
 	beq	a4, a3, .LBB1_6
@@ -67,7 +65,7 @@ vector_memcpy_harness:
 	addi	a4, a2, 1
 	beq	a5, s1, .LBB1_4
 .LBB1_6:
-	addi	a0, zero, 2046
+	addi	a0, zero, 1001
 	sltu	a0, a0, a2
 	j	.LBB1_8
 .LBB1_7:
@@ -100,10 +98,10 @@ main:
 
 	.type	vector_memcpy_harness.data,@object
 	.local	vector_memcpy_harness.data
-	.comm	vector_memcpy_harness.data,8192,4
+	.comm	vector_memcpy_harness.data,4012,4
 	.type	vector_memcpy_harness.out_data,@object
 	.local	vector_memcpy_harness.out_data
-	.comm	vector_memcpy_harness.out_data,8192,4
+	.comm	vector_memcpy_harness.out_data,4012,4
 	.ident	"Ubuntu clang version 13.0.1-++20211215022811+5932c004778c-1~exp1~20211215022819.27"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
