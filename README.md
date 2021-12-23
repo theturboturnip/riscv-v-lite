@@ -15,7 +15,12 @@ To run the emulator on the example program:
 
 If an error occurs during execution, including any issues with unimplemented instructions, the processor state will be dumped and an error message will display.
 
-Currently, the vector load/store instructions are not yet implemented, so an error will always occur.
+Currently, the vector load/store instructions are not yet implemented, so an error will always occur:
+
+```Encountered error: Unexpected opcode/instruction pair (LoadFP, FLdStType { ... })  ```
+
+Vector Load/Stores are encoded under the LoadFP/StoreFP major opcodes, so there will be an error executing a LoadFP opcode instruction.
+The fields of the instruction (e.g. destination register) will also be shown in the error message.
 
 ## The Program
 
