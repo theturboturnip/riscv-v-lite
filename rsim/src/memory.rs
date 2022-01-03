@@ -196,8 +196,7 @@ impl Memory {
 
         if addr == 0xf000_0000 {
             // Special case
-            println!("RESULT = 0x{:08x} = {}", data, data);
-            Ok(())
+            panic!("RESULT = 0x{:08x} = {}", data, data);
         } else if addr & 0x03 != 0 {
             Err(MemError::AddressMisaligned(addr))
         } else if addr + 3 >= self.data.len() {
