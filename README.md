@@ -26,9 +26,18 @@ And some tests embedded in said documentation can be run:
 
 If an error occurs during execution, including any issues with unimplemented instructions, the processor state will be dumped and an error message will display.
 
-Currently, the vector load/store instructions are not yet implemented, so an error will always occur:
+All instructions that occur in the example program are now implemented, so the program should succeed.
+This is signified by writing 1 (or 0 if the program failed) to the address `0xF000_0000`.
+When this happens, the Memory module will throw an ""error"" to report the success.
 
-```Encountered error: Vector Load not fully implemented yet```
+```
+Error: Failed to execute decoded instruction Store SType { funct3: 2, rs1: 11, rs2: 10, imm: 0 }
+
+Caused by:
+    Program returned a value: 1
+```
+
+As the program has returned 1, it has been successful! 🎉
 
 ## The Program
 
