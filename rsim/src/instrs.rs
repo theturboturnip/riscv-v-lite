@@ -225,20 +225,22 @@ pub fn decode(inst: u32) -> Result<(Opcode, Instruction)> {
     let opcode = Instruction::get_opcode(inst)?;
 
     use Opcode::*;
-    match opcode {
-        Load => Ok((opcode, Instruction::from_i(inst))),
-        Store => Ok((opcode, Instruction::from_s(inst))),
-        LoadFP => Ok((opcode, Instruction::from_f_ld_st(inst))),
-        StoreFP => Ok((opcode, Instruction::from_f_ld_st(inst))),
-        OpImm => Ok((opcode, Instruction::from_i(inst))),
-        Op => Ok((opcode, Instruction::from_r(inst))),
-        AddUpperImmPC => Ok((opcode, Instruction::from_u(inst))),
-        LoadUpperImm => Ok((opcode, Instruction::from_u(inst))),
-        JumpAndLink => Ok((opcode, Instruction::from_j(inst))),
-        JumpAndLinkRegister => Ok((opcode, Instruction::from_i(inst))),
-        Branch => Ok((opcode, Instruction::from_b(inst))),
-        Vector => Ok((opcode, Instruction::from_v(inst))),
+    let instr = match opcode {
+        Load =>             Instruction::from_i(inst),
+        Store =>            Instruction::from_s(inst),
+        LoadFP =>           Instruction::from_f_ld_st(inst),
+        StoreFP =>          Instruction::from_f_ld_st(inst),
+        OpImm =>            Instruction::from_i(inst),
+        Op =>               Instruction::from_r(inst),
+        AddUpperImmPC =>    Instruction::from_u(inst),
+        LoadUpperImm =>     Instruction::from_u(inst),
+        JumpAndLink =>      Instruction::from_j(inst),
+        JumpAndLinkRegister => Instruction::from_i(inst),
+        Branch =>           Instruction::from_b(inst),
+        Vector =>           Instruction::from_v(inst),
 
         _ => bail!("opcode {:?} not decoded yet", opcode)
-    }
+    };
+
+    Ok((opcode, instr))
 }
