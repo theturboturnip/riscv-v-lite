@@ -22,17 +22,6 @@ pub enum RunState {
     Running
 }
 
-static register_names: [&str; 32] = [
-    "zero", "ra", "sp", "gp",
-    "tp", "t0", "t1", "t2",
-    "fp", "s1", "a0", "a1",
-    "a2", "a3", "a4", "a5",
-    "a6", "a7", "s2", "s3",
-    "s4", "s5", "s6", "s7",
-    "s8", "s9", "s10", "s11",
-    "t3", "t4", "t5", "t6"
-];
-
 pub struct Processor {
     pub run_state: RunState,
     memory: Memory,
@@ -44,15 +33,16 @@ pub struct Processor {
 
 impl Processor {
     pub fn new<'a>(mem: Memory) -> (Processor, VectorUnit) {
-        let p = Processor {
+        let mut p = Processor {
             run_state: RunState::Stopped,
             memory: mem,
-
             pc: 0,
-
             sreg: [0; 32]
         };
-        let v = VectorUnit::new();
+        let mut v = VectorUnit::new();
+
+        p.reset(&mut v);
+
         (p, v)
     }
 
@@ -233,9 +223,20 @@ impl Processor {
     }
 
     pub fn dump(&self, v_unit: &mut VectorUnit) {
+        const REGISTER_NAMES: [&str; 32] = [
+            "zero", "ra", "sp", "gp",
+            "tp", "t0", "t1", "t2",
+            "fp", "s1", "a0", "a1",
+            "a2", "a3", "a4", "a5",
+            "a6", "a7", "s2", "s3",
+            "s4", "s5", "s6", "s7",
+            "s8", "s9", "s10", "s11",
+            "t3", "t4", "t5", "t6"
+        ];
+
         println!("{:?}\npc: 0x{:08x}", self.run_state, self.pc);
         for i in 0..32 {
-            println!("x{} = {} = 0x{:08x}", i, register_names[i], self.sreg[i]);
+            println!("x{} = {} = 0x{:08x}", i, REGISTER_NAMES[i], self.sreg[i]);
         }
         v_unit.dump();
     }

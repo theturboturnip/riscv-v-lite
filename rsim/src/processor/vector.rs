@@ -7,7 +7,6 @@ use crate::memory::Memory;
 use super::decode::{Opcode,InstructionBits};
 
 use crate::processor::uXLEN;
-use crate::processor::Processor;
 
 const ELEN: usize = 32;
 const VLEN: usize = 128; // ELEN * 4
@@ -37,8 +36,8 @@ pub struct VectorUnitConnection<'a> {
 }
 
 enum ConfigKind {
-    vsetvli,
     vsetvl,
+    vsetvli,
     vsetivli
 }
 
