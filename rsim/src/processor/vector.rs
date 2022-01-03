@@ -32,16 +32,8 @@ pub struct VectorUnit {
 }
 
 pub struct VectorUnitConnection<'a> {
-    sreg: &'a mut [uXLEN; 32],
-    memory: &'a mut Memory,
-}
-impl Processor {
-    pub fn vector_conn<'a,'b>(&'a mut self) -> VectorUnitConnection<'b> where 'a: 'b {
-        VectorUnitConnection {
-            sreg: &mut self.sreg,
-            memory: &mut self.memory,
-        }
-    }
+    pub sreg: &'a mut [uXLEN; 32],
+    pub memory: &'a mut Memory,
 }
 
 enum ConfigKind {

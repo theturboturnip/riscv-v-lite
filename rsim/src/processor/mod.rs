@@ -9,7 +9,7 @@ mod decode;
 use decode::{decode, InstructionBits};
 
 mod vector;
-use vector::{VectorUnit};
+use vector::{VectorUnit, VectorUnitConnection};
 
 const XLEN: usize = 32;
 type uXLEN = u32;
@@ -54,6 +54,13 @@ impl Processor {
         };
         let v = VectorUnit::new();
         (p, v)
+    }
+
+    pub fn vector_conn<'a,'b>(&'a mut self) -> VectorUnitConnection<'b> where 'a: 'b {
+        VectorUnitConnection {
+            sreg: &mut self.sreg,
+            memory: &mut self.memory,
+        }
     }
 
     pub fn reset(&mut self, v_unit: &mut VectorUnit) {
