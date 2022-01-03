@@ -1,20 +1,7 @@
-#[macro_use]
-extern crate bitutils;
-
-#[macro_use]
-extern crate anyhow;
-
-#[macro_use]
-extern crate static_assertions;
-
-mod memory;
-use memory::Memory;
-
-mod processor;
-use processor::{Processor, RunState};
-
 extern crate clap;
 use clap::{Arg, App};
+
+use rsim::{Memory,Processor};
 
 fn main() {
     let matches = App::new("risc-v-v-lite")
@@ -43,7 +30,7 @@ fn main() {
             },
             Ok(()) => {}
         }
-        if processor.run_state == RunState::Stopped {
+        if !processor.running {
             break
         }
     }

@@ -26,17 +26,10 @@ pub const XLEN: usize = 32;
 pub type uXLEN = u32;
 const_assert!(size_of::<uXLEN>() * 8 == XLEN);
 
-/// Is the processor running or not
-#[derive(Debug,PartialEq,Eq)]
-pub enum RunState {
-    Stopped,
-    Running
-}
-
 /// The processor.
 /// Holds scalar registers and configuration, all vector-related stuff is in [VectorUnit]. 
 pub struct Processor {
-    pub run_state: RunState,
+    pub running: bool,
     pub memory: Memory,
     pc: uXLEN,
     sreg: [uXLEN; 32],
@@ -50,7 +43,7 @@ impl Processor {
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
     pub fn new(mem: Memory) -> (Processor, VectorUnit) {
         let mut p = Processor {
-            run_state: RunState::Stopped,
+            running: false,
             memory: mem,
             pc: 0,
             sreg: [0; 32]
@@ -72,10 +65,10 @@ impl Processor {
 
     /// Reset the processor and associated vector unit
     pub fn reset(&mut self, v_unit: &mut VectorUnit) {
-        self.run_state = RunState::Stopped;
-
+        self.running = false;
         self.pc = 0;
         self.sreg = [0; 32];
+
         v_unit.reset();
     }
 
@@ -85,7 +78,7 @@ impl Processor {
     /// 
     /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
     pub fn exec_step(&mut self, v_unit: &mut VectorUnit) -> Result<()> {
-        self.run_state = RunState::Running;
+        self.running = true;
 
         // self.dump();
 
@@ -258,7 +251,7 @@ impl Processor {
             "t3", "t4", "t5", "t6"
         ];
 
-        println!("{:?}\npc: 0x{:08x}", self.run_state, self.pc);
+        println!("running: {:?}\npc: 0x{:08x}", self.running, self.pc);
         for i in 0..32 {
             println!("x{} = {} = 0x{:08x}", i, REGISTER_NAMES[i], self.sreg[i]);
         }
