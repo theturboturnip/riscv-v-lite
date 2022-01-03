@@ -412,6 +412,7 @@ impl Processor {
                                 } else {
                                     if rd != 0 {
                                         bail!("vsetvl{{i}} called with rd != 0, rs1 == 0, which requires VMAX. Haven't thought about that yet.");
+                                        u32::MAX
                                     } else {
                                         self.vl
                                     }
