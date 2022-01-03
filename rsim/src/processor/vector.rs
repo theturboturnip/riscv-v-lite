@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use std::mem::size_of;
 use std::cmp::min;
 use anyhow::{Result};
@@ -6,7 +7,7 @@ use crate::memory::Memory;
 
 use super::decode::{Opcode,InstructionBits};
 
-use crate::processor::uXLEN;
+use crate::processor::{uXLEN,XLEN};
 
 
 
@@ -51,14 +52,8 @@ const_assert!(size_of::<uVLEN>() * 8 == VLEN);
 pub struct VectorUnit {
     vreg: [uVLEN; 32],
 
-    sew: Sew,
-    lmul: Lmul,
+    vtype: VType,
     vl: u32,
-    vtype_reg: u32,
-    // VMA, VTA not required.
-    // agnostic = undisturbed || overwrite with ones, so just assume undisturbed
-    // vma: bool,
-    // vta: bool,
 }
 
 /// References to all scalar resources touched by the vector unit.
@@ -73,21 +68,16 @@ impl VectorUnit {
         VectorUnit {
             vreg: [0; 32],
 
-            sew: Sew::e64,
-            lmul: Lmul::e1,
+            vtype: VType::illegal(),
             vl: 0,
-            vtype_reg: 0,
         }
     }
 
     /// Reset the vector unit's state
     pub fn reset(&mut self) {
         self.vreg = [0; 32];
-
-        self.sew = Sew::e64;
-        self.lmul = Lmul::e1;
+        self.vtype = VType::illegal();
         self.vl = 0;
-        self.vtype_reg = 0;
     }
 
     /// (Internal) Execute a configuration instruction, e.g. vsetvli family
@@ -100,8 +90,12 @@ impl VectorUnit {
     /// * `conn` - Connection to external resources
     fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: VectorUnitConnection) -> Result<()> {
         if let InstructionBits::VType{rd, funct3, rs1, rs2, vm, funct6, zimm11, zimm10} = inst {
+
+            // avl = application vector length
+            // Either read it from a register, or from an immediate
             let avl = match inst_kind {
                 ConfigKind::vsetvli | ConfigKind::vsetvl => { // vsetvli, vsetvl
+                    // Read AVL from a register
                     if rs1 != 0 {
                         conn.sreg[rs1 as usize]
                     } else {
@@ -114,60 +108,47 @@ impl VectorUnit {
                     }
                 } ,
                 ConfigKind::vsetivli => { // vsetivli
-                    rs1 as u32 // Use rs1 as a 5-bit immediate
+                    // Read AVL from an immediate
+                    // Use rs1 as a 5-bit immediate
+                    rs1 as u32
                 }
             };
-            let vtype = match inst_kind {
+
+            // Depending on the instruction, the vtype selection is different
+            // See RISC-V V spec, section 6
+            let vtype_bits = match inst_kind {
                 ConfigKind::vsetvli => {
-                    // vsetvli
                     zimm11 as u32
                 },
                 ConfigKind::vsetivli => {
-                    // vsetivli
                     zimm10 as u32
                 },
                 ConfigKind::vsetvl => {
                     conn.sreg[rs2 as usize] 
                 },
             };
+            // Try to parse vtype bits
+            let req_vtype = VType::decode(vtype_bits)?;
 
-            let req_sew = match bits!(vtype, 3:5) {
-                0b000 => Sew::e8,
-                0b001 => Sew::e16,
-                0b010 => Sew::e32,
-                0b011 => Sew::e64,
+            // 
+            let elems_per_group = req_vtype.elems_per_group();
 
-                invalid => bail!("Bad vtype - invalid SEW selected {:b}", invalid)
-            };
-            let req_lmul = match bits!(vtype, 0:2) {
-                0b000 => Lmul::e1,
-                0b001 => Lmul::e2,
-                0b010 => Lmul::e4,
-                0b011 => Lmul::e8,
+            let vtype_supported = elems_per_group > 0 && 
+                req_vtype.vsew != Sew::e64 &&  // ELEN = 32, we don't support larger elements
+                match req_vtype.vlmul {
+                    Lmul::eEighth => false, // As per the spec (section 3.4.2) we aren't required to support Lmul = 1/8
+                    Lmul::eHalf | Lmul::eQuarter => false, // TODO - support these lol
+                    _ => true
+                };
 
-                0b101 => Lmul::eEighth,
-                0b110 => Lmul::eQuarter,
-                0b111 => Lmul::eHalf,
-
-                invalid => bail!("Bad vtype - invalid Lmul selected {:b}", invalid),
-            };
-
-            let vector_elements = elements_in(req_sew, req_lmul);
-            let vtype_valid = vector_elements > 0 && 
-                req_sew != Sew::e64 && match req_lmul {
-                Lmul::eHalf | Lmul::eQuarter | Lmul::eEighth => false,
-                _ => true
-            };
-            if vtype_valid {
-                self.vtype_reg = vtype;
-                self.sew = req_sew;
-                self.lmul = req_lmul;
-                self.vl = min(vector_elements, avl);
+            if vtype_supported {
+                self.vtype = req_vtype;
+                self.vl = min(elems_per_group, avl);
 
                 conn.sreg[rd as usize] = self.vl;
             } else {
-                self.vtype_reg = 0x8000_0000;
-                bail!("Valid but unsupported vtype: {:b} -> {:?} {:?} elems {:}", vtype, req_sew, req_lmul, vector_elements);
+                self.vtype = VType::illegal();
+                bail!("Valid but unsupported vtype: {:b} -> {:?}, elems_per_group {}", vtype_bits, req_vtype, elems_per_group);
             }
 
             Ok(())
@@ -221,7 +202,7 @@ impl VectorUnit {
                     _ => bail!("LoadFP has impossible width {}", width)
                 };
 
-                let emul_times_8 = val_times_lmul_over_sew(eew * 8, self.sew, self.lmul);
+                let emul_times_8 = val_times_lmul_over_sew(eew * 8, self.vtype.vsew, self.vtype.vlmul);
 
                 if emul_times_8 > 64 || emul_times_8 <= 1 {
                     bail!("emul * 8 too big or too small: {}", emul_times_8);
@@ -276,7 +257,145 @@ impl VectorUnit {
         for i in 0..32 {
             println!("v{} = 0x{:032x}", i, self.vreg[i]);
         }
-        println!("sew: {:?}\nlmul: {:?}\nvl: {}\nvtype_reg: {:08x}", self.sew, self.lmul, self.vl, self.vtype_reg);
+        println!("vl: {}\nvtype: {:?}", self.vl, self.vtype);
+    }
+}
+
+/// Vector type information
+/// 
+/// Records the current vector state the program has requested, including element width.
+/// Convertible to/from uXLEN, e.g. a register value.
+/// 
+/// ```
+/// use rsim::processor::vector::{VType,Sew,Lmul};
+/// 
+/// let encoded_vtype = 0b00001010011;
+/// let decoded_vtype = VType::decode(encoded_vtype).unwrap();
+/// assert_eq!(decoded_vtype,
+///     VType {
+///         vill: false,
+///         vma: false,
+///         vta: true,
+///         vsew: Sew::e32,
+///         vlmul: Lmul::e8
+///     }
+/// );
+/// 
+/// let reencoded_vtype = decoded_vtype.encode();
+/// assert_eq!(encoded_vtype, reencoded_vtype);
+/// ```
+#[derive(Debug,Clone,Copy,PartialEq,Eq)]
+pub struct VType {
+    /// Illegal value.
+    /// 
+    /// If set, then the program has requested an unsupported configuration.
+    pub vill: bool,
+    /// Vector mask agnostic.
+    /// 
+    /// If set, the processor is alowed to overwrite masked-off elements with all 1s.
+    pub vma: bool,
+    /// Vector tail agnostic.
+    /// 
+    /// If set, the processor is allowed to overwrite tail elements with all 1s.
+    pub vta: bool,
+    /// Selected element width. See [Sew]
+    pub vsew: Sew,
+    /// Length multiplier. See [Lmul]
+    pub vlmul: Lmul,
+}
+impl VType {
+    /// Generate a VType with the illegal bit `vill` set, and all other bits zeroed.
+    /// This should be used when an unsupported vtype is requested by the program.
+    pub fn illegal() -> Self {
+        VType::decode(1 << (XLEN - 1)).unwrap()
+    }
+
+    /// Shorthand for [val_times_lmul_over_sew] with x = VLEN
+    /// 
+    /// Used for calculating the number of vector elements a vector register can hold in a given configuration.
+    pub fn elems_per_group(self) -> u32 {
+        val_times_lmul_over_sew(VLEN as u32, self.vsew, self.vlmul)
+    }
+
+    /// Encode the VType structure into a uXLEN
+    /// This is necessary when a program queries the vector type CSR.
+    pub fn encode(&self) -> uXLEN {
+        let mut val: uXLEN = 0;
+
+        if self.vill {
+            // Set top bit
+            val |= 1 << (XLEN - 1);
+        }
+
+        if self.vma {
+            val |= 1 << 7;
+        }
+
+        if self.vta {
+            val |= 1 << 6;
+        }
+
+        let sew_bits = match self.vsew {
+            Sew::e8 =>  0b000,
+            Sew::e16 => 0b001,
+            Sew::e32 => 0b010,
+            Sew::e64 => 0b011,
+        };
+        val |= sew_bits << 3;
+
+        let lmul_bits = match self.vlmul {
+            Lmul::eEighth => 0b101,
+            Lmul::eQuarter => 0b110,
+            Lmul::eHalf => 0b111,
+            Lmul::e1 => 0b000,
+            Lmul::e2 => 0b001,
+            Lmul::e4 => 0b010,
+            Lmul::e8 => 0b011
+        };
+        val |= lmul_bits << 0;
+
+        val
+    }
+
+    /// Attempt to decode a uXLEN vtype value (e.g. one encoded in a register value)
+    /// into an actual VType.
+    pub fn decode(vtype_bits: u32) -> Result<VType> {
+        let vsew = match bits!(vtype_bits, 3:5) {
+            0b000 => Sew::e8,
+            0b001 => Sew::e16,
+            0b010 => Sew::e32,
+            0b011 => Sew::e64,
+
+            invalid => bail!("Bad vtype - invalid SEW selected {:b}", invalid)
+        };
+        let vlmul = match bits!(vtype_bits, 0:2) {
+            0b000 => Lmul::e1,
+            0b001 => Lmul::e2,
+            0b010 => Lmul::e4,
+            0b011 => Lmul::e8,
+
+            0b101 => Lmul::eEighth,
+            0b110 => Lmul::eQuarter,
+            0b111 => Lmul::eHalf,
+
+            0b100 => bail!("Reserved Lmul selected 0b100"), 
+            invalid => bail!("Bad vtype - invalid Lmul selected {:b}", invalid),
+        };
+
+        match bits!(vtype_bits, 8:(XLEN-2)) {
+            0 => {
+                // As expected, all middle bits should be zero
+            },
+            invalid => bail!("Bad vtype - reserved middle bits nonzero: {:b}", invalid)
+        }
+
+        Ok(VType {
+            vill: bits!(vtype_bits, (XLEN-1):(XLEN-1)) == 1,
+            vma:  bits!(vtype_bits, 7:7) == 1,
+            vta:  bits!(vtype_bits, 6:6) == 1,
+            vsew,
+            vlmul
+        })
     }
 }
 
@@ -300,7 +419,7 @@ enum ConfigKind {
 /// 
 /// Depending on ELEN, the maximum element length, some of these values may not be usable in practice.
 #[derive(Debug,PartialEq,Eq,Copy,Clone)]
-enum Sew {
+pub enum Sew {
     e8,
     e16,
     e32,
@@ -321,7 +440,7 @@ enum Sew {
 /// To ensure the following instructions operate on the same number of elements, they reconfigure with doubled LMUL.
 /// LMUL = 8, vtype = 32-bit => LMUL * VLEN / SEW = 8 * VLEN / 32 = VLEN/4 elements, same as before.
 #[derive(Debug,PartialEq,Eq,Copy,Clone)]
-enum Lmul {
+pub enum Lmul {
     eEighth,
     eQuarter,
     eHalf,
@@ -335,9 +454,9 @@ enum Lmul {
 /// 
 /// # Arguments
 /// 
-/// `x` - base value to multiply/divide
-/// `s` - Selected element width enum
-/// `l` - Length multiplier enum
+/// * `x` - base value to multiply/divide
+/// * `s` - Selected element width enum
+/// * `l` - Length multiplier enum
 fn val_times_lmul_over_sew(x: u32, s: Sew, l: Lmul) -> u32 {
     let mut bits_per_group: u32 = x;
     match l {
@@ -369,12 +488,7 @@ fn val_times_lmul_over_sew(x: u32, s: Sew, l: Lmul) -> u32 {
         Sew::e64 => 64,
     }
 }
-/// Shorthand for [val_times_lmul_over_sew] with x = VLEN
-/// 
-/// Used for calculating the number of vector elements a vector register can hold in a given configuration.
-fn elements_in(s: Sew, l: Lmul) -> u32 {
-    val_times_lmul_over_sew(VLEN as u32, s, l)
-}
+
 
 /// Memory OPeration enum
 /// 
