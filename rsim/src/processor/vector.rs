@@ -154,6 +154,7 @@ impl VectorUnit {
 
             if vtype_supported {
                 self.vtype = req_vtype;
+                dbg!(avl, elems_per_group);
                 self.vl = min(elems_per_group, avl);
 
                 conn.sreg[rd as usize] = self.vl;
@@ -313,7 +314,7 @@ impl VectorUnit {
                                 }
 
                                 // Effective VL
-                                let evl = val_times_lmul_over_sew(VLEN as u32, eew, emul);
+                                let evl = self.vl;//val_times_lmul_over_sew(VLEN as u32, eew, emul);
 
                                 // i = element index in logical vector (which includes groups)
                                 let mut addr = base_addr;
@@ -465,7 +466,7 @@ impl VectorUnit {
                                 }
 
                                 // Effective VL
-                                let evl = val_times_lmul_over_sew(VLEN as u32, eew, emul);
+                                let evl = self.vl;//val_times_lmul_over_sew(VLEN as u32, eew, emul);
 
                                 // i = element index in logical vector (which includes groups)
                                 let mut addr = base_addr;
@@ -480,7 +481,7 @@ impl VectorUnit {
                                     }
                                     
                                     let val = self.load_u32_vreg(rd, i as u32)?;
-                                    dbg!(addr, val);
+                                    // dbg!(addr, val);
                                     conn.memory.store_u32(addr, val)?;
                                     
                                     addr += 4;
