@@ -4,8 +4,6 @@ extern crate bitutils;
 #[macro_use]
 extern crate anyhow;
 
-mod decode;
-
 mod memory;
 use memory::Memory;
 

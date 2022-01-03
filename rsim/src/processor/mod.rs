@@ -4,7 +4,9 @@ use anyhow::{Context,Result};
 use bitutils::sign_extend32;
 
 use super::memory::Memory;
-use super::decode::{decode, InstructionBits, Opcode};
+
+mod decode;
+use decode::{decode, InstructionBits};
 
 static XLEN: usize = 32;
 type uXLEN = u32;
@@ -148,7 +150,7 @@ impl Processor {
 
         let mut next_pc = self.pc + 4;
 
-        use Opcode::*;
+        use decode::Opcode::*;
         match (opcode, inst) {
             (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
                 let addr = self.sreg[rs1 as usize] + imm;
