@@ -33,10 +33,6 @@ impl Memory {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.data.len()
-    }
-
     pub fn load_u32(&self, addr: u32) -> Result<u32> {
         let addr: usize = addr.try_into()?;
         if addr & 0x03 == 0 // Aligned address
