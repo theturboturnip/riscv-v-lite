@@ -5,10 +5,10 @@ use bitutils::sign_extend32;
 
 use super::memory::Memory;
 
-mod decode;
+pub mod decode;
 use decode::{decode, InstructionBits};
 
-mod vector;
+pub mod vector;
 use vector::{VectorUnit, VectorUnitConnection};
 
 const XLEN: usize = 32;

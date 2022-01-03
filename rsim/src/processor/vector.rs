@@ -8,15 +8,46 @@ use super::decode::{Opcode,InstructionBits};
 
 use crate::processor::uXLEN;
 
-const ELEN: usize = 32;
-const VLEN: usize = 128; // ELEN * 4
 
-type uELEN = u32;
-type uVLEN = u128;
 
+/// Maximum element length in bits
+pub const ELEN: usize = 32;
+
+/// Unsigned type of length [ELEN]
+/// 
+/// ```
+/// use rsim::processor::vector::{uELEN, ELEN};
+/// use std::mem::size_of;
+/// 
+/// assert_eq!(size_of::<uELEN>() * 8, ELEN);
+/// ```
+#[allow(non_camel_case_types)]
+pub type uELEN = u32;
 const_assert!(size_of::<uELEN>() * 8 == ELEN);
+
+
+
+/// Vector register length in bits
+pub const VLEN: usize = 128; // ELEN * 4
+
+/// Unsigned type of length [VLEN]
+/// 
+/// Used for storing vector registers
+/// 
+/// ```
+/// use rsim::processor::vector::{uVLEN, VLEN};
+/// use std::mem::size_of;
+/// 
+/// assert_eq!(size_of::<uVLEN>() * 8, VLEN);
+/// ```
+#[allow(non_camel_case_types)]
+pub type uVLEN = u128;
 const_assert!(size_of::<uVLEN>() * 8 == VLEN);
 
+/// The Vector Unit for the processor.
+/// Stores all vector state, including registers.
+/// Call [VectorUnit::exec_inst()] on it when you encounter a vector instruction.
+/// This requires a [VectorUnitConnection] to access other resources.
 pub struct VectorUnit {
     vreg: [uVLEN; 32],
 
@@ -30,18 +61,14 @@ pub struct VectorUnit {
     // vta: bool,
 }
 
+/// References to all scalar resources touched by the vector unit.
 pub struct VectorUnitConnection<'a> {
     pub sreg: &'a mut [uXLEN; 32],
     pub memory: &'a mut Memory,
 }
 
-enum ConfigKind {
-    vsetvl,
-    vsetvli,
-    vsetivli
-}
-
 impl VectorUnit {
+    /// Returns an initialized VectorUnit.
     pub fn new() -> VectorUnit {
         VectorUnit {
             vreg: [0; 32],
@@ -53,6 +80,7 @@ impl VectorUnit {
         }
     }
 
+    /// Reset the vector unit's state
     pub fn reset(&mut self) {
         self.vreg = [0; 32];
 
@@ -62,6 +90,14 @@ impl VectorUnit {
         self.vtype_reg = 0;
     }
 
+    /// (Internal) Execute a configuration instruction, e.g. vsetvli family
+    /// Requires a [VectorUnitConnection].
+    /// 
+    /// # Arguments
+    /// 
+    /// * `inst_kind` - Which kind of configuration instruction to execute
+    /// * `inst` - Decoded instruction bits
+    /// * `conn` - Connection to external resources
     fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: VectorUnitConnection) -> Result<()> {
         if let InstructionBits::VType{rd, funct3, rs1, rs2, vm, funct6, zimm11, zimm10} = inst {
             let avl = match inst_kind {
@@ -140,17 +176,27 @@ impl VectorUnit {
         }
     }
 
+    /// Execute a vector-specific instruction, e.g. vector arithmetic, loads, configuration
+    /// Requires a [VectorUnitConnection].
+    /// 
+    /// # Arguments
+    /// 
+    /// * `opcode` - The major opcode of the instruction
+    /// * `inst` - Decoded instruction bits
+    /// * `inst_bits` - Raw instruction bits (TODO - we shouldn't need this)
+    /// * `conn` - Connection to external resources
     pub fn exec_inst(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: VectorUnitConnection) -> Result<()> {
         use Opcode::*;
         match (opcode, inst) {
             (Vector, InstructionBits::VType{funct3, ..}) => {
                 match funct3 {
                     0b111 => {
-                        // Configuration
+                        // Configuration family - vsetvli etc.
                         let inst_kind = match bits!(inst_bits, 30:31) {
                             0b00 | 0b01 => ConfigKind::vsetvli,
                             0b11 => ConfigKind::vsetivli,
                             0b10 => ConfigKind::vsetvl,
+
                             invalid => panic!("impossible top 2 bits {:2b}", invalid)
                         };
                         self.exec_config(inst_kind, inst, conn)?
@@ -190,7 +236,8 @@ impl VectorUnit {
                 let mop = match mop {
                     0b00 => Mop::UnitStride,
                     0b10 => Mop::Strided(conn.sreg[rs2 as usize]),
-                    0b01 | 0b11 => Mop::Indexed, // Unordered | Ordered
+                    0b01 => Mop::Indexed{ordered: false},
+                    0b11 => Mop::Indexed{ordered: true},
 
                     _ => panic!("impossible mop bits {:2b}", mop)
                 };
@@ -205,14 +252,14 @@ impl VectorUnit {
                             0b01011 => UnitStrideLoadOp::ByteMaskLoad,
                             0b10000 => UnitStrideLoadOp::FaultOnlyFirst,
     
-                            _ => bail!("invalid unit stride {:05b}", rs2)
+                            _ => bail!("invalid unit stride type {:05b}", rs2)
                         };
                         bail!("Vector Load not fully implemented yet")
                     }
                     Mop::Strided(stride) => {
                         bail!("Vector Load not fully implemented yet")
                     }
-                    Mop::Indexed => {
+                    Mop::Indexed{ordered} => {
                         bail!("Vector Load not fully implemented yet")
                     }
                 }
@@ -224,6 +271,7 @@ impl VectorUnit {
         Ok(())
     }
 
+    /// Dump vector unit state to standard output.
     pub fn dump(&self) {
         for i in 0..32 {
             println!("v{} = 0x{:032x}", i, self.vreg[i]);
@@ -232,6 +280,25 @@ impl VectorUnit {
     }
 }
 
+/// Config instruction kind enum
+/// 
+/// RISC-V V 1.0 has three vector config instructions, this differentiates between them.
+/// 
+/// - `vsetvl` = Take application-vector-length and vector-type from registers
+/// - `vsetvli` = Take application-vector-length from register, vector-type from immediate
+/// - `vsetivli` = Take application-vector-length and vector-type from immediates
+enum ConfigKind {
+    vsetvl,
+    vsetvli,
+    vsetivli
+}
+
+/// Selected-Element-Width enum
+/// 
+/// The set of possible element-widths that a program can request for e.g. arithmetic.
+/// For example, a program could ask the processor to treat vector registers as vectors of 8-bit elements.
+/// 
+/// Depending on ELEN, the maximum element length, some of these values may not be usable in practice.
 #[derive(Debug,PartialEq,Eq,Copy,Clone)]
 enum Sew {
     e8,
@@ -240,6 +307,19 @@ enum Sew {
     e64
 }
 
+/// Length-Mul enum
+/// 
+/// RISC-V V allows programs to *group* vector registers together for greater theoretical parallelism.
+/// For example, configuring LMUL=8 means that subsequent vector instructions will operate on 8 vector registers worth of elements.
+/// 
+/// This requires care if you are resizing elements.
+/// An example program in v1.0 of the specification (section 6.4, p28)
+/// sets LMUL=4, vtype=16-bit for initial operations.
+/// This will operate on LMUL * VLEN / SEW = 4 * VLEN / 16 = VLEN/4 elements.
+/// 
+/// It then widens the elements to 32-bit using a widening vector multiply.
+/// To ensure the following instructions operate on the same number of elements, they reconfigure with doubled LMUL.
+/// LMUL = 8, vtype = 32-bit => LMUL * VLEN / SEW = 8 * VLEN / 32 = VLEN/4 elements, same as before.
 #[derive(Debug,PartialEq,Eq,Copy,Clone)]
 enum Lmul {
     eEighth,
@@ -251,32 +331,13 @@ enum Lmul {
     e8
 }
 
-#[derive(Debug,PartialEq,Eq,Clone,Copy)]
-enum Mop {
-    UnitStride,
-    Strided(u32),
-    Indexed,
-}
-
-#[derive(Debug,PartialEq,Eq,Clone,Copy)]
-enum UnitStrideLoadOp {
-    Load,
-    WholeRegister,
-    ByteMaskLoad,
-    FaultOnlyFirst
-}
-
-#[derive(Debug,PartialEq,Eq,Clone,Copy)]
-enum UnitStrideStoreOp {
-    Store,
-    WholeRegister,
-    ByteMaskStore
-}
-
-
-fn elements_in(s: Sew, l: Lmul) -> u32 {
-    val_times_lmul_over_sew(VLEN as u32, s, l)
-}
+/// Function that evaluates (X * LMUL) / SEW from their enum values
+/// 
+/// # Arguments
+/// 
+/// `x` - base value to multiply/divide
+/// `s` - Selected element width enum
+/// `l` - Length multiplier enum
 fn val_times_lmul_over_sew(x: u32, s: Sew, l: Lmul) -> u32 {
     let mut bits_per_group: u32 = x;
     match l {
@@ -307,4 +368,41 @@ fn val_times_lmul_over_sew(x: u32, s: Sew, l: Lmul) -> u32 {
         Sew::e32 => 32,
         Sew::e64 => 64,
     }
+}
+/// Shorthand for [val_times_lmul_over_sew] with x = VLEN
+/// 
+/// Used for calculating the number of vector elements a vector register can hold in a given configuration.
+fn elements_in(s: Sew, l: Lmul) -> u32 {
+    val_times_lmul_over_sew(VLEN as u32, s, l)
+}
+
+/// Memory OPeration enum
+/// 
+/// Vector Load/Store operations have four variants:
+/// 
+/// - Unit-Stride, e.g. access contiguous memory, which has special-case versions (see [UnitStrideLoadOp, UnitStrideStoreOp])
+/// - Variable Stride
+/// - Indexed, which can be Ordered or Unordered
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
+enum Mop {
+    UnitStride,
+    Strided(u32),
+    Indexed{ordered: bool},
+}
+
+/// Special variants of vector loads with unit-stride
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
+enum UnitStrideLoadOp {
+    Load,
+    WholeRegister,
+    ByteMaskLoad,
+    FaultOnlyFirst
+}
+
+/// Special variants of vector stores with unit-stride
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
+enum UnitStrideStoreOp {
+    Store,
+    WholeRegister,
+    ByteMaskStore
 }
