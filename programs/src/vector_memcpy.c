@@ -27,17 +27,25 @@ void vector_memcpy_e8(size_t n, const int32_t* __restrict__ in, const int32_t* _
 }
 
 int vector_memcpy_harness() {
-    static int data[1003] = {0};
-    static int out_data[1003] = {0};
+    static int data[2048] = {0};
+    static int out_data[2048] = {0};
 
-    for (int i = 0; i < 1003; i++) {
+    for (int i = 0; i < 2048; i++) {
         data[i] = i;
     }
 
+    // ONLY copy 1003 values
     vector_memcpy_e8(1003, data, out_data);
 
+    // Check the first 1003 values of output are the same
     for (int i = 0; i < 1003; i++) {
         if (data[i] != out_data[i]) {
+            return 0;
+        }
+    }
+    // Check that the rest are 0 (the original value)
+    for (int i = 1003; i < 2048; i++) {
+        if (out_data[i] != 0) {
             return 0;
         }
     }
