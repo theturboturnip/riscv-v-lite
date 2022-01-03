@@ -314,6 +314,9 @@ impl VectorUnit {
                                 }
 
                                 // Effective VL
+                                // TODO - I set this to just be self.vl.
+                                // if this is right, then EMUL doesn't do anything at all?
+                                // are we expected to do min(effective VL, self.vl)?
                                 let evl = self.vl;//val_times_lmul_over_sew(VLEN as u32, eew, emul);
 
                                 // i = element index in logical vector (which includes groups)
