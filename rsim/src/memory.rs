@@ -13,12 +13,16 @@ use std::mem::size_of;
 const_assert!(size_of::<usize>() >= size_of::<u32>());
 
 /// Error which can be raised when accessing memory
+/// 
+/// Includes ResultReturned, which is raised when the program writes a u32 to 0xF000_0000
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum MemError {
     #[error("Address {0:08x} misaligned")]
     AddressMisaligned(usize),
     #[error("Address {addr:08x} out-of-bounds, bounds = {max:08x}")]
     AddressOOB{ addr: usize, max: usize },
+    #[error("Program returned a value: {0}")]
+    ResultReturned(u32),
 }
 
 pub type Result<T> = std::result::Result<T, MemError>;
@@ -190,13 +194,17 @@ impl Memory {
     /// assert_eq!(mem.load_u32(0x0).unwrap(),      512);
     /// assert_eq!(mem.store_u32(0x03, 512).unwrap_err(), MemError::AddressMisaligned(0x03));
     /// assert_eq!(mem.store_u32(512, 512).unwrap_err(),  MemError::AddressOOB{ addr: 512, max: 256 });
+    /// 
+    /// // Writing to 0xF000_0000 is how the program returns results
+    /// assert_eq!(mem.store_u32(0xF000_0000, 42).unwrap_err(),  MemError::ResultReturned(42));
     /// ```
     pub fn store_u32(&mut self, addr: u32, data: u32) -> Result<()> {
         let addr: usize = addr as usize;
 
-        if addr == 0xf000_0000 {
+        if addr == 0xF000_0000 {
             // Special case
-            panic!("RESULT = 0x{:08x} = {}", data, data);
+            Err(MemError::ResultReturned(data))
+            // panic!("RESULT = 0x{:08x} = {}", data, data);
         } else if addr & 0x03 != 0 {
             Err(MemError::AddressMisaligned(addr))
         } else if addr + 3 >= self.data.len() {
