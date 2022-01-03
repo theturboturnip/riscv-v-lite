@@ -4,6 +4,9 @@ extern crate bitutils;
 #[macro_use]
 extern crate anyhow;
 
+#[macro_use]
+extern crate static_assertions;
+
 mod memory;
 use memory::Memory;
 
@@ -27,14 +30,14 @@ fn main() {
 
     let memory_bin = matches.value_of("memory_bin").unwrap();
     let mem = Memory::new_from_file(memory_bin, 640_000);
-    let mut processor = Processor::new(mem);
+    let (mut processor, mut v_unit) = Processor::new(mem);
 
     loop {
-        let res = processor.exec_step();
+        let res = processor.exec_step(&mut v_unit);
 
         match res {
             Err(e) => {
-                processor.dump();
+                processor.dump(&mut v_unit);
                 println!("Encountered error: {:#}", e);
                 break
             },
