@@ -11,28 +11,44 @@ use decode::{decode, InstructionBits};
 pub mod vector;
 use vector::{VectorUnit, VectorUnitConnection};
 
-const XLEN: usize = 32;
-type uXLEN = u32;
+/// Scalar register length in bits
+pub const XLEN: usize = 32;
 
+/// Unsigned type of length [XLEN]
+/// 
+/// ```
+/// use rsim::processor::{uXLEN, XLEN};
+/// use std::mem::size_of;
+/// 
+/// assert_eq!(size_of::<uXLEN>() * 8, XLEN);
+/// ```
+#[allow(non_camel_case_types)]
+pub type uXLEN = u32;
 const_assert!(size_of::<uXLEN>() * 8 == XLEN);
 
+/// Is the processor running or not
 #[derive(Debug,PartialEq,Eq)]
 pub enum RunState {
     Stopped,
     Running
 }
 
+/// The processor.
+/// Holds scalar registers and configuration, all vector-related stuff is in [VectorUnit]. 
 pub struct Processor {
     pub run_state: RunState,
-    memory: Memory,
-
+    pub memory: Memory,
     pc: uXLEN,
-
     sreg: [uXLEN; 32],
 }
 
 impl Processor {
-    pub fn new<'a>(mem: Memory) -> (Processor, VectorUnit) {
+    /// Create a new processor and vector unit which operates on given memory.
+    ///
+    /// # Arguments
+    /// 
+    /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
+    pub fn new(mem: Memory) -> (Processor, VectorUnit) {
         let mut p = Processor {
             run_state: RunState::Stopped,
             memory: mem,
@@ -46,13 +62,15 @@ impl Processor {
         (p, v)
     }
 
-    pub fn vector_conn<'a,'b>(&'a mut self) -> VectorUnitConnection<'b> where 'a: 'b {
+    /// Get a short-lived connection to scalar resources, usable by the vector unit
+    fn vector_conn<'a,'b>(&'a mut self) -> VectorUnitConnection<'b> where 'a: 'b {
         VectorUnitConnection {
             sreg: &mut self.sreg,
             memory: &mut self.memory,
         }
     }
 
+    /// Reset the processor and associated vector unit
     pub fn reset(&mut self, v_unit: &mut VectorUnit) {
         self.run_state = RunState::Stopped;
 
@@ -61,6 +79,11 @@ impl Processor {
         v_unit.reset();
     }
 
+    /// Run a fetch-decode-execute step on the processor, executing a single instruction
+    /// 
+    /// # Arguments
+    /// 
+    /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
     pub fn exec_step(&mut self, v_unit: &mut VectorUnit) -> Result<()> {
         self.run_state = RunState::Running;
 
@@ -222,6 +245,7 @@ impl Processor {
         Ok(())
     }
 
+    /// Dump processor and vector unit state to standard output.
     pub fn dump(&self, v_unit: &mut VectorUnit) {
         const REGISTER_NAMES: [&str; 32] = [
             "zero", "ra", "sp", "gp",
