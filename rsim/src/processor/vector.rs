@@ -141,6 +141,7 @@ impl VectorUnit {
     }
 
     pub fn exec_inst(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: VectorUnitConnection) -> Result<()> {
+        use Opcode::*;
         match (opcode, inst) {
             (Vector, InstructionBits::VType{funct3, ..}) => {
                 match funct3 {
