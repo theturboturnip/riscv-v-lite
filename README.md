@@ -4,23 +4,31 @@ Simplistic RISC-V emulator including Vector extension instructions
 ## The Emulator
 
 The emulator is implemented in Rust using the Cargo package manager.
-Two files are used for decoding and execution:
-- [instrs.rs](rsim/src/instrs.rs) decodes raw instruction bits into pairs of (major opcode, instruction fields).
-- [main.rs](rsim/src/main.rs) implements a Processor structure which executes instructions, as well as a Memory structure. 
+It is split across multiple files:
+- [src/memory.rs](/rsim/src/memory.rs) defines a Memory struct.
+- [src/processor/](/rsim/src/processor/) holds actual processor files:
+    - [decode.rs](rsim/src/processor/decode.rs) decodes raw instruction bits into pairs of (major opcode, instruction fields).
+    - [vector.rs](rsim/src/processor/vector.rs) implements a separate vector unit, which holds and manipulates all vector state.
+    - [mod.rs](rsim/src/processor/mod.rs) implements the scalar processor, which calls out to a vector unit on-demand.
 
 To run the emulator on the example program:
 1. Install Rust as directed by [rust-lang.org](https://www.rust-lang.org/tools/install)
 2. Enter the [rsim/](/rsim/) directory
 3. ```$ cargo run ../programs/build/mem.bin```
 
+Further documentation can be also be generated:
+
+```$ cargo doc --open```
+
+And some tests embedded in said documentation can be run:
+
+```$ cargo test```
+
 If an error occurs during execution, including any issues with unimplemented instructions, the processor state will be dumped and an error message will display.
 
 Currently, the vector load/store instructions are not yet implemented, so an error will always occur:
 
-```Encountered error: Unexpected opcode/instruction pair (LoadFP, FLdStType { ... })  ```
-
-Vector Load/Stores are encoded under the LoadFP/StoreFP major opcodes, so there will be an error executing a LoadFP opcode instruction.
-The fields of the instruction (e.g. destination register) will also be shown in the error message.
+```Encountered error: Vector Load not fully implemented yet```
 
 ## The Program
 
