@@ -510,7 +510,7 @@ fn main() {
     let matches = App::new("risc-v-v-lite")
         .version("1.0")
         .author("Samuel S. <popgoestoast@gmail.com>")
-        .about("simplistic RISC-V emulator for Vector extension")
+        .about("Simplistic RISC-V emulator for Vector extension")
         .arg(
             Arg::with_name("memory_bin")
             .required(true)
