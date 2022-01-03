@@ -38,12 +38,14 @@ int vector_memcpy_harness() {
     vector_memcpy_e8(1003, data, out_data);
 
     // Check the first 1003 values of output are the same
+    // This ensures that the emulator correctly loaded/stored enough values
     for (int i = 0; i < 1003; i++) {
         if (data[i] != out_data[i]) {
             return 0;
         }
     }
     // Check that the rest are 0 (the original value)
+    // This ensures that the emulator didn't store more elements than it should have
     for (int i = 1003; i < 2048; i++) {
         if (out_data[i] != 0) {
             return 0;
