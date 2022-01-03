@@ -16,8 +16,8 @@ use std::io::Read;
 use std::path::Path;
 use std::fs::{File,metadata};
 
-mod instrs;
-use instrs::{decode, Instruction};
+mod decode;
+use decode::{decode, InstructionBits};
 
 struct Memory {
     _data: Vec<u8>,
@@ -271,7 +271,7 @@ impl Processor {
 
         // self.dump();
 
-        let inst_bits = self.memory.load_u32(self.pc).context("Couldn't load next instruction")?;
+        let inst_bits = self.memory.load_u32(self.pc).context("Couldn't load next InstructionBits")?;
         // dbg!(format!("0x{:08x}", self.pc));
         // dbg!(format!("{:08x}", inst_bits));
         let (opcode, inst) = decode(inst_bits)?;
@@ -280,9 +280,9 @@ impl Processor {
 
         let mut next_pc = self.pc + 4;
 
-        use instrs::Opcode::*;
+        use decode::Opcode::*;
         match (opcode, inst) {
-            (Load, Instruction::IType{rd, funct3, rs1, imm}) => {
+            (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
                 let addr = self.sreg[rs1 as usize] + imm;
                 self.sreg[rd as usize] = match funct3 {
                     // LB, LH, LW sign-extend if necessary
@@ -296,7 +296,7 @@ impl Processor {
                     _ => bail!("Unexpected Load funct3 {:03b}", funct3)
                 };
             }
-            (Store, Instruction::SType{funct3, rs1, rs2, imm}) => {
+            (Store, InstructionBits::SType{funct3, rs1, rs2, imm}) => {
                 let addr = self.sreg[rs1 as usize] + imm;
                 match funct3 {
                     0b000 => self.memory.store_u8(addr, (self.sreg[rs2 as usize] & 0xFF) as u8)?,
@@ -307,7 +307,7 @@ impl Processor {
                 };
             }
 
-            (OpImm, Instruction::IType{rd, funct3, rs1, imm}) => {
+            (OpImm, InstructionBits::IType{rd, funct3, rs1, imm}) => {
                 let input = self.sreg[rs1 as usize];
                 self.sreg[rd as usize] = match (imm, funct3) {
                     (imm, 0b000) => input.wrapping_add(imm), // ADDI
@@ -337,7 +337,7 @@ impl Processor {
                 };
             }
 
-            (Op, Instruction::RType{rd, funct3, rs1, rs2, funct7}) => {
+            (Op, InstructionBits::RType{rd, funct3, rs1, rs2, funct7}) => {
                 const ALT: u8 = 0b0100000;
                 let x = self.sreg[rs1 as usize];
                 let y = self.sreg[rs2 as usize];
@@ -360,20 +360,20 @@ impl Processor {
                 };
             }
 
-            (AddUpperImmPC, Instruction::UType{rd, imm}) => {
+            (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
                 let addr = imm + self.pc;
                 self.sreg[rd as usize] = addr;
             }
 
-            (LoadUpperImm, Instruction::UType{rd, imm}) => {
+            (LoadUpperImm, InstructionBits::UType{rd, imm}) => {
                 self.sreg[rd as usize] = imm;
             }
 
-            (JumpAndLink, Instruction::JType{rd, imm}) => {
+            (JumpAndLink, InstructionBits::JType{rd, imm}) => {
                 self.sreg[rd as usize] = self.pc + 4;
                 next_pc = self.pc.wrapping_add(imm);
             }
-            (JumpAndLinkRegister, Instruction::IType{rd, funct3: 0b000, rs1, imm}) => {
+            (JumpAndLinkRegister, InstructionBits::IType{rd, funct3: 0b000, rs1, imm}) => {
                 next_pc = self.sreg[rs1 as usize].wrapping_add(imm);
                 // Unset bottom bit
                 next_pc = next_pc & 0xFFFF_FFFE;
@@ -381,7 +381,7 @@ impl Processor {
                 self.sreg[rd as usize] = self.pc + 4;
             }
 
-            (Branch, Instruction::BType{funct3, rs1, rs2, imm}) => {
+            (Branch, InstructionBits::BType{funct3, rs1, rs2, imm}) => {
                 let src1 = self.sreg[rs1 as usize];
                 let src2 = self.sreg[rs2 as usize];
 
@@ -401,7 +401,7 @@ impl Processor {
                 }
             }
 
-            (Vector, Instruction::VType{rd, funct3, rs1, rs2, vm, funct6, zimm11, zimm10}) => {
+            (Vector, InstructionBits::VType{rd, funct3, rs1, rs2, vm, funct6, zimm11, zimm10}) => {
                 match funct3 {
                     0b111 => {
                         // Configuration
@@ -482,7 +482,7 @@ impl Processor {
                 }
             }
 
-            (LoadFP, Instruction::FLdStType{rd, width, rs1, rs2, funct7, vm, mew, mop, nf}) => {
+            (LoadFP, InstructionBits::FLdStType{rd, width, rs1, rs2, funct7, vm, mew, mop, nf}) => {
                 if mew { bail!("LoadFP with mew = 1 is reserved") }
 
                 let eew = match width {
@@ -541,7 +541,7 @@ impl Processor {
                 
             }
 
-            _ => bail!("Unexpected opcode/instruction pair ({:?}, {:?})", opcode, inst)
+            _ => bail!("Unexpected opcode/InstructionBits pair ({:?}, {:?})", opcode, inst)
         }
 
         self.sreg[0] = 0;

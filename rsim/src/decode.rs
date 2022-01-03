@@ -48,7 +48,7 @@ impl TryInto<Opcode> for u8 {
 }
 
 #[derive(Debug,Clone,Copy)]
-pub enum Instruction {
+pub enum InstructionBits {
     RType {
         rd: u8,
         funct3: u8,
@@ -113,13 +113,13 @@ pub enum Instruction {
     }
 }
 
-impl Instruction {
+impl InstructionBits {
     pub fn get_opcode(inst: u32) -> Result<Opcode> {
         (bits!(inst, 0:6) as u8).try_into()
     }
 
-    pub fn from_r(inst: u32) -> Instruction {
-        Instruction::RType {
+    pub fn from_r(inst: u32) -> InstructionBits {
+        InstructionBits::RType {
             rd:     ((bits!(inst, 7:11) as u8)),
             funct3: ((bits!(inst, 12:14) as u8)),
             rs1:    ((bits!(inst, 15:19) as u8)),
@@ -128,8 +128,8 @@ impl Instruction {
         }
     }
 
-    pub fn from_i(inst: u32) -> Instruction {
-        Instruction::IType {
+    pub fn from_i(inst: u32) -> InstructionBits {
+        InstructionBits::IType {
             rd:     ((bits!(inst, 7:11) as u8)),
             funct3: ((bits!(inst, 12:14) as u8)),
             rs1:    ((bits!(inst, 15:19) as u8)),
@@ -137,10 +137,10 @@ impl Instruction {
         }
     }
 
-    pub fn from_s(inst: u32) -> Instruction {
+    pub fn from_s(inst: u32) -> InstructionBits {
         let imm_bits: u16 = (bits!(inst, 7:11) as u16) | ((bits!(inst, 25:31) as u16) << 5);
 
-        Instruction::SType {
+        InstructionBits::SType {
             funct3: ((bits!(inst, 12:14) as u8)),
             rs1:    ((bits!(inst, 15:19) as u8)),
             rs2:    ((bits!(inst, 20:24) as u8)),
@@ -148,36 +148,36 @@ impl Instruction {
         }
     }
 
-    pub fn from_u(inst: u32) -> Instruction {
+    pub fn from_u(inst: u32) -> InstructionBits {
         let imm_bits = bits!(inst, 12:31);
 
-        Instruction::UType {
+        InstructionBits::UType {
             rd:     ((bits!(inst, 7:11) as u8)),
             imm:    imm_bits << 12
         }
     }
 
-    pub fn from_j(inst: u32) -> Instruction {
+    pub fn from_j(inst: u32) -> InstructionBits {
         let imm = 
             (bits!(inst, 21:30) << 1) |
             (bits!(inst, 20:20) << 11) |
             (bits!(inst, 12:19) << 12) |
             (bits!(inst, 31:31) << 20);
 
-        Instruction::JType {
+        InstructionBits::JType {
             rd:     ((bits!(inst, 7:11) as u8)),
             imm:    (sign_extend32(imm, 20) as u32),
         }
     }
 
-    pub fn from_b(inst: u32) -> Instruction {
+    pub fn from_b(inst: u32) -> InstructionBits {
         let imm = 
             (bits!(inst, 8:11) << 1) |
             (bits!(inst, 25:30) << 5) |
             (bits!(inst, 7:7) << 11) |
             (bits!(inst, 31:31) << 12);
 
-        Instruction::BType {
+        InstructionBits::BType {
             funct3: ((bits!(inst, 12:14) as u8)),
             rs1:    ((bits!(inst, 15:19) as u8)),
             rs2:    ((bits!(inst, 20:24) as u8)),
@@ -185,8 +185,8 @@ impl Instruction {
         }
     }
 
-    pub fn from_v(inst: u32) -> Instruction {
-        Instruction::VType {
+    pub fn from_v(inst: u32) -> InstructionBits {
+        InstructionBits::VType {
             rd:     ((bits!(inst, 7:11) as u8)),
             funct3: ((bits!(inst, 12:14) as u8)),
             rs1:    ((bits!(inst, 15:19) as u8)),
@@ -202,8 +202,8 @@ impl Instruction {
         }
     }
 
-    pub fn from_f_ld_st(inst: u32) -> Instruction {
-        Instruction::FLdStType {
+    pub fn from_f_ld_st(inst: u32) -> InstructionBits {
+        InstructionBits::FLdStType {
             rd:     ((bits!(inst, 7:11) as u8)),
             width: ((bits!(inst, 12:14) as u8)),
             rs1:    ((bits!(inst, 15:19) as u8)),
@@ -221,23 +221,23 @@ impl Instruction {
     }
 }
 
-pub fn decode(inst: u32) -> Result<(Opcode, Instruction)> {
-    let opcode = Instruction::get_opcode(inst)?;
+pub fn decode(inst: u32) -> Result<(Opcode, InstructionBits)> {
+    let opcode = InstructionBits::get_opcode(inst)?;
 
     use Opcode::*;
     let instr = match opcode {
-        Load =>             Instruction::from_i(inst),
-        Store =>            Instruction::from_s(inst),
-        LoadFP =>           Instruction::from_f_ld_st(inst),
-        StoreFP =>          Instruction::from_f_ld_st(inst),
-        OpImm =>            Instruction::from_i(inst),
-        Op =>               Instruction::from_r(inst),
-        AddUpperImmPC =>    Instruction::from_u(inst),
-        LoadUpperImm =>     Instruction::from_u(inst),
-        JumpAndLink =>      Instruction::from_j(inst),
-        JumpAndLinkRegister => Instruction::from_i(inst),
-        Branch =>           Instruction::from_b(inst),
-        Vector =>           Instruction::from_v(inst),
+        Load =>             InstructionBits::from_i(inst),
+        Store =>            InstructionBits::from_s(inst),
+        LoadFP =>           InstructionBits::from_f_ld_st(inst),
+        StoreFP =>          InstructionBits::from_f_ld_st(inst),
+        OpImm =>            InstructionBits::from_i(inst),
+        Op =>               InstructionBits::from_r(inst),
+        AddUpperImmPC =>    InstructionBits::from_u(inst),
+        LoadUpperImm =>     InstructionBits::from_u(inst),
+        JumpAndLink =>      InstructionBits::from_j(inst),
+        JumpAndLinkRegister => InstructionBits::from_i(inst),
+        Branch =>           InstructionBits::from_b(inst),
+        Vector =>           InstructionBits::from_v(inst),
 
         _ => bail!("opcode {:?} not decoded yet", opcode)
     };
