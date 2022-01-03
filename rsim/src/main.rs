@@ -84,7 +84,7 @@ fn val_times_lmul_over_sew(x: u32, s: Sew, l: Lmul) -> u32 {
 }
 
 #[derive(Debug,PartialEq,Eq)]
-enum ProcState {
+enum RunState {
     Stopped,
     Running
 }
@@ -101,7 +101,7 @@ static register_names: [&str; 32] = [
 ];
 
 struct Processor {
-    state: ProcState,
+    run_state: RunState,
     memory: Memory,
 
     pc: uXLEN,
@@ -122,7 +122,7 @@ struct Processor {
 impl Processor {
     fn new(mem: Memory) -> Processor {
         Processor {
-            state: ProcState::Stopped,
+            run_state: RunState::Stopped,
             memory: mem,
 
             pc: 0,
@@ -138,7 +138,7 @@ impl Processor {
     }
 
     fn reset(&mut self) {
-        self.state = ProcState::Stopped;
+        self.run_state = RunState::Stopped;
 
         self.pc = 0;
         self.sreg = [0; 32];
@@ -151,7 +151,7 @@ impl Processor {
     }
 
     fn exec_step(&mut self) -> Result<()> {
-        self.state = ProcState::Running;
+        self.run_state = RunState::Running;
 
         // self.dump();
 
@@ -439,7 +439,7 @@ impl Processor {
     }
 
     fn dump(&self) {
-        println!("{:?}\npc: 0x{:08x}", self.state, self.pc);
+        println!("{:?}\npc: 0x{:08x}", self.run_state, self.pc);
         for i in 0..32 {
             println!("x{} = {} = 0x{:08x}", i, register_names[i], self.sreg[i]);
         }
@@ -502,7 +502,7 @@ fn main() {
             },
             Ok(()) => {}
         }
-        if processor.state == ProcState::Stopped {
+        if processor.run_state == RunState::Stopped {
             break
         }
     }
