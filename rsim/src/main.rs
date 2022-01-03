@@ -165,7 +165,10 @@ enum Lmul {
 }
 
 fn elements_in(s: Sew, l: Lmul) -> u32 {
-    let mut bits_per_group: u32 = VLEN as u32;
+    val_times_lmul_over_sew(VLEN as u32, s, l)
+}
+fn val_times_lmul_over_sew(x: u32, s: Sew, l: Lmul) -> u32 {
+    let mut bits_per_group: u32 = x;
     match l {
         Lmul::eEighth => {
             bits_per_group /= 8;
@@ -478,6 +481,65 @@ impl Processor {
                 }
             }
 
+            (LoadFP, Instruction::FLdStType{rd, width, rs1, rs2, funct7, vm, mew, mop, nf}) => {
+                if mew { bail!("LoadFP with mew = 1 is reserved") }
+
+                let eew = match width {
+                    0b0001 | 0b0010 | 0b0011 | 0b0100 => bail!("LoadFP uses width for actual floats, not vectors"),
+                    0b1000..=0b1111 => bail!("LoadFP using reserved width {}", width),
+
+                    0b0000 => 8,
+                    0b0101 => 16,
+                    0b0110 => 32,
+                    0b0111 => 64,
+
+                    _ => bail!("LoadFP has impossible width {}", width)
+                };
+
+                let emul_times_8 = val_times_lmul_over_sew(eew * 8, self.sew, self.lmul);
+
+                if emul_times_8 > 64 || emul_times_8 <= 1 {
+                    bail!("emul * 8 too big or too small: {}", emul_times_8);
+                }
+
+                let nf = nf + 1;
+
+                if (emul_times_8 * nf as u32) > 64 {
+                    bail!("emul * nf too big: {}", emul_times_8 * (nf as u32) / 8);
+                }
+
+                let mop = match mop {
+                    0b00 => Mop::UnitStride,
+                    0b10 => Mop::Strided(self.sreg[rs2 as usize]),
+                    0b01 | 0b11 => Mop::Indexed, // Unordered | Ordered
+
+                    _ => panic!("impossible mop bits {:2b}", mop)
+                };
+
+                let base_addr = self.sreg[rs1 as usize];
+
+                match mop {
+                    Mop::UnitStride => {
+                        let lumop = match rs2 {
+                            0b00000 => UnitStrideLoadOp::Load,
+                            0b01000 => UnitStrideLoadOp::WholeRegister,
+                            0b01011 => UnitStrideLoadOp::ByteMaskLoad,
+                            0b10000 => UnitStrideLoadOp::FaultOnlyFirst,
+    
+                            _ => bail!("invalid unit stride {:05b}", rs2)
+                        };
+                        bail!("Vector Load not fully implemented yet")
+                    }
+                    Mop::Strided(stride) => {
+                        bail!("Vector Load not fully implemented yet")
+                    }
+                    Mop::Indexed => {
+                        bail!("Vector Load not fully implemented yet")
+                    }
+                }
+                
+            }
+
             _ => bail!("Unexpected opcode/instruction pair ({:?}, {:?})", opcode, inst)
         }
 
@@ -501,6 +563,28 @@ impl Processor {
         }
         println!("sew: {:?}\nlmul: {:?}\nvl: {}\nvtype_reg: {:08x}", self.sew, self.lmul, self.vl, self.vtype_reg);
     }
+}
+
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
+enum Mop {
+    UnitStride,
+    Strided(u32),
+    Indexed,
+}
+
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
+enum UnitStrideLoadOp {
+    Load,
+    WholeRegister,
+    ByteMaskLoad,
+    FaultOnlyFirst
+}
+
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
+enum UnitStrideStoreOp {
+    Store,
+    WholeRegister,
+    ByteMaskStore
 }
 
 extern crate clap;
