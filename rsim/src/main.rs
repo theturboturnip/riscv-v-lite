@@ -1,9 +1,11 @@
 extern crate clap;
 use clap::{Arg, App};
 
+use anyhow::Result;
+
 use rsim::{Memory,Processor};
 
-fn main() {
+fn main() -> Result<()> {
     let matches = App::new("risc-v-v-lite")
         .version("1.0")
         .author("Samuel S. <popgoestoast@gmail.com>")
@@ -25,8 +27,7 @@ fn main() {
         match res {
             Err(e) => {
                 processor.dump(&mut v_unit);
-                println!("Encountered error: {:#}", e);
-                break
+                return Err(e)
             },
             Ok(()) => {}
         }
@@ -34,4 +35,6 @@ fn main() {
             break
         }
     }
+
+    Ok(())
 }

@@ -72,25 +72,17 @@ impl Processor {
         v_unit.reset();
     }
 
-    /// Run a fetch-decode-execute step on the processor, executing a single instruction
+    /// Process an instruction, returning the new PC value or any execution error
     /// 
     /// # Arguments
     /// 
     /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
-    pub fn exec_step(&mut self, v_unit: &mut VectorUnit) -> Result<()> {
-        self.running = true;
-
-        // self.dump();
-
-        let inst_bits = self.memory.load_u32(self.pc).context("Couldn't load next InstructionBits")?;
-        // dbg!(format!("0x{:08x}", self.pc));
-        // dbg!(format!("{:08x}", inst_bits));
-        let (opcode, inst) = decode(inst_bits)?;
-
-        // println!("executing {:?} {:?}", opcode, inst);
-
+    /// * `inst_bits` - The raw instruction bits
+    /// * `opcode` - The major opcode of the decoded instruction
+    /// * `inst` - The fields of the decoded instruction
+    fn process_inst(&mut self, v_unit: &mut VectorUnit, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u32> {
         let mut next_pc = self.pc + 4;
-
+        
         use decode::Opcode::*;
         match (opcode, inst) {
             (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
@@ -218,18 +210,43 @@ impl Processor {
                 if mew { bail!("LoadFP/StoreFP with mew = 1 is reserved") }
 
                 match width {
-                    0b0001 | 0b0010 | 0b0011 | 0b0100 => bail!("Load/StoreFP uses width for actual floats, not supported"),
-                    0b1000..=0b1111 => bail!("Load/StoreFP using reserved width {}", width),
+                    0b0001 | 0b0010 | 0b0011 | 0b0100 => bail!("LoadFP/StoreFP uses width for actual floats, not supported"),
+                    0b1000..=0b1111 => bail!("LoadFP/StoreFP using reserved width {}", width),
 
                     _ => v_unit.exec_inst(opcode, inst, inst_bits, self.vector_conn())?
                 }
             },
 
-            _ => bail!("Unexpected opcode/InstructionBits pair ({:?}, {:?})", opcode, inst)
+            _ => bail!("Unexpected opcode/InstructionBits pair")
         }
 
+        Ok(next_pc)
+    }
+
+    /// Run a fetch-decode-execute step on the processor, executing a single instruction
+    /// 
+    /// # Arguments
+    /// 
+    /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
+    pub fn exec_step(&mut self, v_unit: &mut VectorUnit) -> Result<()> {
+        self.running = true;
+
+        // Fetch
+        let inst_bits = self.memory.load_u32(self.pc).context("Couldn't load next instruction")?;
+
+        // Decode
+        let (opcode, inst) = decode(inst_bits)
+            .with_context(|| format!("Failed to decode instruction {:08x}", inst_bits))?;
+
+        // Execute
+        let next_pc = self.process_inst(v_unit, inst_bits, opcode, inst)
+            .with_context(|| format!("Failed to execute decoded instruction {:?} {:?}", opcode, inst))
+            ?;
+
+        // Restore x0 => 0
         self.sreg[0] = 0;
 
+        // Increment PC
         if next_pc % 4 != 0 {
             bail!("PC was set to a misaligned value {:?}", next_pc);
         }
