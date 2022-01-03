@@ -1,4 +1,3 @@
-use std::convert::TryInto;
 use std::mem::size_of;
 use std::cmp::min;
 use anyhow::{Result};
@@ -89,20 +88,28 @@ impl VectorUnit {
     /// * `inst` - Decoded instruction bits
     /// * `conn` - Connection to external resources
     fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: VectorUnitConnection) -> Result<()> {
-        if let InstructionBits::VType{rd, funct3, rs1, rs2, vm, funct6, zimm11, zimm10} = inst {
+        if let InstructionBits::VType{rd, funct3, rs1, rs2, zimm11, zimm10, ..} = inst {
+            assert_eq!(funct3, 0b111);
 
             // avl = application vector length
-            // Either read it from a register, or from an immediate
+            // e.g. the total number of elements to process
+            // Either read it from a register, or from an immediate.
+            // See Section 6.2 of the spec.
             let avl = match inst_kind {
                 ConfigKind::vsetvli | ConfigKind::vsetvl => { // vsetvli, vsetvl
                     // Read AVL from a register
                     if rs1 != 0 {
+                        // default case, just read it out
                         conn.sreg[rs1 as usize]
                     } else {
                         if rd != 0 {
-                            bail!("vsetvl{{i}} called with rd != 0, rs1 == 0, which requires VMAX. Haven't thought about that yet.");
+                            // rs1 == 0, rd != 0
+                            // => set the AVL to the maximum possible value,
+                            // use that to calculate the maximum number of elements in this configuration,
+                            // which will get written out to rd.
                             u32::MAX
                         } else {
+                            // Request the same vector length, even if the vtype is changing.
                             self.vl
                         }
                     }
@@ -130,7 +137,8 @@ impl VectorUnit {
             // Try to parse vtype bits
             let req_vtype = VType::decode(vtype_bits)?;
 
-            // 
+            // Calculate the maximum number of elements per register group
+            // (under some configurations, e.g. Sew=8,Lmul=1/4,Vlen=32, this could be < 1 which is illegal)
             let elems_per_group = req_vtype.elems_per_group();
 
             let vtype_supported = elems_per_group > 0 && 
