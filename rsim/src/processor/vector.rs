@@ -320,7 +320,9 @@ impl VectorUnit {
                                 for i in self.vstart..evl {
                                     // TODO remove dumb usize cast here?
                                     let i = i as usize;
-                                    if vm && (bits!(self.vreg[0], i:i) == 0) {
+                                    // vm == 1 => mask disabled
+                                    // => only check mask if vm == 0 e.g. false
+                                    if (!vm) && (bits!(self.vreg[0], i:i) == 0) {
                                         // The element has been masked out
                                         continue
                                     }
@@ -343,6 +345,160 @@ impl VectorUnit {
                             bail!("Indexed load for EMUL < 1 (emul*8 = {}) not implemented", emul_times_8);
                         }
                         bail!("Vector Indexed Load not implemented yet")
+                    }
+                }
+            }
+
+            (StoreFP, InstructionBits::FLdStType{rd, width, rs1, rs2, vm, mew, mop, nf, ..}) => {
+                // TODO - move shared code with LoadFP somewhere common
+
+                // MEW = Memory Expanded Width(?)
+                // Expected to be used for larger widths, because it's right next to the width field,
+                // but for now it has to be 0
+                if mew { bail!("LoadFP with mew = 1 is reserved") }
+
+                // Get the element width we want to use (which is NOT the same as the one encoded in vtype)
+                // EEW = Effective Element Width
+                let eew = match width {
+                    0b0001 | 0b0010 | 0b0011 | 0b0100 => bail!("LoadFP uses width for normal floats, not vectors"),
+                    0b1000..=0b1111 => bail!("LoadFP using reserved width {}", width),
+
+                    0b0000 => 8,
+                    0b0101 => 16,
+                    0b0110 => 32,
+                    0b0111 => 64,
+
+                    _ => bail!("LoadFP has impossible width {}", width)
+                };
+
+                if eew == 64 {
+                    // We are allowed to reject values of EEW that aren't supported for SEW in vtype
+                    // (see section 7.3 of RISC-V V spec)
+                    bail!("effective element width of 64 is not supported");
+                }
+
+                // Check the effective element width is valid, given the current SEW and LMUL
+
+                // EMUL = Effective LMUL
+                // because LMULs can be as small as 1/8th, evaluate it as an integer * 8 (effectively 29.3 fixed point)
+                let emul_times_8 = self.vtype.val_times_lmul_over_sew(eew * 8);
+
+                // Limit EMUL to the same values as LMUL
+                if emul_times_8 > 64 || emul_times_8 <= 1 {
+                    bail!("emul * 8 too big or too small: {}", emul_times_8);
+                }
+
+                // NF = Number of Fields
+                // If NF > 1, it's a *segmented* load/store
+                // where "packed contiguous segments" are moved into "multiple destination vector register groups"
+                // For example
+                // a0 => rgbrgbrgbrgbrgb (24-bit pixels, 8-bits-per-component)
+                // vlseg3e8 v8, (a0) ; NF = 3, EEW = 8
+                //  ->  v8  = rrrr
+                //      v9  = gggg
+                //      v10 = bbbb
+                let nf = nf + 1;
+
+                // EMUL * NF = number of underlying registers in use
+                // => EMUL * NF should be <= 8
+                if (emul_times_8 * (nf as u32)) > 64 {
+                    bail!("emul * nf too big: {}", emul_times_8 * (nf as u32) / 8);
+                }
+
+                // Convert EEW, EMUL to enums
+                let eew = match eew {
+                    8  => Sew::e8,
+                    16 => Sew::e16,
+                    32 => Sew::e32,
+                    64 => Sew::e64,
+                    _ => bail!("Impossible EEW {}", eew)
+                };
+                let emul = match emul_times_8 {
+                    1 => Lmul::eEighth,
+                    2 => Lmul::eQuarter,
+                    4 => Lmul::eHalf,
+                    8 => Lmul::e1,
+                    16 => Lmul::e2,
+                    32 => Lmul::e4,
+                    64 => Lmul::e8,
+                    _ => bail!("Impossible EMUL-times-8 {}", emul_times_8)
+                };
+
+                // MOP = Memory OPeration
+                // Determines indexing mode
+                let mop = match mop {
+                    0b00 => Mop::UnitStride,
+                    0b10 => Mop::Strided(conn.sreg[rs2 as usize]),
+                    0b01 => Mop::Indexed{ordered: false},
+                    0b11 => Mop::Indexed{ordered: true},
+
+                    _ => panic!("impossible mop bits {:2b}", mop)
+                };
+
+                let base_addr = conn.sreg[rs1 as usize];
+
+                match mop {
+                    Mop::UnitStride => {
+                        use UnitStrideStoreOp::*;
+                        let sumop = match rs2 {
+                            0b00000 => Store,
+                            0b01000 => WholeRegister,
+                            0b01011 => ByteMaskStore,
+    
+                            _ => bail!("invalid unit stride type {:05b}", rs2)
+                        };
+
+                        match sumop {
+                            WholeRegister | ByteMaskStore => {
+                                bail!("Variant {:?} of Vector Unit Store not implemented", sumop)
+                            }
+                            Store => {
+                                if vm && rd == 0 {
+                                    // If we're masked, we can't load over v0 as that's the mask register
+                                    bail!("Masked instruction cannot load into v0");
+                                }
+                                if nf > 1 {
+                                    bail!("Unit Segmented Store not implemented");
+                                }
+                                if eew != Sew::e32 {
+                                    bail!("Unit Vector Store for EEW ({:?}) != 32 not implemented", eew);
+                                }
+
+                                // Effective VL
+                                let evl = val_times_lmul_over_sew(VLEN as u32, eew, emul);
+
+                                // i = element index in logical vector (which includes groups)
+                                let mut addr = base_addr;
+                                for i in self.vstart..evl {
+                                    // TODO remove dumb usize cast here?
+                                    let i = i as usize;
+                                    // vm == 1 => mask disabled
+                                    // => only check mask if vm == 0 e.g. false
+                                    if (!vm) && (bits!(self.vreg[0], i:i) == 0) {
+                                        // The element has been masked out
+                                        continue
+                                    }
+                                    
+                                    let val = self.load_u32_vreg(rd, i as u32)?;
+                                    dbg!(addr, val);
+                                    conn.memory.store_u32(addr, val)?;
+                                    
+                                    addr += 4;
+                                }
+                            }
+                        }
+                    }
+                    Mop::Strided(_stride) => {
+                        bail!("Vector Strided Store not implemented yet")
+                    }
+                    Mop::Indexed{ordered: _ordered} => {
+                        if nf > 1 {
+                            bail!("Indexed Segmented Store not implemented");
+                        }
+                        if emul_times_8 < 8 {
+                            bail!("Indexed load for EMUL < 1 (emul*8 = {}) not implemented", emul_times_8);
+                        }
+                        bail!("Vector Indexed Store not implemented yet")
                     }
                 }
             }
@@ -374,6 +530,25 @@ impl VectorUnit {
         self.vreg[vd as usize] = new_value;
 
         Ok(())
+    }
+
+    /// Store a value in an element in a vertex register group, where EEW = 32.
+    /// 
+    /// Example: if VLEN=128bits (4 32-bit elements per register), `vd` = 3, `idx` = 5,
+    /// this would store `val` into v4[96:64]
+    fn load_u32_vreg(&self, vd: u8, idx: u32) -> Result<u32> {
+        use std::convert::TryInto;
+
+        const ELEMS_PER_V: u32 = (VLEN as u32)/32;
+        // Convert
+        let vd: u8 = (vd as u32 + (idx / ELEMS_PER_V)).try_into()
+            .context(format!("calculating destination register for vd={},idx={}", vd, idx))?;
+        let idx = idx % 4;
+
+        let full_reg = self.vreg[vd as usize];
+        let individual_elem = ((full_reg >> (32*idx)) & 0xFFFF_FFFF) as u32;
+
+        Ok(individual_elem)
     }
 
     /// Dump vector unit state to standard output.
