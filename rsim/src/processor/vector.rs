@@ -516,7 +516,7 @@ impl VectorUnit {
     /// Store a value in an element in a vertex register group, where EEW = 32.
     /// 
     /// Example: if VLEN=128bits (4 32-bit elements per register), `vd` = 3, `idx` = 5,
-    /// this would store `val` into v4[96:64]
+    /// this would store `val` into v4\[96:64\]
     fn store_u32_vreg(&mut self, vd: u8, idx: u32, val: u32) -> Result<()> {
         use std::convert::TryInto;
 
@@ -536,10 +536,10 @@ impl VectorUnit {
         Ok(())
     }
 
-    /// Store a value in an element in a vertex register group, where EEW = 32.
+    /// Load a value from an element in a vertex register group, where EEW = 32.
     /// 
     /// Example: if VLEN=128bits (4 32-bit elements per register), `vd` = 3, `idx` = 5,
-    /// this would store `val` into v4[96:64]
+    /// this would return v4\[96:64\]
     fn load_u32_vreg(&self, vd: u8, idx: u32) -> Result<u32> {
         use std::convert::TryInto;
 
@@ -613,7 +613,7 @@ impl VType {
         VType::decode(1 << (XLEN - 1)).unwrap()
     }
 
-    /// Shorthand for [val_times_lmul_over_sew] with x = VLEN
+    /// Shorthand for [VType::val_times_lmul_over_sew] with x = VLEN
     /// 
     /// Used for calculating the number of vector elements a vector register can hold in a given configuration.
     pub fn elems_per_group(self) -> u32 {

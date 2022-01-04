@@ -55,7 +55,22 @@ impl Processor {
         (p, v)
     }
 
-    /// Get a short-lived connection to scalar resources, usable by the vector unit
+    /// Get a short-lived connection to scalar resources, usable by the vector unit.
+    /// This connection holds mutable references to fields in the Processor.
+    /// 
+    /// # Associated Lifetimes
+    /// 
+    /// * `'a` - The lifetime of the Processor
+    /// * `'b` - The lifetime of the references held in the VectorUnitConnection
+    /// 
+    /// `'a : 'b` => `'a` outlives `'b`, e.g. the Processor will live longer than the references to its fields.
+    /// Rust needs this guarantee.
+    /// 
+    /// Because Rust isn't smart enough to understand *which* fields in the processor are referenced,
+    /// and the references inside the [VectorUnitConnection] are mutable,
+    /// holding a [VectorUnitConnection] is equivalent to holding a *mutable reference to the Processor and all its fields*.
+    /// This means you couldn't, say, store the [VectorUnit] inside the Processor and do `processor.v_unit.exec_inst(connection)`,
+    /// because [VectorUnit::exec_inst()] tries to take a mutable reference to [VectorUnit], but the `connection` holds that reference already.
     fn vector_conn<'a,'b>(&'a mut self) -> VectorUnitConnection<'b> where 'a: 'b {
         VectorUnitConnection {
             sreg: &mut self.sreg,
