@@ -219,15 +219,16 @@ impl Processor {
                 }
             }
 
+            // Delegate all instructions under the Vector opcode to the vector unit
             (Vector, inst) => v_unit.exec_inst(opcode, inst, inst_bits, self.vector_conn())?,
 
-            (LoadFP | StoreFP, InstructionBits::FLdStType{width, mew, ..}) => {
-                if mew { bail!("LoadFP/StoreFP with mew = 1 is reserved") }
-
+            (LoadFP | StoreFP, InstructionBits::FLdStType{width, ..}) => {
+                // Check the access width
                 match width {
                     0b0001 | 0b0010 | 0b0011 | 0b0100 => bail!("LoadFP/StoreFP uses width for actual floats, not supported"),
                     0b1000..=0b1111 => bail!("LoadFP/StoreFP using reserved width {}", width),
 
+                    // This width corresponds to a vector, delegate this instruction to the vector unit
                     _ => v_unit.exec_inst(opcode, inst, inst_bits, self.vector_conn())?
                 }
             },
