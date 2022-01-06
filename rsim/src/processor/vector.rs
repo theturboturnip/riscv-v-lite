@@ -215,7 +215,12 @@ impl VectorUnit {
                 if op.nf > 1 {
                     bail!("Segmented things not yet implemented");
                 }
-                
+
+                if op.evl < self.vstart {
+                    println!("EVL {} smaller than vstart {} => vector {:?} is no-op", op.evl, self.vstart, op.dir);
+                    return Ok(())
+                }
+
                 let base_addr = conn.sreg[rs1 as usize];
 
                 use OverallMemOpKind::*;
@@ -223,7 +228,7 @@ impl VectorUnit {
                     (Load, Strided(stride)) => {
                         // i = element index in logical vector (which includes groups)
                         let mut addr = base_addr;
-                        for i in self.vstart..self.vl {
+                        for i in self.vstart..op.evl {
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... load from memory into register
@@ -237,7 +242,7 @@ impl VectorUnit {
                     (Store, Strided(stride)) => {
                         // i = element index in logical vector (which includes groups)
                         let mut addr = base_addr;
-                        for i in self.vstart..self.vl {
+                        for i in self.vstart..op.evl {
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... store from register into memory
@@ -268,7 +273,7 @@ impl VectorUnit {
         (!vm) && (bits!(self.vreg[0], i:i) == 0)
     }
 
-    fn decode_load_store(&mut self, opcode: Opcode, inst: InstructionBits, conn: &VectorUnitConnection) -> Result<OverallMemOp> {
+    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &VectorUnitConnection) -> Result<OverallMemOp> {
         if let InstructionBits::FLdStType{width, rs2, mew, mop, nf, ..} = inst {
             // MEW = Memory Expanded Width(?)
             // Expected to be used for larger widths, because it's right next to the width field,
@@ -397,6 +402,10 @@ impl VectorUnit {
                 Mop::Strided(stride) => OverallMemOpKind::Strided(stride),
                 Mop::Indexed{ordered: _ordered} => OverallMemOpKind::Indexed
             };
+
+            if kind == OverallMemOpKind::ByteMask && eew != Sew::e8 {
+                bail!("Trying to do a byte-masked operation with EEW != 8 is impossible");
+            }
     
             Ok(OverallMemOp {
                 dir: match opcode {
@@ -406,6 +415,14 @@ impl VectorUnit {
                 },
                 eew,
                 emul,
+                evl: match kind {
+                    OverallMemOpKind::ByteMask => {
+                        // As per section 7.4, evl = ceil(vl/8)
+                        // We don't have div_ceil in Rust yet, so do (vl + 7) / 8 which is equivalent
+                        (self.vl + 7) / 8
+                    }
+                    _ => self.vl
+                },
                 kind,
                 nf
             })
@@ -757,6 +774,7 @@ enum OverallMemOpKind {
 struct OverallMemOp {
     emul: Lmul,
     eew: Sew,
+    evl: u32,
     nf: u8,
     kind: OverallMemOpKind,
     dir: MemOpDir
