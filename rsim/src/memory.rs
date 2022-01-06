@@ -21,7 +21,7 @@ pub enum MemError {
     AddressMisaligned(usize),
     #[error("Address {addr:08x} out-of-bounds, bounds = {max:08x}")]
     AddressOOB{ addr: usize, max: usize },
-    #[error("Program returned a value: {0}")]
+    #[error("Program returned a value: 0b{0:016b}")]
     ResultReturned(u32),
 }
 
