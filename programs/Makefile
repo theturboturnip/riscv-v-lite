@@ -26,7 +26,7 @@ LD = lld-13 $(RISCV_CONFIG) #$(RISCV_PREFIX)ld
 OBJCOPY = llvm-objcopy-13 #$(RISCV_CONFIG) #$(RISCV_PREFIX)objcopy
 OBJDUMP = llvm-objdump-13 #$(RISCV_CONFIG) #$(RISCV_PREFIX)objdump
 
-CCFLAGS = -O1 -fno-inline-functions
+CCFLAGS = -O1 -fno-inline-functions -ffreestanding
 
 # Lists of rules: the name of a file, followed by the files it depends on.
 # When typing 'make' not followed by a rule name, the first rule is followed.  This rule depends on

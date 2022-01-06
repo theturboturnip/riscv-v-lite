@@ -44,7 +44,7 @@ As the program has returned 1, it has been successful! 🎉
 [The programs/ subfolder](/programs/) contains the source files and compilation output for a simple vectorized memcpy.
 
 Currently the vectorized memcpy tests
-- Behaviour with LMUL=8, SEW=32
+- Behaviour with LMUL={8, 1/2}, SEW=32
 - Unmasked simple unit vector loads,stores
 - Behaviour when the application vector length is not a multiple of elements per register group - i.e. behaviour for vector loads/stores with a tail
 
@@ -54,7 +54,7 @@ It does NOT test (and thus the emulator doesn't support)
 - Strided or Indexed loads/stores
 - Segmented loads/stores
 - Masked loads/stores
-- Fractional or 1,2,4 LMUL
+- 1,2,4 LMUL
 - SEW=8,16 (64 is not supported because it's a 32-bit program)
 - Any changes to `vstart`
 - Any accesses to CSRs e.g. `vtype`
