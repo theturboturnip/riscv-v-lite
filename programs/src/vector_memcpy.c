@@ -52,33 +52,36 @@ void vector_memcpy_indexed(size_t n, const int32_t* __restrict__ in, int32_t* __
     }
 }
 
-/*
+// special version that only copies odd-indexed elements
 void vector_memcpy_masked(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
-    // 0b0101 = 0x5
-    uint64_t mask_a = 0x5555555555555555;
-    uint64_t mask_b = ~mask_a;
-
+    // Generate mask
+    uint32_t mask_ints[128] = {0};
     size_t vlmax = vsetvlmax_e32m4();
-    vint32m4_t vec_zero = vmv_v_f_f32m4(0, vlmax);
+
+    for (size_t i = 0; i < vlmax; i++) {
+        // ...10101010
+        mask_ints[i] = i & 1;
+    }
+
+    vuint32m4_t mask_ints_v = vle32_v_u32m4(&mask_ints[0], vlmax);
+    // Where mask = 1, e.g. ...10101010
+    // => only odd element get written
+    vbool8_t mask = vmseq_vx_u32m4_b8(mask_ints_v, 1, vlmax);
+    // All zeroes
+    vint32m4_t vec_zero = vmv_v_x_i32m4(0, vlmax);
+
 
     size_t copied_per_iter = 0;
     for (; n > 0; n -= copied_per_iter) {
         copied_per_iter = vsetvl_e32m4(n);
 
-        vbool64_t a = vlm_v_b64(&mask_a, copied_per_iter);
-        vbool64_t b = vlm_v_b64(&mask_b, copied_per_iter);
-
-        vint32m4_t data = vle32_v_i32m4_m(a, 0, in, copied_per_iter);
-        vse32_v_i32m4_m(a, out, data, copied_per_iter);
-
-        vint32m4_t data = vle32_v_i32m4_m(b, 0, in, copied_per_iter);
-        vse32_v_i32m4_m(b, out, data, copied_per_iter);
+        vint32m4_t data = vle32_v_i32m4_m(mask, vec_zero, in, copied_per_iter);
+        vse32_v_i32m4_m(mask, out, data, copied_per_iter);
 
         in += copied_per_iter;
         out += copied_per_iter;
     }
 }
-*/
 
 void vector_memcpy_strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     const size_t STRIDE_FACTOR = 4;
@@ -178,6 +181,45 @@ int vector_memcpy_harness(void (*memcpy_fn)(size_t, const int32_t*, int32_t*)) {
     return 1;
 }
 
+int vector_memcpy_masked_harness(void (*memcpy_fn)(size_t, const int32_t*, int32_t*)) {
+    // This is different to the normal harness, to better test mask stuff.
+    // It only tests odd-indexed elements for copy, because that's what masked memcpys do
+    // (if we tested all elements, and had the masked memcpy do all elements,
+    // we wouldn't be able to tell if any masking was actually enabled.)
+
+    // also, it sets out_data to 0xFFFFFFFF
+    // this means the masked-out elements actually don't write anything, instead of e.g. writing zero.
+
+    int data[128] = {0};
+    int out_data[128] = {0};
+    memset(out_data, 0xFF, 128*sizeof(int));
+
+    for (int i = 0; i < 128; i++) {
+        data[i] = i;
+    }
+
+    // ONLY copy 103 values
+    memcpy_fn(103, data, out_data);
+
+    // Check all odd indices < 103 of output have been copied
+    // This ensures that the emulator correctly loaded/stored enough values
+    for (int i = 0; i < 103; i++) {
+        if ((i & 1) == 1 && data[i] != out_data[i]) {
+            return 0;
+        } else if ((i & 1) == 0 && out_data[i] != 0xFFFFFFFF) {
+            return 0;
+        }
+    }
+    // Check that the rest are 0 (the original value)
+    // This ensures that the emulator didn't store more elements than it should have
+    for (int i = 103; i < 128; i++) {
+        if (out_data[i] != 0xFFFFFFFF) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int main(void)
 {
   int *outputDevice = (int*) 0xf0000000; // magic output device
@@ -186,6 +228,7 @@ int main(void)
   result |= vector_memcpy_harness(vector_memcpy_32mf2) << 1;
   result |= vector_memcpy_harness(vector_memcpy_strided) << 2;
   result |= vector_memcpy_harness(vector_memcpy_indexed) << 3;
+  result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 4;
   outputDevice[0] = result;
   return result;
 }

@@ -181,7 +181,7 @@ impl VectorUnit {
     pub fn exec_inst(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: VectorUnitConnection) -> Result<()> {
         use Opcode::*;
         match (opcode, inst) {
-            (Vector, InstructionBits::VType{funct3, ..}) => {
+            (Vector, InstructionBits::VType{funct3, funct6, rs1, rs2, rd, vm, ..}) => {
                 match funct3 {
                     0b111 => {
                         // Configuration family - vsetvli etc.
@@ -195,7 +195,115 @@ impl VectorUnit {
                         self.exec_config(inst_kind, inst, conn)?
                     }
 
-                    _ => bail!("Vector arithmetic currently not supported")
+                    // 0b000 => {
+                    //     // Vector-Vector int
+                    // }
+
+                    // 0b010 => {
+                    //     // Vector-Vector Move
+                    // }
+
+                    0b011 => {
+                        // Vector-immediate
+                        // TODO - this assumes no sign extending?
+                        let imm = rs1 as u32;
+
+                        if self.vtype.vsew != Sew::e32 {
+                            bail!("Sew {:?} != 32 for arithmetic not supported", self.vtype.vsew);
+                        }
+
+                        match funct6 {
+                            0b011000 => {
+                                // VMSEQ
+                                // Mask Set-if-EQual
+                                // This cannot itself be masked
+                                let mut val: uVLEN = 0;
+                                for i in self.vstart..self.vl {
+                                    let reg_val = self.load_u32_vreg(rs2, i)?;
+                                    if reg_val == imm {
+                                        val |= (1 as uVLEN) << i;
+                                    }
+                                }
+                                self.vreg[rd as usize] = val;
+                            }
+                            0b011001 => {
+                                // VMSNE
+                                // Mask Set-if-Not-Equal
+                                // This cannot itself be masked
+                                let mut val: uVLEN = 0;
+                                for i in self.vstart..self.vl {
+                                    if self.load_u32_vreg(rs2, i)? != imm {
+                                        val |= (1 as uVLEN) << i;
+                                    }
+                                }
+                                self.vreg[rd as usize] = val;
+                            }
+
+                            0b010111 => {
+                                if (!vm) && rd == 0 {
+                                    bail!("Can't handle vmerge on the mask register, because it uses the mask register :)")
+                                }
+
+                                // vmerge or vmv
+                                // if masked, vmerge, else vmv
+                                for i in self.vstart..self.vl {
+                                    let val = if self.idx_masked_out(vm, i as usize) {
+                                        // if masked out, this must be vmerge, write new value in
+                                        self.load_u32_vreg(rs2, i)?
+                                    } else {
+                                        // either vmerge + not masked, or vmv
+                                        // either way, write immediate
+                                        imm
+                                    };
+                                    self.store_u32_vreg(rd, i, val)?;
+                                }
+                            }
+
+                            0b100111 => {
+                                if vm == true {
+                                    // vmv<nr>r.v (section 16.6)
+                                    // copy whole registers/register groups
+
+                                    // By the spec, nr = simm5?
+                                    // No such field, but section 11.8  mentions it.
+                                    // I imagine it's a leftover from a previous draft.
+                                    // rs1 looks right for this case, but need to double check.
+                                    let nr = rs1 as usize + 1;
+                                    let emul = match nr {
+                                        1 => Lmul::e1,
+                                        2 => Lmul::e2,
+                                        4 => Lmul::e4,
+                                        8 => Lmul::e8,
+
+                                        _ => bail!("Invalid nr encoding in vmv<nr>r.v: nr = {}", nr)
+                                    };
+
+                                    let eew = self.vtype.vsew;
+
+                                    let evl = val_times_lmul_over_sew(VLEN as u32, eew, emul);
+                                    if self.vstart >= evl {
+                                        bail!("evl {} <= vstart {} therefore vector move is no op", evl, self.vstart)
+                                    }
+                                    if rd == rs2 {
+                                        // architetural no-op
+                                        return Ok(())
+                                    }
+
+                                    for vx in 0..nr {
+                                        self.vreg[rd as usize + vx] = self.vreg[rs2 as usize + vx];
+                                    }
+                                } else {
+                                    bail!("vsmul not implemented");
+                                }
+                            }
+
+                            _ => bail!("Vector arithmetic funct3 {:03b} funct6 {:06b} not yet handled", funct3, funct6)
+                        }
+                    }
+
+
+
+                    _ => bail!("Vector arithmetic funct3 {:03b} currently not supported", funct3)
                 }
             }
 
@@ -216,8 +324,8 @@ impl VectorUnit {
                     bail!("Segmented things not yet implemented");
                 }
 
-                if op.evl < self.vstart {
-                    println!("EVL {} smaller than vstart {} => vector {:?} is no-op", op.evl, self.vstart, op.dir);
+                if op.evl <= self.vstart {
+                    println!("EVL {} <= vstart {} => vector {:?} is no-op", op.evl, self.vstart, op.dir);
                     return Ok(())
                 }
 
