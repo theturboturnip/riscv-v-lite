@@ -153,7 +153,7 @@ impl VectorUnit {
 
             if vtype_supported {
                 self.vtype = req_vtype;
-                dbg!(avl, elems_per_group);
+                // dbg!(avl, elems_per_group);
                 // TODO - section 6.3 shows more constraints on setting VL
                 self.vl = min(elems_per_group, avl);
 
@@ -242,6 +242,10 @@ impl VectorUnit {
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... store from register into memory
                                 let val = self.load_u32_vreg(rd, i)?;
+                                // Used for debugging strided memcpy
+                                // if stride != 1 {
+                                //     println!("{} => 0x{:x}",val, addr);
+                                // }
                                 conn.memory.store_u32(addr, val)?;
                             }
 
