@@ -83,6 +83,45 @@ void vector_memcpy_masked(size_t n, const int32_t* __restrict__ in, int32_t* __r
     }
 }
 
+// TODO - Make this work once I figure out which intrinsics actually trigger a unit-stride-mask-load
+/*
+void vector_memcpy_masked_bytemaskload(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    // Generate mask
+    uint32_t mask_ints[128] = {0};
+    size_t vlmax = vsetvlmax_e32m2();
+
+    for (size_t i = 0; i < vlmax; i++) {
+        // ...10101010
+        mask_ints[i] = i & 1;
+    }
+
+    vuint32m2_t mask_ints_v = vle32_v_u32m2(&mask_ints[0], vlmax);
+    // Where mask = 1, e.g. ...10101010
+    // => only odd element get written
+    vbool16_t mask_initial = vmseq_vx_u32m2_b16(mask_ints_v, 1, vlmax);
+    // All zeroes
+    vint32m2_t vec_zero = vmv_v_x_i32m2(0, vlmax);
+
+    uint8_t big_old_buffer[128] = {0};
+    // Store the mask in
+    vsm_v_b16(big_old_buffer, mask_initial, vlmax);
+    // Pull the mask back out
+    vbool16_t mask = vlm_v_b16(big_old_buffer, vlmax);
+
+
+    size_t copied_per_iter = 0;
+    for (; n > 0; n -= copied_per_iter) {
+        copied_per_iter = vsetvl_e32m2(n);
+
+        vint32m2_t data = vle32_v_i32m2_m(mask, vec_zero, in, copied_per_iter);
+        vse32_v_i32m2_m(mask, out, data, copied_per_iter);
+
+        in += copied_per_iter;
+        out += copied_per_iter;
+    }
+}
+*/
+
 void vector_memcpy_strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     const size_t STRIDE_FACTOR = 4;
     size_t copied_per_iter = 0;
@@ -229,6 +268,7 @@ int main(void)
   result |= vector_memcpy_harness(vector_memcpy_strided) << 2;
   result |= vector_memcpy_harness(vector_memcpy_indexed) << 3;
   result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 4;
+//   result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 5;
   outputDevice[0] = result;
   return result;
 }
