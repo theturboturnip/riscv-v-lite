@@ -19,6 +19,67 @@ void* memset(void* dest, int ch, size_t count) {
     return dest_uc;
 }
 
+void vector_memcpy_indexed(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    // Generate indices
+    uint32_t indices[128] = {0};
+    size_t vlmax = vsetvlmax_e32m4();
+
+    for (size_t i = 0; i < vlmax; i++) {
+        // Use xor to generate a shuffled index pattern
+        indices[i] = ((uint32_t)i) ^ 1;
+    }
+
+    vuint32m4_t indices_v = vle32_v_u32m4(&indices[0], vlmax);
+
+    size_t copied_per_iter = 0;
+    for (; n > 0; n -= copied_per_iter) {
+        copied_per_iter = vsetvl_e32m4(n);
+
+        if (copied_per_iter == vlmax) {
+            // We know that using indices_v will cover all values from 0..copied_per_iter-1
+            vint32m4_t data = vloxei32_v_i32m4(in, indices_v, copied_per_iter);
+            vsoxei32_v_i32m4(out, indices_v, data, copied_per_iter);
+        } else {
+            // Because the indices are shuffled, just using [0-copied_per_iter] 
+            // won't necessarily cover all 0..copied_per_iter-1 values.
+            // Just use a standard load
+            vint32m4_t data = vle32_v_i32m4(in, copied_per_iter);
+            vse32_v_i32m4(out, data, copied_per_iter);
+        }
+
+        in += copied_per_iter;
+        out += copied_per_iter;
+    }
+}
+
+/*
+void vector_memcpy_masked(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    // 0b0101 = 0x5
+    uint64_t mask_a = 0x5555555555555555;
+    uint64_t mask_b = ~mask_a;
+
+    size_t vlmax = vsetvlmax_e32m4();
+    vint32m4_t vec_zero = vmv_v_f_f32m4(0, vlmax);
+
+    size_t copied_per_iter = 0;
+    for (; n > 0; n -= copied_per_iter) {
+        copied_per_iter = vsetvl_e32m4(n);
+
+        vbool64_t a = vlm_v_b64(&mask_a, copied_per_iter);
+        vbool64_t b = vlm_v_b64(&mask_b, copied_per_iter);
+
+        vint32m4_t data = vle32_v_i32m4_m(a, 0, in, copied_per_iter);
+        vse32_v_i32m4_m(a, out, data, copied_per_iter);
+
+        vint32m4_t data = vle32_v_i32m4_m(b, 0, in, copied_per_iter);
+        vse32_v_i32m4_m(b, out, data, copied_per_iter);
+
+        in += copied_per_iter;
+        out += copied_per_iter;
+    }
+}
+*/
+
 void vector_memcpy_strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     const size_t STRIDE_FACTOR = 4;
     size_t copied_per_iter = 0;
@@ -120,10 +181,11 @@ int vector_memcpy_harness(void (*memcpy_fn)(size_t, const int32_t*, int32_t*)) {
 int main(void)
 {
   int *outputDevice = (int*) 0xf0000000; // magic output device
-  int result;
-  result = vector_memcpy_harness(vector_memcpy_32m8);
+  int result = 0;
+  result |= vector_memcpy_harness(vector_memcpy_32m8);
   result |= vector_memcpy_harness(vector_memcpy_32mf2) << 1;
   result |= vector_memcpy_harness(vector_memcpy_strided) << 2;
+  result |= vector_memcpy_harness(vector_memcpy_indexed) << 3;
   outputDevice[0] = result;
   return result;
 }

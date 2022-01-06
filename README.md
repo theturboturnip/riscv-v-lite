@@ -44,18 +44,18 @@ As the program has returned 1, it has been successful! 🎉
 [The programs/ subfolder](/programs/) contains the source files and compilation output for a simple vectorized memcpy.
 
 Currently the vectorized memcpy tests
-- Behaviour with LMUL={8, 1/2, 1}, SEW=32
-- Unmasked simple unit vector loads,stores
-- Unmasked strided vector loads,stores
+- Behaviour with LMUL={8, 1/2, 1, 4}, SEW=32
+- Unmasked Unit vector loads,stores
+- Unmasked Strided vector loads,stores
+- Unmasked Indexed vector loads,stores
 - Behaviour when the application vector length is not a multiple of elements per register group - i.e. behaviour for vector loads/stores with a tail
 
 It does NOT test (and thus the emulator doesn't support)
 - Unit WholeRegister, ByteMaskLoad, or FaultOnlyFirst loads
 - Unit WholeRegister or ByteMaskStore stores
-- Indexed loads/stores
 - Segmented loads/stores
 - Masked loads/stores
-- 2,4 LMUL (1/4 and 1/8 not supported by intrinsics for 32-bit elements)
+- 2 LMUL (1/4 and 1/8 not supported by intrinsics for 32-bit elements)
 - SEW=8,16 (64 is not supported because it's a 32-bit program)
 - Any changes to `vstart`
 - Any accesses to CSRs e.g. `vtype`

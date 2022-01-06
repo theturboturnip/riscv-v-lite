@@ -199,7 +199,7 @@ impl VectorUnit {
                 }
             }
 
-            (LoadFP | StoreFP, InstructionBits::FLdStType{rd, rs1, vm, ..}) => {
+            (LoadFP | StoreFP, InstructionBits::FLdStType{rd, rs1, rs2, vm, ..}) => {
                 let op = self.decode_load_store(opcode, inst, &conn)?;
                 use MemOpDir::*;
 
@@ -255,6 +255,45 @@ impl VectorUnit {
                             }
 
                             addr += 4 * stride;
+                        }
+                    }
+                    (Load, Indexed{index_ew}) => {
+                        if index_ew != Sew::e32 {
+                            bail!("Indexed Load with index width != 32 not supported")
+                        }
+
+                        // i = element index in logical vector (which includes groups)
+                        for i in self.vstart..op.evl {
+                            // Get our index
+                            let idx: u32 = self.load_u32_vreg(rs2, i)?;
+                            let addr = base_addr + 4 * idx;
+
+                            // If we aren't masked out...
+                            if !self.idx_masked_out(vm, i as usize) {
+                                // ... load from memory(idx) into register(i)
+                                let val = conn.memory.load_u32(addr)?;
+                                self.store_u32_vreg(rd, i, val)?;
+                            }
+                        }
+                    }
+                    (Store, Indexed{index_ew}) => {
+                        if index_ew != Sew::e32 {
+                            bail!("Indexed Store with index width != 32 not supported")
+                        }
+
+                        // i = element index in logical vector (which includes groups)
+                        for i in self.vstart..op.evl {
+                            // Get our index
+                            let idx: u32 = self.load_u32_vreg(rs2, i)?;
+                            let addr = base_addr + 4 * idx;
+
+                            // If we aren't masked out...
+                            if !self.idx_masked_out(vm, i as usize) {
+                                // ... load from memory(idx) into register(i)
+                                let val = self.load_u32_vreg(rd, i)?;
+                                // println!("{} => 0x{:x}",val, addr);
+                                conn.memory.store_u32(addr, val)?;
+                            }
                         }
                     }
 
@@ -400,7 +439,7 @@ impl VectorUnit {
                     
                 }
                 Mop::Strided(stride) => OverallMemOpKind::Strided(stride),
-                Mop::Indexed{ordered: _ordered} => OverallMemOpKind::Indexed
+                Mop::Indexed{ordered: _ordered} => OverallMemOpKind::Indexed{index_ew: eew}
             };
 
             if kind == OverallMemOpKind::ByteMask && eew != Sew::e8 {
@@ -413,7 +452,12 @@ impl VectorUnit {
                     Opcode::StoreFP => MemOpDir::Store,
                     _ => bail!("Incorrect opcode passed to decode_load_store: {:?}", opcode)
                 },
-                eew,
+                eew: match kind {
+                    // Indexed accesses use SEW as the unit for accessing elements from memory,
+                    // and EEW for the size of the indices
+                    OverallMemOpKind::Indexed{index_ew: _index_ew} => self.vtype.vsew,
+                    _ => eew
+                },
                 emul,
                 evl: match kind {
                     OverallMemOpKind::ByteMask => {
@@ -764,7 +808,7 @@ enum MemOpDir {
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 enum OverallMemOpKind {
     Strided(u32),
-    Indexed,
+    Indexed{index_ew: Sew},
     WholeRegister,
     ByteMask,
     FaultOnlyFirst,
