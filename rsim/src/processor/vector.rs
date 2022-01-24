@@ -312,10 +312,6 @@ impl VectorUnit {
                 let op = self.decode_load_store(opcode, inst, &conn)?;
                 use MemOpDir::*;
 
-                if op.eew != Sew::e32 {
-                    bail!("element width != 32 not yet supported");
-                }
-
                 if op.dir == Load && vm && rd == 0 {
                     // If we're masked, we can't load over v0 as that's the mask register
                     bail!("Masked instruction cannot load into v0");
@@ -408,21 +404,37 @@ impl VectorUnit {
     }
     fn load_to_vreg(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd: u8, i: u32) -> Result<()> {
         match eew {
-            Sew::e8 | Sew::e16 | Sew::e64 => { bail!("Unsupported") }
+            Sew::e8 => {
+                let val = conn.memory.load_u8(addr)?;
+                self.store_vreg_elem(eew, vd, i, val as u32)?;
+            }
+            Sew::e16 => {
+                let val = conn.memory.load_u16(addr)?;
+                self.store_vreg_elem(eew, vd, i, val as u32)?;
+            }
             Sew::e32 => {
                 let val = conn.memory.load_u32(addr)?;
                 self.store_vreg_elem(eew, vd, i, val)?;
             }
+            Sew::e64 => { bail!("load_to_vreg {:?} unsupported", eew) }
         }
         Ok(())
     }
     fn store_to_mem(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd: u8, i: u32) -> Result<()> {
         match eew {
-            Sew::e8 | Sew::e16 | Sew::e64 => { bail!("Unsupported") }
+            Sew::e8 => {
+                let val = self.load_vreg_elem(eew, vd, i)?;
+                conn.memory.store_u8(addr, val.try_into()?)?;
+            }
+            Sew::e16 => {
+                let val = self.load_vreg_elem(eew, vd, i)?;
+                conn.memory.store_u16(addr, val.try_into()?)?;
+            }
             Sew::e32 => {
                 let val = self.load_vreg_elem(eew, vd, i)?;
                 conn.memory.store_u32(addr, val)?;
             }
+            Sew::e64 => { bail!("store_to_mem {:?} unsupported", eew) }
         }
         Ok(())
     }
