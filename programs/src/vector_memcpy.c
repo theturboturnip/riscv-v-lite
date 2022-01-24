@@ -178,6 +178,23 @@ void vector_memcpy_32mf2(size_t n, const int32_t* __restrict__ in, int32_t* __re
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)
 // out = pointer to output data (should be aligned?)
+void vector_memcpy_8m8(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    size_t copied_per_iter = 0;
+    for (; n > 0; n -= copied_per_iter) {
+        copied_per_iter = vsetvl_e8m8(n);
+        // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
+        // but if you wanted to change it it would do vsetvl to set architectural state
+        vint8m8_t data = vle8_v_i8m8(in, copied_per_iter);
+        vse8_v_i8m8(out, data, copied_per_iter);
+
+        in += copied_per_iter;
+        out += copied_per_iter;
+    }
+}
+
+// n = number of elements to copy
+// in = pointer to data (should be aligned to 128-bit?)
+// out = pointer to output data (should be aligned?)
 void vector_memcpy_32m8(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     size_t copied_per_iter = 0;
     for (; n > 0; n -= copied_per_iter) {
@@ -269,6 +286,7 @@ int main(void)
   result |= vector_memcpy_harness(vector_memcpy_indexed) << 3;
   result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 4;
 //   result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 5;
+  result |= vector_memcpy_harness(vector_memcpy_8m8) << 6;
   outputDevice[0] = result;
   return result;
 }

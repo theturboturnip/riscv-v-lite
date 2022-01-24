@@ -187,15 +187,15 @@ vector_memcpy_32mf2:
 .Lfunc_end4:
 	.size	vector_memcpy_32mf2, .Lfunc_end4-vector_memcpy_32mf2
 
-	.globl	vector_memcpy_32m8
+	.globl	vector_memcpy_8m8
 	.p2align	2
-	.type	vector_memcpy_32m8,@function
-vector_memcpy_32m8:
+	.type	vector_memcpy_8m8,@function
+vector_memcpy_8m8:
 	beqz	a0, .LBB5_2
 .LBB5_1:
-	vsetvli	a3, a0, e32, m8, ta, mu
-	vle32.v	v8, (a1)
-	vse32.v	v8, (a2)
+	vsetvli	a3, a0, e8, m8, ta, mu
+	vle8.v	v8, (a1)
+	vse8.v	v8, (a2)
 	slli	a4, a3, 2
 	add	a1, a1, a4
 	sub	a0, a0, a3
@@ -204,7 +204,26 @@ vector_memcpy_32m8:
 .LBB5_2:
 	ret
 .Lfunc_end5:
-	.size	vector_memcpy_32m8, .Lfunc_end5-vector_memcpy_32m8
+	.size	vector_memcpy_8m8, .Lfunc_end5-vector_memcpy_8m8
+
+	.globl	vector_memcpy_32m8
+	.p2align	2
+	.type	vector_memcpy_32m8,@function
+vector_memcpy_32m8:
+	beqz	a0, .LBB6_2
+.LBB6_1:
+	vsetvli	a3, a0, e32, m8, ta, mu
+	vle32.v	v8, (a1)
+	vse32.v	v8, (a2)
+	slli	a4, a3, 2
+	add	a1, a1, a4
+	sub	a0, a0, a3
+	add	a2, a2, a4
+	bnez	a0, .LBB6_1
+.LBB6_2:
+	ret
+.Lfunc_end6:
+	.size	vector_memcpy_32m8, .Lfunc_end6-vector_memcpy_32m8
 
 	.globl	vector_memcpy_harness
 	.p2align	2
@@ -227,11 +246,11 @@ vector_memcpy_harness:
 	call	memset@plt
 	mv	a0, zero
 	addi	a1, zero, 128
-.LBB6_1:
+.LBB7_1:
 	sw	a0, 0(s1)
 	addi	a0, a0, 1
 	addi	s1, s1, 4
-	bne	a0, a1, .LBB6_1
+	bne	a0, a1, .LBB7_1
 	addi	s1, sp, 528
 	addi	a0, zero, 103
 	addi	a1, sp, 528
@@ -240,42 +259,42 @@ vector_memcpy_harness:
 	jalr	s2
 	mv	a0, zero
 	addi	a1, zero, 412
-.LBB6_3:
+.LBB7_3:
 	add	a2, s1, a0
 	lw	a2, 0(a2)
 	add	a3, s0, a0
 	lw	a3, 0(a3)
-	bne	a2, a3, .LBB6_10
+	bne	a2, a3, .LBB7_10
 	addi	a0, a0, 4
-	bne	a0, a1, .LBB6_3
+	bne	a0, a1, .LBB7_3
 	lw	a1, 428(sp)
 	mv	a0, zero
-	bnez	a1, .LBB6_11
+	bnez	a1, .LBB7_11
 	addi	a0, sp, 432
 	addi	a3, zero, 103
 	addi	a1, zero, 127
-.LBB6_7:
+.LBB7_7:
 	mv	a2, a3
-	beq	a3, a1, .LBB6_9
+	beq	a3, a1, .LBB7_9
 	lw	a4, 0(a0)
 	addi	a0, a0, 4
 	addi	a3, a2, 1
-	beqz	a4, .LBB6_7
-.LBB6_9:
+	beqz	a4, .LBB7_7
+.LBB7_9:
 	addi	a0, zero, 126
 	sltu	a0, a0, a2
-	j	.LBB6_11
-.LBB6_10:
+	j	.LBB7_11
+.LBB7_10:
 	mv	a0, zero
-.LBB6_11:
+.LBB7_11:
 	lw	s2, 1040(sp)
 	lw	s1, 1044(sp)
 	lw	s0, 1048(sp)
 	lw	ra, 1052(sp)
 	addi	sp, sp, 1056
 	ret
-.Lfunc_end6:
-	.size	vector_memcpy_harness, .Lfunc_end6-vector_memcpy_harness
+.Lfunc_end7:
+	.size	vector_memcpy_harness, .Lfunc_end7-vector_memcpy_harness
 
 	.globl	vector_memcpy_masked_harness
 	.p2align	2
@@ -303,11 +322,11 @@ vector_memcpy_masked_harness:
 	call	memset
 	mv	a0, zero
 	addi	a1, zero, 128
-.LBB7_1:
+.LBB8_1:
 	sw	a0, 0(s0)
 	addi	a0, a0, 1
 	addi	s0, s0, 4
-	bne	a0, a1, .LBB7_1
+	bne	a0, a1, .LBB8_1
 	addi	s3, zero, 103
 	addi	s0, sp, 524
 	addi	a0, zero, 103
@@ -317,29 +336,29 @@ vector_memcpy_masked_harness:
 	jalr	s2
 	mv	a0, zero
 	addi	a1, zero, -1
-	j	.LBB7_5
-.LBB7_3:
+	j	.LBB8_5
+.LBB8_3:
 	lw	a2, 0(s0)
 	lw	a3, 0(s1)
-	bne	a2, a3, .LBB7_8
-.LBB7_4:
+	bne	a2, a3, .LBB8_8
+.LBB8_4:
 	addi	a0, a0, 1
 	addi	s1, s1, 4
 	addi	s0, s0, 4
-	beq	a0, s3, .LBB7_7
-.LBB7_5:
+	beq	a0, s3, .LBB8_7
+.LBB8_5:
 	andi	a2, a0, 1
-	bnez	a2, .LBB7_3
+	bnez	a2, .LBB8_3
 	lw	a2, 0(s1)
-	beq	a2, a1, .LBB7_4
-	j	.LBB7_8
-.LBB7_7:
+	beq	a2, a1, .LBB8_4
+	j	.LBB8_8
+.LBB8_7:
 	lw	a1, 424(sp)
 	addi	a0, zero, -1
-	beq	a1, a0, .LBB7_10
-.LBB7_8:
+	beq	a1, a0, .LBB8_10
+.LBB8_8:
 	mv	a0, zero
-.LBB7_9:
+.LBB8_9:
 	lw	s3, 1036(sp)
 	lw	s2, 1040(sp)
 	lw	s1, 1044(sp)
@@ -347,23 +366,23 @@ vector_memcpy_masked_harness:
 	lw	ra, 1052(sp)
 	addi	sp, sp, 1056
 	ret
-.LBB7_10:
+.LBB8_10:
 	addi	a1, sp, 428
 	addi	a4, zero, 103
 	addi	a2, zero, 127
-.LBB7_11:
+.LBB8_11:
 	mv	a3, a4
-	beq	a4, a2, .LBB7_13
+	beq	a4, a2, .LBB8_13
 	lw	a5, 0(a1)
 	addi	a1, a1, 4
 	addi	a4, a3, 1
-	beq	a5, a0, .LBB7_11
-.LBB7_13:
+	beq	a5, a0, .LBB8_11
+.LBB8_13:
 	addi	a0, zero, 126
 	sltu	a0, a0, a3
-	j	.LBB7_9
-.Lfunc_end7:
-	.size	vector_memcpy_masked_harness, .Lfunc_end7-vector_memcpy_masked_harness
+	j	.LBB8_9
+.Lfunc_end8:
+	.size	vector_memcpy_masked_harness, .Lfunc_end8-vector_memcpy_masked_harness
 
 	.globl	main
 	.p2align	2
@@ -395,6 +414,11 @@ main:
 	addi	a0, a0, %lo(vector_memcpy_masked)
 	call	vector_memcpy_masked_harness
 	slli	a0, a0, 4
+	or	s0, s0, a0
+	lui	a0, %hi(vector_memcpy_8m8)
+	addi	a0, a0, %lo(vector_memcpy_8m8)
+	call	vector_memcpy_harness
+	slli	a0, a0, 6
 	or	a0, s0, a0
 	lui	a1, 983040
 	sw	a0, 0(a1)
@@ -402,8 +426,8 @@ main:
 	lw	ra, 12(sp)
 	addi	sp, sp, 16
 	ret
-.Lfunc_end8:
-	.size	main, .Lfunc_end8-main
+.Lfunc_end9:
+	.size	main, .Lfunc_end9-main
 
 	.ident	"Ubuntu clang version 13.0.1-++20211215022811+5932c004778c-1~exp1~20211215022819.27"
 	.section	".note.GNU-stack","",@progbits
@@ -412,4 +436,5 @@ main:
 	.addrsig_sym vector_memcpy_masked
 	.addrsig_sym vector_memcpy_strided
 	.addrsig_sym vector_memcpy_32mf2
+	.addrsig_sym vector_memcpy_8m8
 	.addrsig_sym vector_memcpy_32m8
