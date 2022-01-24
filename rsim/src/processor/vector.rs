@@ -178,7 +178,7 @@ impl VectorUnit {
     /// * `inst` - Decoded instruction bits
     /// * `inst_bits` - Raw instruction bits (TODO - we shouldn't need this)
     /// * `conn` - Connection to external resources
-    pub fn exec_inst(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: VectorUnitConnection) -> Result<()> {
+    pub fn exec_inst(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, mut conn: VectorUnitConnection) -> Result<()> {
         use Opcode::*;
         match (opcode, inst) {
             (Vector, InstructionBits::VType{funct3, funct6, rs1, rs2, rd, vm, ..}) => {
@@ -340,8 +340,7 @@ impl VectorUnit {
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... load from memory into register
-                                let val = conn.memory.load_u32(addr)?;
-                                self.store_u32_vreg(rd, i, val)?;
+                                self.load_to_vreg(&mut conn, op.eew, addr, rd, i)?;
                             }
 
                             addr += 4 * stride;
@@ -354,12 +353,7 @@ impl VectorUnit {
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... store from register into memory
-                                let val = self.load_u32_vreg(rd, i)?;
-                                // Used for debugging strided memcpy
-                                // if stride != 1 {
-                                //     println!("{} => 0x{:x}",val, addr);
-                                // }
-                                conn.memory.store_u32(addr, val)?;
+                                self.store_to_mem(&mut conn, op.eew, addr, rd, i)?;
                             }
 
                             addr += 4 * stride;
@@ -379,8 +373,7 @@ impl VectorUnit {
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... load from memory(idx) into register(i)
-                                let val = conn.memory.load_u32(addr)?;
-                                self.store_u32_vreg(rd, i, val)?;
+                                self.load_to_vreg(&mut conn, op.eew, addr, rd, i)?;
                             }
                         }
                     }
@@ -397,10 +390,8 @@ impl VectorUnit {
 
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
-                                // ... load from memory(idx) into register(i)
-                                let val = self.load_u32_vreg(rd, i)?;
-                                // println!("{} => 0x{:x}",val, addr);
-                                conn.memory.store_u32(addr, val)?;
+                                // ... store from register(i) to memory(idx)
+                                self.store_to_mem(&mut conn, op.eew, addr, rd, i)?;
                             }
                         }
                     }
@@ -412,6 +403,26 @@ impl VectorUnit {
             _ => bail!("Unexpected opcode/InstructionBits pair at vector unit")
         }
 
+        Ok(())
+    }
+    fn load_to_vreg(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd: u8, i: u32) -> Result<()> {
+        match eew {
+            Sew::e8 | Sew::e16 | Sew::e64 => { bail!("Unsupported") }
+            Sew::e32 => {
+                let val = conn.memory.load_u32(addr)?;
+                self.store_u32_vreg(vd, i, val)?;
+            }
+        }
+        Ok(())
+    }
+    fn store_to_mem(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd: u8, i: u32) -> Result<()> {
+        match eew {
+            Sew::e8 | Sew::e16 | Sew::e64 => { bail!("Unsupported") }
+            Sew::e32 => {
+                let val = self.load_u32_vreg(vd, i)?;
+                conn.memory.store_u32(addr, val)?;
+            }
+        }
         Ok(())
     }
 
