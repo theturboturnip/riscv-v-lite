@@ -122,7 +122,79 @@ void vector_memcpy_masked_bytemaskload(size_t n, const int32_t* __restrict__ in,
 }
 */
 
-void vector_memcpy_strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+void vector_memcpy_8strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    const size_t STRIDE_FACTOR = 4;
+    size_t copied_per_iter = 0;
+    for (; n > 0; ) {
+        copied_per_iter = vsetvl_e8m1(n*4);
+
+        // If we have room to do so, copy STRIDE*elems 
+        // by copying STRIDE vectors each of length `elems`
+        if ((copied_per_iter * STRIDE_FACTOR)/4 < n) {
+            // Strided load-store with stride of N
+            //    for address offset = 0
+            //    and address offset = 1 element
+            //    ...
+            //    and address offset = N - 1 elements
+
+            for (size_t i = 0; i < STRIDE_FACTOR*4; i++) {
+                vint8m1_t data = vlse8_v_i8m1(((void*)in)+i, STRIDE_FACTOR, copied_per_iter);
+                vsse8_v_i8m1(((void*)out)+i, STRIDE_FACTOR, data, copied_per_iter);
+            }
+
+            in += (copied_per_iter * STRIDE_FACTOR) / 4;
+            out += (copied_per_iter * STRIDE_FACTOR) / 4;
+            n -= (copied_per_iter * STRIDE_FACTOR) / 4;
+        } else {
+            // We don't have room to do STRIDE*elems,
+            // pick up the rest with normal copies
+            vint8m1_t data = vle8_v_i8m1(in, copied_per_iter);
+            vse8_v_i8m1(out, data, copied_per_iter);
+
+            in += copied_per_iter / 4;
+            out += copied_per_iter / 4;
+            n -= copied_per_iter / 4;
+        }
+    }
+}
+
+void vector_memcpy_16strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    const size_t STRIDE_FACTOR = 4;
+    size_t copied_per_iter = 0;
+    for (; n > 0 && !(n == 1 && copied_per_iter < 2); ) {
+        copied_per_iter = vsetvl_e16m1(n*2);
+
+        // If we have room to do so, copy STRIDE*elems 
+        // by copying STRIDE vectors each of length `elems`
+        if (copied_per_iter * STRIDE_FACTOR < n) {
+            // Strided load-store with stride of N
+            //    for address offset = 0
+            //    and address offset = 1 element
+            //    ...
+            //    and address offset = N - 1 elements
+
+            for (size_t i = 0; i < STRIDE_FACTOR*2; i++) {
+                vint16m1_t data = vlse16_v_i16m1(((void*)in)+(i*2), STRIDE_FACTOR, copied_per_iter);
+                vsse16_v_i16m1(((void*)out)+(i*2), STRIDE_FACTOR, data, copied_per_iter);
+            }
+
+            in += (copied_per_iter * STRIDE_FACTOR) / 2;
+            out += (copied_per_iter * STRIDE_FACTOR) / 2;
+            n -= (copied_per_iter * STRIDE_FACTOR) / 2;
+        } else {
+            // We don't have room to do STRIDE*elems,
+            // pick up the rest with normal copies
+            vint16m1_t data = vle16_v_i16m1(in, copied_per_iter);
+            vse16_v_i16m1(out, data, copied_per_iter);
+
+            in += copied_per_iter / 2;
+            out += copied_per_iter / 2;
+            n -= copied_per_iter / 2;
+        }
+    }
+}
+
+void vector_memcpy_32strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     const size_t STRIDE_FACTOR = 4;
     size_t copied_per_iter = 0;
     for (; n > 0; ) {
@@ -180,15 +252,16 @@ void vector_memcpy_32mf2(size_t n, const int32_t* __restrict__ in, int32_t* __re
 // out = pointer to output data (should be aligned?)
 void vector_memcpy_8m8(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     size_t copied_per_iter = 0;
-    for (; n > 0; n -= copied_per_iter) {
-        copied_per_iter = vsetvl_e8m8(n);
+    // TODO infinite loops
+    for (; n > 0 && !(n == 1 && copied_per_iter < 4); n -= (copied_per_iter/4)) {
+        copied_per_iter = vsetvl_e8m8(n*4);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
         vint8m8_t data = vle8_v_i8m8(in, copied_per_iter);
         vse8_v_i8m8(out, data, copied_per_iter);
 
-        in += copied_per_iter;
-        out += copied_per_iter;
+        in += (copied_per_iter/4);
+        out += (copied_per_iter/4);
     }
 }
 
@@ -197,15 +270,16 @@ void vector_memcpy_8m8(size_t n, const int32_t* __restrict__ in, int32_t* __rest
 // out = pointer to output data (should be aligned?)
 void vector_memcpy_16m8(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     size_t copied_per_iter = 0;
-    for (; n > 0; n -= copied_per_iter) {
-        copied_per_iter = vsetvl_e16m8(n);
+    // TODO infinite loops
+    for (; n > 0 && !(n == 1 && copied_per_iter < 2); n -= (copied_per_iter/2)) {
+        copied_per_iter = vsetvl_e16m8(n*2);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
         vint16m8_t data = vle16_v_i16m8(in, copied_per_iter);
         vse16_v_i16m8(out, data, copied_per_iter);
 
-        in += copied_per_iter;
-        out += copied_per_iter;
+        in += (copied_per_iter/2);
+        out += (copied_per_iter/2);
     }
 }
 
@@ -301,9 +375,11 @@ int main(void)
   result |= vector_memcpy_harness(vector_memcpy_16m8) << 1;
   result |= vector_memcpy_harness(vector_memcpy_32m8) << 2;
   result |= vector_memcpy_harness(vector_memcpy_32mf2) << 3;
-  result |= vector_memcpy_harness(vector_memcpy_strided) << 4;
-  result |= vector_memcpy_harness(vector_memcpy_indexed) << 5;
-  result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 6;
+  result |= vector_memcpy_harness(vector_memcpy_8strided) << 4;
+  result |= vector_memcpy_harness(vector_memcpy_16strided) << 5;
+  result |= vector_memcpy_harness(vector_memcpy_32strided) << 6;
+  result |= vector_memcpy_harness(vector_memcpy_indexed) << 7;
+  result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 8;
 //   result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 5;
   outputDevice[0] = result;
   return result;

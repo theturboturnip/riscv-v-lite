@@ -328,6 +328,13 @@ impl VectorUnit {
 
                 let base_addr = conn.sreg[rs1 as usize];
 
+                let addr_base_step = match op.eew {
+                    Sew::e8 => 1,
+                    Sew::e16 => 2,
+                    Sew::e32 => 4,
+                    Sew::e64 => bail!("unsupported {:?} in vector load/store", op.eew),
+                };
+
                 use OverallMemOpKind::*;
                 match (op.dir, op.kind) {
                     (Load, Strided(stride)) => {
@@ -337,10 +344,13 @@ impl VectorUnit {
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... load from memory into register
+                                if op.eew == Sew::e8 {
+                                    println!("v{}[{}] <= ({:x})", rd, i, addr);
+                                }
                                 self.load_to_vreg(&mut conn, op.eew, addr, rd, i)?;
                             }
 
-                            addr += 4 * stride;
+                            addr += addr_base_step * stride;
                         }
                     }
                     (Store, Strided(stride)) => {
@@ -350,10 +360,13 @@ impl VectorUnit {
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... store from register into memory
+                                if op.eew == Sew::e8 {
+                                    println!("({:x}) <= v{}[{}]", addr, rd, i);
+                                }
                                 self.store_to_mem(&mut conn, op.eew, addr, rd, i)?;
                             }
 
-                            addr += 4 * stride;
+                            addr += addr_base_step * stride;
                         }
                     }
                     (Load, Indexed{ordered: _ordered, index_ew}) => {
@@ -365,7 +378,7 @@ impl VectorUnit {
                         for i in self.vstart..op.evl {
                             // Get our index
                             let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
-                            let addr = base_addr + 4 * idx;
+                            let addr = base_addr + addr_base_step * idx;
 
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
@@ -383,7 +396,7 @@ impl VectorUnit {
                         for i in self.vstart..op.evl {
                             // Get our index
                             let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
-                            let addr = base_addr + 4 * idx;
+                            let addr = base_addr + addr_base_step * idx;
 
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
@@ -429,6 +442,7 @@ impl VectorUnit {
         match eew {
             Sew::e8 => {
                 let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
+                println!("({:x}) <= {:x}", addr, val);
                 conn.memory.store_u8(addr, val.try_into()?)?;
             }
             Sew::e16 => {
