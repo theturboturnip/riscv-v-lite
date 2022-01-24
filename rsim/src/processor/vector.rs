@@ -356,7 +356,7 @@ impl VectorUnit {
                             addr += 4 * stride;
                         }
                     }
-                    (Load, Indexed{index_ew}) => {
+                    (Load, Indexed{ordered: _ordered, index_ew}) => {
                         if index_ew != Sew::e32 {
                             bail!("Indexed Load with index width != 32 not supported")
                         }
@@ -374,7 +374,7 @@ impl VectorUnit {
                             }
                         }
                     }
-                    (Store, Indexed{index_ew}) => {
+                    (Store, Indexed{ordered: _ordered, index_ew}) => {
                         if index_ew != Sew::e32 {
                             bail!("Indexed Store with index width != 32 not supported")
                         }
@@ -402,36 +402,41 @@ impl VectorUnit {
 
         Ok(())
     }
-    fn load_to_vreg(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd: u8, i: u32) -> Result<()> {
+
+    /// Load a value of width `eew` from a given address `addr` 
+    /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
+    fn load_to_vreg(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd_base: u8, idx_from_base: u32) -> Result<()> {
         match eew {
             Sew::e8 => {
                 let val = conn.memory.load_u8(addr)?;
-                self.store_vreg_elem(eew, vd, i, val as u32)?;
+                self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
             }
             Sew::e16 => {
                 let val = conn.memory.load_u16(addr)?;
-                self.store_vreg_elem(eew, vd, i, val as u32)?;
+                self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
             }
             Sew::e32 => {
                 let val = conn.memory.load_u32(addr)?;
-                self.store_vreg_elem(eew, vd, i, val)?;
+                self.store_vreg_elem(eew, vd_base, idx_from_base, val)?;
             }
             Sew::e64 => { bail!("load_to_vreg {:?} unsupported", eew) }
         }
         Ok(())
     }
-    fn store_to_mem(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd: u8, i: u32) -> Result<()> {
+    /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
+    /// vector register group starting at `vd_base` into a given address `addr` 
+    fn store_to_mem(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd_base: u8, idx_from_base: u32) -> Result<()> {
         match eew {
             Sew::e8 => {
-                let val = self.load_vreg_elem(eew, vd, i)?;
+                let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
                 conn.memory.store_u8(addr, val.try_into()?)?;
             }
             Sew::e16 => {
-                let val = self.load_vreg_elem(eew, vd, i)?;
+                let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
                 conn.memory.store_u16(addr, val.try_into()?)?;
             }
             Sew::e32 => {
-                let val = self.load_vreg_elem(eew, vd, i)?;
+                let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
                 conn.memory.store_u32(addr, val)?;
             }
             Sew::e64 => { bail!("store_to_mem {:?} unsupported", eew) }
@@ -439,11 +444,14 @@ impl VectorUnit {
         Ok(())
     }
 
+    /// Returns true if the mask is enabled and element `i` has been masked *out*, e.g. that it should not be touched.
     fn idx_masked_out(&self, vm: bool, i: usize) -> bool {
         // vm == 1 for mask disabled, 0 for mask enabled
         (!vm) && (bits!(self.vreg[0], i:i) == 0)
     }
 
+    /// Decode a Load/Store opcode into an OverallMemOp structure.
+    /// Performs all checks to ensure the instruction is a valid RISC-V V vector load/store.
     fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &VectorUnitConnection) -> Result<OverallMemOp> {
         if let InstructionBits::FLdStType{width, rs2, mew, mop, nf, ..} = inst {
             // MEW = Memory Expanded Width(?)
@@ -571,7 +579,7 @@ impl VectorUnit {
                     
                 }
                 Mop::Strided(stride) => OverallMemOpKind::Strided(stride),
-                Mop::Indexed{ordered: _ordered} => OverallMemOpKind::Indexed{index_ew: eew}
+                Mop::Indexed{ordered} => OverallMemOpKind::Indexed{ordered, index_ew: eew}
             };
 
             if kind == OverallMemOpKind::ByteMask && eew != Sew::e8 {
@@ -587,7 +595,7 @@ impl VectorUnit {
                 eew: match kind {
                     // Indexed accesses use SEW as the unit for accessing elements from memory,
                     // and EEW for the size of the indices
-                    OverallMemOpKind::Indexed{index_ew: _index_ew} => self.vtype.vsew,
+                    OverallMemOpKind::Indexed{index_ew: _index_ew, ..} => self.vtype.vsew,
                     _ => eew
                 },
                 emul,
@@ -860,23 +868,6 @@ pub enum Sew {
     e64
 }
 
-// trait VElem: BitAnd + std::convert::Into<uVLEN> + std::convert::TryFrom<uVLEN> {
-//     const EW: Sew;
-//     fn from_vec(vec: uVLEN) -> Self;
-// }
-// impl VElem for u8 {
-//     const EW: Sew = Sew::e8;
-//     fn from_vec(vec: u128) -> Self { vec as u8 }
-// }
-// impl VElem for u16 {
-//     const EW: Sew = Sew::e16;
-//     fn from_vec(vec: u128) -> Self { vec as u16 }
-// }
-// impl VElem for u32 {
-//     const EW: Sew = Sew::e32;
-//     fn from_vec(vec: u128) -> Self { vec as u32 }
-// }
-
 /// Length-Mul enum
 /// 
 /// RISC-V V allows programs to *group* vector registers together for greater theoretical parallelism.
@@ -973,22 +964,34 @@ enum UnitStrideStoreOp {
     ByteMaskStore
 }
 
-
+/// The "direction" of a memory operation.
+/// Used by [OverallMemOp].
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 enum MemOpDir { 
+    /// Load = taking values from memory and putting them in vector registers
     Load,
+    /// Store = taking values from vector registers and putting them in memory
     Store
 }
 
+/// The different kinds of RISC-V V vector loads/stores.
+/// One top-level enum which encapsulates Strided access (also used for basic unit-stride access),
+/// Indexed access, and the special cases of unit-stride access (e.g. whole-register, bytemasked, fault-only-first).
+/// 
+/// Used by [OverallMemOp].
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 enum OverallMemOpKind {
     Strided(u32),
-    Indexed{index_ew: Sew},
+    Indexed{ordered: bool, index_ew: Sew},
     WholeRegister,
     ByteMask,
     FaultOnlyFirst,
 }
 
+/// A structure representing a decoded RISC-V V vector load/store instruction.
+/// 
+/// This can represent a superset of valid RISC-V V instructions,
+/// e.g. fault-only-first store (which isn't allowed).
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 struct OverallMemOp {
     emul: Lmul,
