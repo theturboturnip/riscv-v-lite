@@ -1,6 +1,7 @@
 use std::mem::size_of;
 use std::cmp::min;
 use anyhow::{Context, Result};
+use std::convert::{TryInto};
 
 use crate::memory::Memory;
 
@@ -219,7 +220,7 @@ impl VectorUnit {
                                 // This cannot itself be masked
                                 let mut val: uVLEN = 0;
                                 for i in self.vstart..self.vl {
-                                    let reg_val = self.load_u32_vreg(rs2, i)?;
+                                    let reg_val = self.load_vreg_elem(Sew::e32, rs2, i)?;
                                     if reg_val == imm {
                                         val |= (1 as uVLEN) << i;
                                     }
@@ -232,7 +233,7 @@ impl VectorUnit {
                                 // This cannot itself be masked
                                 let mut val: uVLEN = 0;
                                 for i in self.vstart..self.vl {
-                                    if self.load_u32_vreg(rs2, i)? != imm {
+                                    if self.load_vreg_elem(Sew::e32, rs2, i)? != imm {
                                         val |= (1 as uVLEN) << i;
                                     }
                                 }
@@ -249,13 +250,13 @@ impl VectorUnit {
                                 for i in self.vstart..self.vl {
                                     let val = if self.idx_masked_out(vm, i as usize) {
                                         // if masked out, this must be vmerge, write new value in
-                                        self.load_u32_vreg(rs2, i)?
+                                        self.load_vreg_elem(Sew::e32, rs2, i)?
                                     } else {
                                         // either vmerge + not masked, or vmv
                                         // either way, write immediate
                                         imm
                                     };
-                                    self.store_u32_vreg(rd, i, val)?;
+                                    self.store_vreg_elem(Sew::e32, rd, i, val)?;
                                 }
                             }
 
@@ -367,7 +368,7 @@ impl VectorUnit {
                         // i = element index in logical vector (which includes groups)
                         for i in self.vstart..op.evl {
                             // Get our index
-                            let idx: u32 = self.load_u32_vreg(rs2, i)?;
+                            let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
                             let addr = base_addr + 4 * idx;
 
                             // If we aren't masked out...
@@ -385,7 +386,7 @@ impl VectorUnit {
                         // i = element index in logical vector (which includes groups)
                         for i in self.vstart..op.evl {
                             // Get our index
-                            let idx: u32 = self.load_u32_vreg(rs2, i)?;
+                            let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
                             let addr = base_addr + 4 * idx;
 
                             // If we aren't masked out...
@@ -410,7 +411,7 @@ impl VectorUnit {
             Sew::e8 | Sew::e16 | Sew::e64 => { bail!("Unsupported") }
             Sew::e32 => {
                 let val = conn.memory.load_u32(addr)?;
-                self.store_u32_vreg(vd, i, val)?;
+                self.store_vreg_elem(eew, vd, i, val)?;
             }
         }
         Ok(())
@@ -419,7 +420,7 @@ impl VectorUnit {
         match eew {
             Sew::e8 | Sew::e16 | Sew::e64 => { bail!("Unsupported") }
             Sew::e32 => {
-                let val = self.load_u32_vreg(vd, i)?;
+                let val = self.load_vreg_elem(eew, vd, i)?;
                 conn.memory.store_u32(addr, val)?;
             }
         }
@@ -594,46 +595,72 @@ impl VectorUnit {
         }
     }
 
-    /// Store a value in an element in a vertex register group, where EEW = 32.
+    /// Store a value in an element in a vertex register group, with specified EEW.
+    /// Requires the type of the value to store matches the EEW.
     /// 
-    /// Example: if VLEN=128bits (4 32-bit elements per register), `vd` = 3, `idx` = 5,
-    /// this would store `val` into v4\[96:64\]
-    fn store_u32_vreg(&mut self, vd: u8, idx: u32, val: u32) -> Result<()> {
-        use std::convert::TryInto;
+    /// Example: if EEW=32bits, VLEN=128bits (4 32-bit elements per register), `vd_base` = 3, `idx_from_base` = 5,
+    /// the actual `vd` = 3 + (idx_from_base / 4) = 4, and
+    /// the actual `idx` = idx_from_base % 4 = 1.
+    /// This would store `val` into v4\[64:32\] (element 1 of v4)
+    fn store_vreg_elem(&mut self, eew: Sew, vd_base: u8, idx_from_base: u32, val: uELEN) -> Result<()> {
+        let (elem_width_mask, elem_width) : (uELEN, u32) = match eew {
+            Sew::e8  => (0xFF, 8),
+            Sew::e16 => (0xFFFF, 16),
+            Sew::e32 => (0xFFFF_FFFF, 32),
+            Sew::e64 => bail!("64-bit vreg elem unsupported")
+        };
+        // Assert the value doesn't have more data
+        assert_eq!(val & (!elem_width_mask), 0);
 
-        const ELEMS_PER_V: u32 = (VLEN as u32)/32;
-        // Convert
-        let vd: u8 = (vd as u32 + (idx / ELEMS_PER_V)).try_into()
-            .context(format!("calculating destination register for vd={},idx={}", vd, idx))?;
-        let idx = idx % 4;
+        // TODO refactor to use shifting
+        let elems_per_v: u32 = (VLEN as u32)/elem_width;
+        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
+            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
+        let idx = idx_from_base % elems_per_v;
 
+        // Get the previous value for the vector
         let old_value = self.vreg[vd as usize];
-        let mask = (0xFFFF_FFFF as uVLEN) << (32*idx);
+        // Mask off the element we want to write
+        let mask = (elem_width_mask as uVLEN) << (elem_width*idx);
         let old_value_with_element_removed = old_value & (!mask);
-        let new_value = old_value_with_element_removed | ((val as uVLEN) << (32*idx));
+        // Create a uVLEN value with just the new element, shifted into the right place
+        let new_element_shifted = (val as uVLEN) << (elem_width*idx);
+        // Combine (old value sans element) with (new element)
+        let new_value = old_value_with_element_removed | new_element_shifted;
 
         self.vreg[vd as usize] = new_value;
 
         Ok(())
     }
 
-    /// Load a value from an element in a vertex register group, where EEW = 32.
+    /// Load a value from an element in a vertex register group, with specified EEW
+    /// Requires the type of the value to store matches the EEW.
     /// 
-    /// Example: if VLEN=128bits (4 32-bit elements per register), `vd` = 3, `idx` = 5,
-    /// this would return v4\[96:64\]
-    fn load_u32_vreg(&self, vd: u8, idx: u32) -> Result<u32> {
-        use std::convert::TryInto;
+    /// Example: if EEW=32bits, VLEN=128bits (4 32-bit elements per register), `vd` = 3, `idx` = 5,
+    /// the actual `vd` = 3 + (idx_from_base / 4) = 4, and
+    /// the actual `idx` = idx_from_base % 4 = 1.
+    /// this would return v4\[64:32\] (element 1 of v4)
+    fn load_vreg_elem(&self, eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<uELEN> {
+        let (elem_width_mask, elem_width) : (uELEN, u32) = match eew {
+            Sew::e8  => (0xFF, 8),
+            Sew::e16 => (0xFFFF, 16),
+            Sew::e32 => (0xFFFF_FFFF, 32),
+            Sew::e64 => bail!("64-bit vreg elem unsupported")
+        };
 
-        const ELEMS_PER_V: u32 = (VLEN as u32)/32;
-        // Convert
-        let vd: u8 = (vd as u32 + (idx / ELEMS_PER_V)).try_into()
-            .context(format!("calculating destination register for vd={},idx={}", vd, idx))?;
-        let idx = idx % 4;
+        // TODO refactor to use shifting
+        let elems_per_v: u32 = (VLEN as u32)/elem_width;
+        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
+            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
+        let idx = idx_from_base % elems_per_v;
 
         let full_reg = self.vreg[vd as usize];
-        let individual_elem = ((full_reg >> (32*idx)) & 0xFFFF_FFFF) as u32;
+        // Shift the register down so the new element is at the bottom,
+        // and mask off the other elements
+        let individual_elem = (full_reg >> (elem_width*idx)) & (elem_width_mask as uVLEN);
 
-        Ok(individual_elem)
+        // Convert the element to the expected type and return
+        Ok(individual_elem as uELEN)
     }
 
     /// Dump vector unit state to standard output.
@@ -820,6 +847,23 @@ pub enum Sew {
     e32,
     e64
 }
+
+// trait VElem: BitAnd + std::convert::Into<uVLEN> + std::convert::TryFrom<uVLEN> {
+//     const EW: Sew;
+//     fn from_vec(vec: uVLEN) -> Self;
+// }
+// impl VElem for u8 {
+//     const EW: Sew = Sew::e8;
+//     fn from_vec(vec: u128) -> Self { vec as u8 }
+// }
+// impl VElem for u16 {
+//     const EW: Sew = Sew::e16;
+//     fn from_vec(vec: u128) -> Self { vec as u16 }
+// }
+// impl VElem for u32 {
+//     const EW: Sew = Sew::e32;
+//     fn from_vec(vec: u128) -> Self { vec as u32 }
+// }
 
 /// Length-Mul enum
 /// 
