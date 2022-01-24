@@ -195,6 +195,23 @@ void vector_memcpy_8m8(size_t n, const int32_t* __restrict__ in, int32_t* __rest
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)
 // out = pointer to output data (should be aligned?)
+void vector_memcpy_16m8(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    size_t copied_per_iter = 0;
+    for (; n > 0; n -= copied_per_iter) {
+        copied_per_iter = vsetvl_e16m8(n);
+        // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
+        // but if you wanted to change it it would do vsetvl to set architectural state
+        vint16m8_t data = vle16_v_i16m8(in, copied_per_iter);
+        vse16_v_i16m8(out, data, copied_per_iter);
+
+        in += copied_per_iter;
+        out += copied_per_iter;
+    }
+}
+
+// n = number of elements to copy
+// in = pointer to data (should be aligned to 128-bit?)
+// out = pointer to output data (should be aligned?)
 void vector_memcpy_32m8(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     size_t copied_per_iter = 0;
     for (; n > 0; n -= copied_per_iter) {
@@ -280,13 +297,14 @@ int main(void)
 {
   int *outputDevice = (int*) 0xf0000000; // magic output device
   int result = 0;
-  result |= vector_memcpy_harness(vector_memcpy_32m8);
-  result |= vector_memcpy_harness(vector_memcpy_32mf2) << 1;
-  result |= vector_memcpy_harness(vector_memcpy_strided) << 2;
-  result |= vector_memcpy_harness(vector_memcpy_indexed) << 3;
-  result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 4;
+  result |= vector_memcpy_harness(vector_memcpy_8m8) << 0;
+  result |= vector_memcpy_harness(vector_memcpy_16m8) << 1;
+  result |= vector_memcpy_harness(vector_memcpy_32m8) << 2;
+  result |= vector_memcpy_harness(vector_memcpy_32mf2) << 3;
+  result |= vector_memcpy_harness(vector_memcpy_strided) << 4;
+  result |= vector_memcpy_harness(vector_memcpy_indexed) << 5;
+  result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 6;
 //   result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 5;
-  result |= vector_memcpy_harness(vector_memcpy_8m8) << 6;
   outputDevice[0] = result;
   return result;
 }
