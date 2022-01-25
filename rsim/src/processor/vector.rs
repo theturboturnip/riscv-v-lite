@@ -312,13 +312,9 @@ impl VectorUnit {
                 let op = self.decode_load_store(opcode, inst, &conn)?;
                 use MemOpDir::*;
 
-                if op.dir == Load && vm && rd == 0 {
+                if op.dir == Load && (!vm) && rd == 0 {
                     // If we're masked, we can't load over v0 as that's the mask register
                     bail!("Masked instruction cannot load into v0");
-                }
-
-                if op.nf > 1 {
-                    bail!("Segmented things not yet implemented");
                 }
 
                 if op.evl <= self.vstart {
@@ -335,43 +331,58 @@ impl VectorUnit {
                     Sew::e64 => bail!("unsupported {:?} in vector load/store", op.eew),
                 };
 
+                let elems_per_group = val_times_lmul_over_sew(VLEN as u32, op.eew, op.emul);
+
                 use OverallMemOpKind::*;
                 match (op.dir, op.kind) {
                     (Load, Strided(stride)) => {
+                        if stride > 1 && op.nf > 1 {
+                            bail!("Non-unit stride Load with NFIELDS != 1 ({}) not checked", op.nf);
+                        }
+
                         // i = element index in logical vector (which includes groups)
                         let mut addr = base_addr;
+                        // For each segment
                         for i in self.vstart..op.evl {
-                            // If we aren't masked out...
-                            if !self.idx_masked_out(vm, i as usize) {
-                                // ... load from memory into register
-                                if op.eew == Sew::e8 {
-                                    println!("v{}[{}] <= ({:x})", rd, i, addr);
+                            // For each field
+                            for i_field in 0..op.nf {
+                                // If we aren't masked out...
+                                if !self.idx_masked_out(vm, i as usize) {
+                                    // ... load from memory into register
+                                    self.load_to_vreg(&mut conn, op.eew, addr, rd, i + (i_field as u32 * elems_per_group))?;
                                 }
-                                self.load_to_vreg(&mut conn, op.eew, addr, rd, i)?;
+                                // Either way increment the address
+                                addr += addr_base_step * stride;
                             }
-
-                            addr += addr_base_step * stride;
                         }
                     }
                     (Store, Strided(stride)) => {
+                        if stride > 1 && op.nf > 1 {
+                            bail!("Non-unit stride Store with NFIELDS != 1 ({}) not checked", op.nf);
+                        }
+
                         // i = element index in logical vector (which includes groups)
                         let mut addr = base_addr;
+                        // For each segment
                         for i in self.vstart..op.evl {
-                            // If we aren't masked out...
-                            if !self.idx_masked_out(vm, i as usize) {
-                                // ... store from register into memory
-                                if op.eew == Sew::e8 {
-                                    println!("({:x}) <= v{}[{}]", addr, rd, i);
+                            // For each field
+                            for i_field in 0..op.nf {
+                                // If we aren't masked out...
+                                if !self.idx_masked_out(vm, i as usize) {
+                                    // ... store from register into memory
+                                    self.store_to_mem(&mut conn, op.eew, addr, rd, i + (i_field as u32 * elems_per_group))?;
                                 }
-                                self.store_to_mem(&mut conn, op.eew, addr, rd, i)?;
+                                // Either way increment the address
+                                addr += addr_base_step * stride;
                             }
-
-                            addr += addr_base_step * stride;
                         }
                     }
                     (Load, Indexed{ordered: _ordered, index_ew}) => {
                         if index_ew != Sew::e32 {
                             bail!("Indexed Load with index width != 32 not supported")
+                        }
+                        if op.nf > 1 {
+                            bail!("Indexed Load with NFIELDS != 1 ({}) not supported", op.nf);
                         }
 
                         // i = element index in logical vector (which includes groups)
@@ -390,6 +401,9 @@ impl VectorUnit {
                     (Store, Indexed{ordered: _ordered, index_ew}) => {
                         if index_ew != Sew::e32 {
                             bail!("Indexed Store with index width != 32 not supported")
+                        }
+                        if op.nf > 1 {
+                            bail!("Indexed Store with NFIELDS != 1 ({}) not supported", op.nf);
                         }
 
                         // i = element index in logical vector (which includes groups)
@@ -442,7 +456,6 @@ impl VectorUnit {
         match eew {
             Sew::e8 => {
                 let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
-                println!("({:x}) <= {:x}", addr, val);
                 conn.memory.store_u8(addr, val.try_into()?)?;
             }
             Sew::e16 => {

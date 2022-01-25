@@ -101,7 +101,7 @@ impl Processor {
         use decode::Opcode::*;
         match (opcode, inst) {
             (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
-                let addr = self.sreg[rs1 as usize] + imm;
+                let addr = self.sreg[rs1 as usize].wrapping_add(imm);
                 self.sreg[rd as usize] = match funct3 {
                     // LB, LH, LW sign-extend if necessary
                     0b000 => sign_extend32(self.memory.load_u8(addr)? as u32, 8) as u32, // LB
@@ -115,7 +115,7 @@ impl Processor {
                 };
             }
             (Store, InstructionBits::SType{funct3, rs1, rs2, imm}) => {
-                let addr = self.sreg[rs1 as usize] + imm;
+                let addr = self.sreg[rs1 as usize].wrapping_add(imm);
                 match funct3 {
                     0b000 => self.memory.store_u8(addr, (self.sreg[rs2 as usize] & 0xFF) as u8)?,
                     0b001 => self.memory.store_u16(addr, (self.sreg[rs2 as usize] & 0xFFFF) as u16)?,

@@ -138,8 +138,8 @@ void vector_memcpy_8strided(size_t n, const int32_t* __restrict__ in, int32_t* _
             //    and address offset = N - 1 elements
 
             for (size_t i = 0; i < STRIDE_FACTOR*4; i++) {
-                vint8m1_t data = vlse8_v_i8m1(((void*)in)+i, STRIDE_FACTOR, copied_per_iter);
-                vsse8_v_i8m1(((void*)out)+i, STRIDE_FACTOR, data, copied_per_iter);
+                vint8m1_t data = vlse8_v_i8m1(((char*)in)+i, STRIDE_FACTOR, copied_per_iter);
+                vsse8_v_i8m1(((char*)out)+i, STRIDE_FACTOR, data, copied_per_iter);
             }
 
             in += (copied_per_iter * STRIDE_FACTOR) / 4;
@@ -174,8 +174,8 @@ void vector_memcpy_16strided(size_t n, const int32_t* __restrict__ in, int32_t* 
             //    and address offset = N - 1 elements
 
             for (size_t i = 0; i < STRIDE_FACTOR*2; i++) {
-                vint16m1_t data = vlse16_v_i16m1(((void*)in)+(i*2), STRIDE_FACTOR, copied_per_iter);
-                vsse16_v_i16m1(((void*)out)+(i*2), STRIDE_FACTOR, data, copied_per_iter);
+                vint16m1_t data = vlse16_v_i16m1(((char*)in)+(i*2), STRIDE_FACTOR, copied_per_iter);
+                vsse16_v_i16m1(((char*)out)+(i*2), STRIDE_FACTOR, data, copied_per_iter);
             }
 
             in += (copied_per_iter * STRIDE_FACTOR) / 2;
@@ -300,6 +300,31 @@ void vector_memcpy_32m8(size_t n, const int32_t* __restrict__ in, int32_t* __res
     }
 }
 
+// n = number of elements to copy
+// in = pointer to data (should be aligned to 128-bit?)
+// out_datas = pointer to output datas
+void vector_memcpy_32m2_seg4load(size_t n_seg, const int32_t* __restrict__ in, int32_t* __restrict__ out[4]) {
+    size_t copied_per_iter = 0;
+    for (; n_seg > 0; n_seg -= copied_per_iter) {
+        copied_per_iter = vsetvl_e32m2(n_seg);
+        // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
+        // but if you wanted to change it it would do vsetvl to set architectural state
+        // vint32m8_t data = vle32_v_i32m8(in, copied_per_iter);
+        // vse32_v_i32m8(out, data, copied_per_iter);
+
+        vint32m2_t r,g,b,a;
+        vlseg4e32_v_i32m2(&r, &g, &b, &a, in, copied_per_iter);
+        vse32_v_i32m2(out[0], r, copied_per_iter);
+        vse32_v_i32m2(out[1], g, copied_per_iter);
+        vse32_v_i32m2(out[2], b, copied_per_iter);
+        vse32_v_i32m2(out[3], a, copied_per_iter);
+
+        in += copied_per_iter * 4;
+        for (int i = 0; i < 4; i++)
+            out[i] += copied_per_iter;
+    }
+}
+
 int vector_memcpy_harness(void (*memcpy_fn)(size_t, const int32_t*, int32_t*)) {
     int data[128] = {0};
     int out_data[128] = {0};
@@ -367,6 +392,51 @@ int vector_memcpy_masked_harness(void (*memcpy_fn)(size_t, const int32_t*, int32
     return 1;
 }
 
+int vector_memcpy_segmented_harness_i32(void (*memcpy_fn)(size_t, const int32_t* __restrict__, int32_t* __restrict__ [4])) {
+    // This is different to the normal harness, to better test segmented accesses.
+    // Tests are expected to copy data out into four separate arrays
+
+    int32_t data[128] = {0};
+    int32_t out_r[32] = {0};
+    int32_t out_g[32] = {0};
+    int32_t out_b[32] = {0};
+    int32_t out_a[32] = {0};
+
+    for (int i = 0; i < 128; i++) {
+        data[i] = i;
+    }
+
+    int32_t* out_datas[4] = {out_r, out_g, out_b, out_a};
+
+    // copy 104 elements = 26 segments
+    memcpy_fn(26, data, out_datas);
+
+    // Check all odd indices < 103 of output have been copied
+    // This ensures that the emulator correctly loaded/stored enough values
+    for (int i = 0; i < 26; i++) {
+        if (data[i*4 + 0] != out_r[i]) {
+            return 0;
+        }
+        if (data[i*4 + 1] != out_g[i]) {
+            return 0;
+        }
+        if (data[i*4 + 2] != out_b[i]) {
+            return 0;
+        }
+        if (data[i*4 + 3] != out_a[i]) {
+            return 0;
+        }
+    }
+    // Check that the rest are 0 (the original value)
+    // This ensures that the emulator didn't store more elements than it should have
+    for (int i = 26; i < 32; i++) {
+        if (out_r[i] != 0 || out_g[i] != 0 || out_b[i] != 0 || out_a[i] != 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int main(void)
 {
   int *outputDevice = (int*) 0xf0000000; // magic output device
@@ -380,6 +450,7 @@ int main(void)
   result |= vector_memcpy_harness(vector_memcpy_32strided) << 6;
   result |= vector_memcpy_harness(vector_memcpy_indexed) << 7;
   result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 8;
+  result |= vector_memcpy_segmented_harness_i32(vector_memcpy_32m2_seg4load) << 9;
 //   result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 5;
   outputDevice[0] = result;
   return result;
