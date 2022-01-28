@@ -246,6 +246,8 @@ void vector_memcpy_32mf2(size_t n, const int32_t* __restrict__ in, int32_t* __re
     }
 }
 
+// TODO - find a way to invoke WholeRegister loads/stores
+// There aren't any intrinsics for it as of 28/01/2022
 
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)

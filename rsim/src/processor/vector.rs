@@ -419,6 +419,30 @@ impl VectorUnit {
                             }
                         }
                     }
+                    (Load, WholeRegister) => {
+                        let mut addr = base_addr;
+                        // vstart is ignored, except for the vstart >= evl case above
+                        // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
+                        for i in 0..op.evl {
+                            // We can't be masked out.
+                            // Load from memory into register
+                            self.load_to_vreg(&mut conn, op.eew, addr, rd, i)?;
+
+                            addr += addr_base_step;
+                        }
+                    }
+                    (Store, WholeRegister) => {
+                        let mut addr = base_addr;
+                        // vstart is ignored, except for the vstart >= evl case above
+                        // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
+                        for i in 0..op.evl {
+                            // We can't be masked out.
+                            // Store from register into memory
+                            self.store_to_mem(&mut conn, op.eew, addr, rd, i)?;
+
+                            addr += addr_base_step;
+                        }
+                    }
 
                     _ => bail!("vector memory op {:?} {:?} not yet supported", op.dir, op.kind)
                 }
@@ -488,7 +512,7 @@ impl VectorUnit {
     
             // Get the element width we want to use (which is NOT the same as the one encoded in vtype)
             // EEW = Effective Element Width
-            let eew = match width {
+            let eew_num = match width {
                 0b0001 | 0b0010 | 0b0011 | 0b0100 => bail!("LoadFP uses width for normal floats, not vectors"),
                 0b1000..=0b1111 => bail!("LoadFP using reserved width {}", width),
     
@@ -500,7 +524,7 @@ impl VectorUnit {
                 _ => bail!("LoadFP has impossible width {}", width)
             };
     
-            if eew == 64 {
+            if eew_num == 64 {
                 // We are allowed to reject values of EEW that aren't supported for SEW in vtype
                 // (see section 7.3 of RISC-V V spec)
                 bail!("effective element width of 64 is not supported");
@@ -510,7 +534,7 @@ impl VectorUnit {
     
             // EMUL = Effective LMUL
             // because LMULs can be as small as 1/8th, evaluate it as an integer * 8 (effectively 29.3 fixed point)
-            let emul_times_8 = self.vtype.val_times_lmul_over_sew(eew * 8);
+            let emul_times_8 = self.vtype.val_times_lmul_over_sew(eew_num * 8);
     
             // Limit EMUL to the same values as LMUL
             if emul_times_8 > 64 || emul_times_8 <= 1 {
@@ -535,12 +559,12 @@ impl VectorUnit {
             }
     
             // Convert EEW, EMUL to enums
-            let eew = match eew {
+            let eew = match eew_num {
                 8  => Sew::e8,
                 16 => Sew::e16,
                 32 => Sew::e32,
                 64 => Sew::e64,
-                _ => bail!("Impossible EEW {}", eew)
+                _ => bail!("Impossible EEW {}", eew_num)
             };
             let emul = match emul_times_8 {
                 1 => Lmul::eEighth,
@@ -612,6 +636,14 @@ impl VectorUnit {
             if kind == OverallMemOpKind::ByteMask && eew != Sew::e8 {
                 bail!("Trying to do a byte-masked operation with EEW != 8 is impossible");
             }
+
+            let nf_pow2 = match nf {
+                1 | 2 | 4 | 8 => true,
+                _ => false
+            };
+            if kind == OverallMemOpKind::WholeRegister && !nf_pow2 {
+                bail!("WholeRegister operation with non-power2 nf {} impossible", nf);
+            }
     
             Ok(OverallMemOp {
                 dir: match opcode {
@@ -632,10 +664,16 @@ impl VectorUnit {
                         // We don't have div_ceil in Rust yet, so do (vl + 7) / 8 which is equivalent
                         (self.vl + 7) / 8
                     }
+                    // For WholeRegister, LMUL is ignored
+                    OverallMemOpKind::WholeRegister => (nf as u32)*(VLEN as u32)/eew_num,
                     _ => self.vl
                 },
                 kind,
-                nf
+                nf: match kind {
+                    // WholeRegister loads incorporate NF into EVL calculations, so we don't need it here
+                    OverallMemOpKind::WholeRegister => 1,
+                    _ => nf
+                }
             })
         } else {
             bail!("decode_load_store MUST be passed an instruction of FLdStType, got {:?}", inst)
