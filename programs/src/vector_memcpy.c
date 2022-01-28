@@ -84,6 +84,8 @@ void vector_memcpy_masked(size_t n, const int32_t* __restrict__ in, int32_t* __r
 }
 
 // TODO - Make this work once I figure out which intrinsics actually trigger a unit-stride-mask-load
+// See https://raw.githubusercontent.com/riscv-non-isa/rvv-intrinsic-doc/master/intrinsic_funcs.md
+// This implies vlm_v_bX and vsm_v_bX do it, but clang says they're 'implicit declarations' when I try and use them
 /*
 void vector_memcpy_masked_bytemaskload(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     // Generate mask
@@ -453,7 +455,7 @@ int main(void)
   result |= vector_memcpy_harness(vector_memcpy_indexed) << 7;
   result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 8;
   result |= vector_memcpy_segmented_harness_i32(vector_memcpy_32m2_seg4load) << 9;
-//   result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 5;
+//   result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 10;
   outputDevice[0] = result;
   return result;
 }

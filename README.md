@@ -55,11 +55,14 @@ Currently the vectorized memcpy tests
 - Behaviour when the application vector length is not a multiple of elements per register group - i.e. behaviour for vector loads/stores with a tail
 
 It does NOT test (and thus the emulator doesn't support)
-- Unit WholeRegister, ByteMaskLoad, or FaultOnlyFirst loads
-- Unit WholeRegister or ByteMaskStore stores
+- Unit FaultOnlyFirst loads
+  - Supporting this requires the emulator to understand memory faults, which isn't the case currently
 - Any changes to `vstart`
 - Any accesses to CSRs e.g. `vtype`
 - Most arithmetic
+
+Some modes are implemented, but can't be triggered directly from intrinsics so are not tested:
+- Unit WholeRegister and ByteMask accesses
 
 **You should not need to compile this program yourself - [programs/build/](/programs/build/) has all the artifacts you need**. 
 

@@ -443,6 +443,52 @@ impl VectorUnit {
                             addr += addr_base_step;
                         }
                     }
+                    (Load, ByteMask) => {
+                        if op.eew != Sew::e8 {
+                            bail!("ByteMask {:?} must have EEW = byte", op.eew);
+                        }
+                        if op.nf != 1 {
+                            // See https://github.com/riscv/riscv-opcodes/blob/master/opcodes-rvv
+                            // vlm.v, vsm.v both specify the top bits (i.e. nf) = 0
+                            // this gets incremented by the decode so it must be 1
+                            bail!("NF for ByteMask operations must == 1");
+                        }
+                        if vm == false {
+                            // As above, vlm, vsm cannot be masked out
+                            bail!("ByteMask operations cannot be masked")
+                        }
+
+                        let mut addr = base_addr;
+                        for i in self.vstart..op.evl {
+                            self.load_to_vreg(&mut conn, op.eew, addr, rd, i)?;
+
+                            // Increment the address
+                            addr += addr_base_step;
+                        }
+                    }
+                    (Store, ByteMask) => {
+                        if op.eew != Sew::e8 {
+                            bail!("ByteMask {:?} must have EEW = byte", op.eew);
+                        }
+                        if op.nf != 1 {
+                            // See https://github.com/riscv/riscv-opcodes/blob/master/opcodes-rvv
+                            // vlm.v, vsm.v both specify the top bits (i.e. nf) = 0
+                            // this gets incremented by the decode so it must be 1
+                            bail!("NF for ByteMask operations must == 1");
+                        }
+                        if vm == false {
+                            // As above, vlm, vsm cannot be masked out
+                            bail!("ByteMask operations cannot be masked")
+                        }
+
+                        let mut addr = base_addr;
+                        for i in self.vstart..op.evl {
+                            self.store_to_mem(&mut conn, op.eew, addr, rd, i)?;
+
+                            // Increment the address
+                            addr += addr_base_step;
+                        }
+                    }
 
                     _ => bail!("vector memory op {:?} {:?} not yet supported", op.dir, op.kind)
                 }
@@ -1057,6 +1103,9 @@ enum OverallMemOpKind {
 /// 
 /// This can represent a superset of valid RISC-V V instructions,
 /// e.g. fault-only-first store (which isn't allowed).
+/// 
+/// TODO: merge OverallMemOpKind and this into a single Enum, representing only valid flavors?
+/// e.g. WholeRegister doesn't have NF, FaultOnlyFirst can only be a Load
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 struct OverallMemOp {
     emul: Lmul,
