@@ -9,6 +9,19 @@
 #include <riscv_vector.h>
 #include <stdint.h>
 
+
+// Patch over differences between GCC vector intrinsics and clang ones
+#if defined(__GNUC__) && !defined(__llvm__) && !defined(__INTEL_COMPILER)
+// GNU exts enabled, not in LLVM or Intel, => in GCC
+#define ENABLE_SEG 0
+#define ENABLE_FRAC 0
+#define ENABLE_BYTEMASKLOAD 1
+#else
+#define ENABLE_SEG 1
+#define ENABLE_FRAC 1
+#define ENABLE_BYTEMASKLOAD 0
+#endif
+
 void* memset(void* dest, int ch, size_t count) {
     unsigned char ch_uc = (unsigned char)ch;
     unsigned char* dest_uc = (unsigned char*)dest;
@@ -86,7 +99,7 @@ void vector_memcpy_masked(size_t n, const int32_t* __restrict__ in, int32_t* __r
 // TODO - Make this work once I figure out which intrinsics actually trigger a unit-stride-mask-load
 // See https://raw.githubusercontent.com/riscv-non-isa/rvv-intrinsic-doc/master/intrinsic_funcs.md
 // This implies vlm_v_bX and vsm_v_bX do it, but clang says they're 'implicit declarations' when I try and use them
-/*
+#if ENABLE_BYTEMASKLOAD
 void vector_memcpy_masked_bytemaskload(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     // Generate mask
     uint32_t mask_ints[128] = {0};
@@ -122,7 +135,7 @@ void vector_memcpy_masked_bytemaskload(size_t n, const int32_t* __restrict__ in,
         out += copied_per_iter;
     }
 }
-*/
+#endif // ENABLE_BYTEMASKLOAD
 
 void vector_memcpy_8strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     const size_t STRIDE_FACTOR = 4;
@@ -232,6 +245,7 @@ void vector_memcpy_32strided(size_t n, const int32_t* __restrict__ in, int32_t* 
     }
 }
 
+#if ENABLE_FRAC
 // f2 => LMUL = 1/2, which means only 1/2 of the vector register is used per iteration
 // I would use 1/4, but it doesn't exist for 32bit in the intrinsics
 void vector_memcpy_32mf2(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
@@ -247,6 +261,7 @@ void vector_memcpy_32mf2(size_t n, const int32_t* __restrict__ in, int32_t* __re
         out += copied_per_iter;
     }
 }
+#endif // ENABLE_FRAC
 
 // TODO - find a way to invoke WholeRegister loads/stores
 // There aren't any intrinsics for it as of 28/01/2022
@@ -307,6 +322,7 @@ void vector_memcpy_32m8(size_t n, const int32_t* __restrict__ in, int32_t* __res
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)
 // out_datas = pointer to output datas
+#if ENABLE_SEG
 void vector_memcpy_32m2_seg4load(size_t n_seg, const int32_t* __restrict__ in, int32_t* __restrict__ out[4]) {
     size_t copied_per_iter = 0;
     for (; n_seg > 0; n_seg -= copied_per_iter) {
@@ -328,6 +344,7 @@ void vector_memcpy_32m2_seg4load(size_t n_seg, const int32_t* __restrict__ in, i
             out[i] += copied_per_iter;
     }
 }
+#endif // ENABLE_SEG
 
 int vector_memcpy_harness(void (*memcpy_fn)(size_t, const int32_t*, int32_t*)) {
     int data[128] = {0};
@@ -448,14 +465,26 @@ int main(void)
   result |= vector_memcpy_harness(vector_memcpy_8m8) << 0;
   result |= vector_memcpy_harness(vector_memcpy_16m8) << 1;
   result |= vector_memcpy_harness(vector_memcpy_32m8) << 2;
+  #if ENABLE_FRAC
   result |= vector_memcpy_harness(vector_memcpy_32mf2) << 3;
+  #else
+  result |= 1 << 3;
+  #endif // ENABLE_FRAC
   result |= vector_memcpy_harness(vector_memcpy_8strided) << 4;
   result |= vector_memcpy_harness(vector_memcpy_16strided) << 5;
   result |= vector_memcpy_harness(vector_memcpy_32strided) << 6;
   result |= vector_memcpy_harness(vector_memcpy_indexed) << 7;
   result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 8;
+  #if ENABLE_SEG
   result |= vector_memcpy_segmented_harness_i32(vector_memcpy_32m2_seg4load) << 9;
-//   result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 10;
+  #else
+  result |= 1 << 9;
+  #endif // ENABLE_SEG
+  #if ENABLE_BYTEMASKLOAD
+  result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 10;
+  #else
+  result |= 1 << 10;
+  #endif // ENABLE_BYTEMASKLOAD
   outputDevice[0] = result;
   return result;
 }

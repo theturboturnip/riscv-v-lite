@@ -17,16 +17,28 @@ C_OBJ_FILES := $(patsubst src/%.c,build/%.o,$(C_FILES))
 AS_OBJ_FILES := $(patsubst src/%.s,build/%.o,$(AS_FILES))
 ASP_OBJ_FILES := $(patsubst src/%.S,build/%.o,$(ASP_FILES))
 
-
+COMPILER=llvm-13
+ifeq ($(strip $(COMPILER)),gcc)
+TARGET_ARCH = -march=rv32_v
+RISCV_CONFIG = $(TARGET_ARCH)
+RISCV_PREFIX = /scratch/riscv-gnu-toolchain-rvv-intrinsic/bin/riscv32-unknown-linux-gnu-
+CC = $(RISCV_PREFIX)gcc
+LD = $(RISCV_PREFIX)ld
+OBJCOPY = $(RISCV_PREFIX)objcopy
+OBJDUMP = $(RISCV_PREFIX)objdump
+else ifeq ($(strip $(COMPILER)),llvm-13)
 # settings for the compilers
 TARGET_ARCH = -march=rv32gv0p10
 RISCV_CONFIG = --target=riscv32 $(TARGET_ARCH) -menable-experimental-extensions
-CC = clang-13 $(RISCV_CONFIG) #$(RISCV_PREFIX)gcc
-LD = lld-13 $(RISCV_CONFIG) #$(RISCV_PREFIX)ld
-OBJCOPY = llvm-objcopy-13 #$(RISCV_CONFIG) #$(RISCV_PREFIX)objcopy
-OBJDUMP = llvm-objdump-13 #$(RISCV_CONFIG) #$(RISCV_PREFIX)objdump
+CC = clang-13 $(RISCV_CONFIG)
+LD = lld-13 $(RISCV_CONFIG)
+OBJCOPY = llvm-objcopy-13
+OBJDUMP = llvm-objdump-13
+else
+$(error "Bad COMPILER $(COMPILER)")
+endif
 
-CCFLAGS = -O1 -fno-inline-functions -ffreestanding
+CCFLAGS = -O1 -fno-inline-functions -ffreestanding -Werror=implicit-function-declaration
 
 # Lists of rules: the name of a file, followed by the files it depends on.
 # When typing 'make' not followed by a rule name, the first rule is followed.  This rule depends on
@@ -92,3 +104,5 @@ dirs:
 # 'clean' rule: delete all the files so we can start afresh
 clean:
 	rm -rf $(BUILD)
+
+rebuild: clean all

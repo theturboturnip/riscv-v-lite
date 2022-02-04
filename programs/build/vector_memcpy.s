@@ -728,7 +728,7 @@ main:
 .Lfunc_end14:
 	.size	main, .Lfunc_end14-main
 
-	.ident	"Ubuntu clang version 13.0.1-++20211215022811+5932c004778c-1~exp1~20211215022819.27"
+	.ident	"Ubuntu clang version 13.0.1-++20220120110924+75e33f71c2da-1~exp1~20220120231001.58"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
 	.addrsig_sym vector_memcpy_indexed
