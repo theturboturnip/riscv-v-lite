@@ -16,7 +16,8 @@ pub enum Opcode {
     JumpAndLinkRegister,
     MiscMem,
     Branch,
-    Vector
+    Vector,
+    System
 }
 
 impl TryInto<Opcode> for u8 {
@@ -41,6 +42,8 @@ impl TryInto<Opcode> for u8 {
             0b00_011_11 => Opcode::MiscMem,
 
             0b10_101_11 => Opcode::Vector,
+
+            0b11_100_11 => Opcode::System,
 
             _ => bail!("unhandled opcode {:07b}", self),
         })
@@ -128,12 +131,17 @@ impl InstructionBits {
         }
     }
 
-    pub fn from_i(inst: u32) -> InstructionBits {
+    pub fn from_i(inst: u32, sign_extend_imm: bool) -> InstructionBits {
+        let mut imm = bits!(inst, 20:31);
+        if sign_extend_imm {
+            imm = sign_extend32(imm, 12) as u32;
+        }
+
         InstructionBits::IType {
             rd:     ((bits!(inst, 7:11) as u8)),
             funct3: ((bits!(inst, 12:14) as u8)),
             rs1:    ((bits!(inst, 15:19) as u8)),
-            imm:    (sign_extend32((bits!(inst, 20:31) as u16).into(), 12) as u32),
+            imm:    imm,
         }
     }
 
@@ -226,18 +234,19 @@ pub fn decode(inst: u32) -> Result<(Opcode, InstructionBits)> {
 
     use Opcode::*;
     let instr = match opcode {
-        Load =>             InstructionBits::from_i(inst),
+        Load =>             InstructionBits::from_i(inst, true),
         Store =>            InstructionBits::from_s(inst),
         LoadFP =>           InstructionBits::from_f_ld_st(inst),
         StoreFP =>          InstructionBits::from_f_ld_st(inst),
-        OpImm =>            InstructionBits::from_i(inst),
+        OpImm =>            InstructionBits::from_i(inst, true),
         Op =>               InstructionBits::from_r(inst),
         AddUpperImmPC =>    InstructionBits::from_u(inst),
         LoadUpperImm =>     InstructionBits::from_u(inst),
         JumpAndLink =>      InstructionBits::from_j(inst),
-        JumpAndLinkRegister => InstructionBits::from_i(inst),
+        JumpAndLinkRegister => InstructionBits::from_i(inst, true),
         Branch =>           InstructionBits::from_b(inst),
         Vector =>           InstructionBits::from_v(inst),
+        System =>           InstructionBits::from_i(inst, false),
 
         _ => bail!("opcode {:?} not decoded yet", opcode)
     };

@@ -26,6 +26,33 @@ pub const XLEN: usize = 32;
 pub type uXLEN = u32;
 const_assert!(size_of::<uXLEN>() * 8 == XLEN);
 
+/// Defines if Zicsr extension (CSR instructions) is enabled
+#[allow(non_upper_case_globals)]
+const EXT_Zicsr: bool = true;
+
+pub trait CSRProvider {
+    /// Does the Provider provide access to a given CSR?
+    fn has_csr(&self, csr: u32) -> bool;
+    /// Atomic Read/Write a CSR
+    /// 
+    /// Reads can have side-effects, and some variants of the instruction disable that.
+    /// If `need_read == false', it won't perform a read or any side-effects, and will return an Ok(None).
+    /// Otherwise will return an Ok(Some()) with the previous CSR value, and execute side-effects.
+    fn csr_atomic_read_write(&mut self, csr: u32, need_read: bool, write_val: u32) -> Result<Option<u32>>;
+
+    /// Atomically read and set specific bits in a CSR
+    /// 
+    /// If `set_bits == None', no write will be performed (thus no side-effects of the write will happen).
+    /// The CSR will always be read, and those side-effects will always be applied.
+    fn csr_atomic_read_set(&mut self, csr: u32, set_bits: Option<u32>) -> Result<u32>;
+
+    /// Atomically read and clear specific bits in a CSR
+    /// 
+    /// If `clear_bits == None', no write will be performed (thus no side-effects of the write will happen).
+    /// The CSR will always be read, and those side-effects will always be applied.
+    fn csr_atomic_read_clear(&mut self, csr: u32, clear_bits: Option<u32>) -> Result<u32>;
+}
+
 /// The processor.
 /// Holds scalar registers and configuration, all vector-related stuff is in [VectorUnit]. 
 pub struct Processor {
@@ -219,6 +246,98 @@ impl Processor {
                 }
             }
 
+            (System, InstructionBits::IType{rd, funct3, rs1, imm}) => {
+
+                if funct3 == 0b000 {
+                    bail!("Non-CSR System instructions not supported")
+                } else if EXT_Zicsr {
+                    let csr = imm;
+
+                    let is_imm_instruction = (funct3 & 0b100) != 0;
+                    // rs1 can be an immediate value if the top bit of funct3 is set
+                    // Take the "rs1 value" as either the immediate or the register[rs1]
+                    let rs1_val = if is_imm_instruction {
+                        rs1 as uXLEN
+                    } else {
+                        self.sreg[rs1 as usize]
+                    };
+
+                    match funct3 {
+                        0b001 | 0b101 => {
+                            // Atomic Read-Write CSR
+                            let need_read = rd == 0;
+                            let write_val = rs1_val;
+
+                            // Perform the read/write
+                            let old_csr_val = {
+                                if self.has_csr(csr) {
+                                    self.csr_atomic_read_write(csr, need_read, write_val)?
+                                // } else if v_unit.has_csr(csr) {
+                                //     v_unit.csr_atomic_read_write(csr, need_read, write_val)?
+                                } else {
+                                    bail!("No provider found for Read/Write of CSR 0x{:04x}", csr)
+                                }
+                            };
+
+                            if need_read {
+                                self.sreg[rd as usize] = old_csr_val.unwrap();
+                            }
+                        }
+
+                        0b010 | 0b110 => {
+                            // Atomic Read-Set CSR
+                            // If the register index (or immediate value) is equal to 0, then no write is performed
+                            let write_val = if rs1 == 0 {
+                                None
+                            } else {
+                                Some(rs1_val)
+                            };
+
+                            // Perform the read/write
+                            let old_csr_val = {
+                                if self.has_csr(csr) {
+                                    self.csr_atomic_read_set(csr, write_val)?
+                                // } else if v_unit.has_csr(csr) {
+                                //     v_unit.csr_atomic_read_set(csr, write_val)?
+                                } else {
+                                    bail!("No provider found for Read/Set of CSR 0x{:04x}", csr)
+                                }
+                            };
+
+                            self.sreg[rd as usize] = old_csr_val;
+                        }
+                        0b011 | 0b111 => {
+                            // Atomic Read-Clear CSR
+                            // If the register index (or immediate value) is equal to 0, then no write is performed
+                            let write_val = if rs1 == 0 {
+                                None
+                            } else {
+                                Some(rs1_val)
+                            };
+
+                            // Perform the read/write
+                            let old_csr_val = {
+                                if self.has_csr(csr) {
+                                    self.csr_atomic_read_clear(csr, write_val)?
+                                // } else if v_unit.has_csr(csr) {
+                                //     v_unit.csr_atomic_read_clear(csr, write_val)?
+                                } else {
+                                    bail!("No provider found for Read/Clear of CSR 0x{:04x}", csr)
+                                }
+                            };
+
+                            self.sreg[rd as usize] = old_csr_val;
+                        }
+
+                        0b000 | _ => bail!("impossible funct3")
+                    }
+                } else {
+                    // funct3 != 0 but EXT_Zicsr not enabled
+                    bail!("CSR extension not enabled, CSR instruction won't work");
+                }
+                
+            }
+
             // Delegate all instructions under the Vector opcode to the vector unit
             (Vector, inst) => v_unit.exec_inst(opcode, inst, inst_bits, self.vector_conn())?,
 
@@ -290,4 +409,13 @@ impl Processor {
         }
         v_unit.dump();
     }
+}
+
+impl CSRProvider for Processor {
+    fn has_csr(&self, _csr: u32) -> bool {
+        false
+    }
+    fn csr_atomic_read_write(&mut self, _csr: u32, _need_read: bool, _write_val: u32) -> Result<Option<u32>> { todo!() }
+    fn csr_atomic_read_set(&mut self, _csr: u32, _set_bits: Option<u32>) -> Result<u32> { todo!() }
+    fn csr_atomic_read_clear(&mut self, _csr: u32, _clear_bits: Option<u32>) -> Result<u32> { todo!() }
 }
