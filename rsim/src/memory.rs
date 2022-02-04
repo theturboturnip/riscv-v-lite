@@ -1,11 +1,15 @@
+use std::ops::Range;
 use thiserror::Error;
 use std::convert::TryInto;
 
 /// Simple structure representing main memory.
 /// Supports loads and stores in 8, 16, 32-bit granularity.
 /// Addressable by u32 only.
+/// 
+/// Can assign a specific range to be unmapped, causing memory faults on access.
 pub struct Memory {
     data: Vec<u8>,
+    unmapped_range: Range<usize>,
 }
 
 // This library expects to address a Vec of data by u32 - usize should be at least that large
@@ -21,6 +25,8 @@ pub enum MemError {
     AddressMisaligned(usize),
     #[error("Address {addr:08x} out-of-bounds, bounds = {max:08x}")]
     AddressOOB{ addr: usize, max: usize },
+    #[error("Address {addr:08x} in unmapped range {range:?}")]
+    AddressUnmapped{ addr: usize, range: Range<usize> }, 
     #[error("Program returned a value: 0b{0:016b}")]
     ResultReturned(u32),
 }
@@ -34,7 +40,8 @@ impl Memory {
     /// 
     /// * `path_s` - A path to the source file
     /// * `pad_memory_to` - The length to pad out the data to (bytes)
-    pub fn new_from_file(path_s: &str, pad_memory_to: usize) -> Memory {
+    /// * `unmapped_range` - A range of addresses that should generate invalid access faults. Must be 4-byte aligned.
+    pub fn new_from_file(path_s: &str, pad_memory_to: usize, unmapped_range: Range<usize>) -> Memory {
         use std::io::Read;
         use std::path::Path;
         use std::fs::{File,metadata};
@@ -51,6 +58,7 @@ impl Memory {
 
         Memory {
             data: buffer,
+            unmapped_range,
         }
     }
 
@@ -65,13 +73,14 @@ impl Memory {
     /// ```
     /// use rsim::memory::Memory;
     /// 
-    /// let mem = Memory::new(4);
+    /// let mem = Memory::new(4, None);
     /// assert_eq!(mem.load_u32(0).unwrap(), 0);
     /// assert_eq!(mem.len(), 4);
     /// ```
-    pub fn new(length: usize) -> Memory {
+    pub fn new(length: usize, unmapped_range: Option<Range<usize>>) -> Memory {
         Memory {
-            data: vec![0; length]
+            data: vec![0; length],
+            unmapped_range: unmapped_range.unwrap_or(0..0)
         }
     }
 
@@ -91,12 +100,14 @@ impl Memory {
     /// 
     /// ```
     /// use rsim::memory::{Memory,MemError};
-    /// let mut mem = Memory::new(256);
+    /// let mut mem = Memory::new(256, Some(100..200));
     /// 
-    /// mem.store_u32(0x0, 512).unwrap();
-    /// assert_eq!(mem.load_u32(0x0).unwrap(),      512);
+    /// let x = 50;
+    /// mem.store_u32(0x0, x).unwrap();
+    /// assert_eq!(mem.load_u32(0x0).unwrap(),      x);
     /// assert_eq!(mem.load_u32(0x03).unwrap_err(), MemError::AddressMisaligned(0x03));
     /// assert_eq!(mem.load_u32(512).unwrap_err(),  MemError::AddressOOB{ addr: 512, max: 256 });
+    /// assert_eq!(mem.load_u32(100).unwrap_err(),  MemError::AddressUnmapped{ addr: 100, range: 100..200 });
     /// ```
     pub fn load_u32(&self, addr: u32) -> Result<u32> {
         let addr: usize = addr as usize;
@@ -105,6 +116,8 @@ impl Memory {
             Err(MemError::AddressMisaligned(addr))
         } else if addr + 3 >= self.data.len() {
             Err(MemError::AddressOOB{addr, max: self.data.len()})
+        } else if self.unmapped_range.contains(&addr) {
+            Err(MemError::AddressUnmapped{addr, range: self.unmapped_range.clone()})
         } else {
             // Must be aligned and in-bounds
             Ok(
@@ -127,12 +140,14 @@ impl Memory {
     /// 
     /// ```
     /// use rsim::memory::{Memory,MemError};
-    /// let mut mem = Memory::new(256);
+    /// let mut mem = Memory::new(256, Some(100..200));
     /// 
-    /// mem.store_u16(0x0, 512).unwrap();
-    /// assert_eq!(mem.load_u16(0x0).unwrap(),      512);
+    /// let x = 50;
+    /// mem.store_u16(0x0, x).unwrap();
+    /// assert_eq!(mem.load_u16(0x0).unwrap(),      x);
     /// assert_eq!(mem.load_u16(0x03).unwrap_err(), MemError::AddressMisaligned(0x03));
     /// assert_eq!(mem.load_u16(512).unwrap_err(),  MemError::AddressOOB{ addr: 512, max: 256 });
+    /// assert_eq!(mem.load_u16(100).unwrap_err(),  MemError::AddressUnmapped{ addr: 100, range: 100..200 });
     /// ```
     pub fn load_u16(&self, addr: u32) -> Result<u16> {
         let addr: usize = addr as usize;
@@ -141,6 +156,8 @@ impl Memory {
             Err(MemError::AddressMisaligned(addr))
         } else if addr + 1 >= self.data.len() {
             Err(MemError::AddressOOB{addr, max: self.data.len()})
+        } else if self.unmapped_range.contains(&addr) {
+            Err(MemError::AddressUnmapped{addr, range: self.unmapped_range.clone()})
         } else {
             Ok(
                 ((self.data[addr+1] as u16) << 8) | 
@@ -160,17 +177,21 @@ impl Memory {
     /// 
     /// ```
     /// use rsim::memory::{Memory,MemError};
-    /// let mut mem = Memory::new(256);
+    /// let mut mem = Memory::new(256, Some(100..200));
     /// 
-    /// mem.store_u8(0x0, 16).unwrap();
-    /// assert_eq!(mem.load_u8(0x0).unwrap(),     16);
+    /// let x = 50;
+    /// mem.store_u8(0x0, x).unwrap();
+    /// assert_eq!(mem.load_u8(0x0).unwrap(),     x);
     /// assert_eq!(mem.load_u8(512).unwrap_err(), MemError::AddressOOB{ addr: 512, max: 256 });
+    /// assert_eq!(mem.load_u8(100).unwrap_err(),  MemError::AddressUnmapped{ addr: 100, range: 100..200 });
     /// ```
     pub fn load_u8(&self, addr: u32) -> Result<u8> {
         let addr: usize = addr as usize;
 
         if addr >= self.data.len() {
             Err(MemError::AddressOOB{addr, max: self.data.len()})
+        } else if self.unmapped_range.contains(&addr) {
+            Err(MemError::AddressUnmapped{addr, range: self.unmapped_range.clone()})
         } else {
             Ok(self.data[addr])
         }
@@ -188,12 +209,14 @@ impl Memory {
     /// 
     /// ```
     /// use rsim::memory::{Memory,MemError};
-    /// let mut mem = Memory::new(256);
+    /// let mut mem = Memory::new(256, Some(100..200));
     /// 
-    /// mem.store_u32(0x0, 512).unwrap();
-    /// assert_eq!(mem.load_u32(0x0).unwrap(),      512);
-    /// assert_eq!(mem.store_u32(0x03, 512).unwrap_err(), MemError::AddressMisaligned(0x03));
-    /// assert_eq!(mem.store_u32(512, 512).unwrap_err(),  MemError::AddressOOB{ addr: 512, max: 256 });
+    /// let x = 50;
+    /// mem.store_u32(0x0, x).unwrap();
+    /// assert_eq!(mem.load_u32(0x0).unwrap(),      x);
+    /// assert_eq!(mem.store_u32(0x03, x).unwrap_err(), MemError::AddressMisaligned(0x03));
+    /// assert_eq!(mem.store_u32(512, x).unwrap_err(),  MemError::AddressOOB{ addr: 512, max: 256 });
+    /// assert_eq!(mem.store_u32(100, x).unwrap_err(),  MemError::AddressUnmapped{ addr: 100, range: 100..200 });
     /// 
     /// // Writing to 0xF000_0000 is how the program returns results
     /// assert_eq!(mem.store_u32(0xF000_0000, 42).unwrap_err(),  MemError::ResultReturned(42));
@@ -209,6 +232,8 @@ impl Memory {
             Err(MemError::AddressMisaligned(addr))
         } else if addr + 3 >= self.data.len() {
             Err(MemError::AddressOOB{addr, max: self.data.len()})
+        } else if self.unmapped_range.contains(&addr) {
+            Err(MemError::AddressUnmapped{addr, range: self.unmapped_range.clone()})
         } else {
             self.data[addr + 3] = ((data >> 24) & 0xff).try_into().unwrap();
             self.data[addr + 2] = ((data >> 16) & 0xff).try_into().unwrap();
@@ -230,12 +255,14 @@ impl Memory {
     /// 
     /// ```
     /// use rsim::memory::{Memory,MemError};
-    /// let mut mem = Memory::new(256);
+    /// let mut mem = Memory::new(256, Some(100..200));
     /// 
-    /// mem.store_u16(0x0, 16).unwrap();
-    /// assert_eq!(mem.load_u16(0x0).unwrap(),           16);
-    /// assert_eq!(mem.store_u16(0x03, 16).unwrap_err(), MemError::AddressMisaligned(0x03));
-    /// assert_eq!(mem.store_u16(512, 16).unwrap_err(),  MemError::AddressOOB{ addr: 512, max: 256 });
+    /// let x = 50;
+    /// mem.store_u16(0x0, x).unwrap();
+    /// assert_eq!(mem.load_u16(0x0).unwrap(),           x);
+    /// assert_eq!(mem.store_u16(0x03, x).unwrap_err(), MemError::AddressMisaligned(0x03));
+    /// assert_eq!(mem.store_u16(512, x).unwrap_err(),  MemError::AddressOOB{ addr: 512, max: 256 });
+    /// assert_eq!(mem.store_u16(100, x).unwrap_err(),  MemError::AddressUnmapped{ addr: 100, range: 100..200 });
     /// ```
     pub fn store_u16(&mut self, addr: u32, data: u16) -> Result<()> {
         let addr: usize = addr as usize;
@@ -244,6 +271,8 @@ impl Memory {
             Err(MemError::AddressMisaligned(addr))
         } else if addr + 1 >= self.data.len() {
             Err(MemError::AddressOOB{addr, max: self.data.len()})
+        } else if self.unmapped_range.contains(&addr) {
+            Err(MemError::AddressUnmapped{addr, range: self.unmapped_range.clone()})
         } else {
 
             self.data[addr + 1] = ((data >> 8) & 0xff).try_into().unwrap();
@@ -264,17 +293,21 @@ impl Memory {
     /// 
     /// ```
     /// use rsim::memory::{Memory,MemError};
-    /// let mut mem = Memory::new(256);
+    /// let mut mem = Memory::new(256, Some(100..200));
     /// 
-    /// mem.store_u8(0x0, 16).unwrap();
-    /// assert_eq!(mem.load_u8(0x0).unwrap(),     16);
-    /// assert_eq!(mem.store_u8(512, 16).unwrap_err(), MemError::AddressOOB{ addr: 512, max: 256 });
+    /// let x = 50;
+    /// mem.store_u8(0x0, x).unwrap();
+    /// assert_eq!(mem.load_u8(0x0).unwrap(),     x);
+    /// assert_eq!(mem.store_u8(512, x).unwrap_err(), MemError::AddressOOB{ addr: 512, max: 256 });
+    /// assert_eq!(mem.store_u8(100, x).unwrap_err(),  MemError::AddressUnmapped{ addr: 100, range: 100..200 });
     /// ```
     pub fn store_u8(&mut self, addr: u32, data: u8) -> Result<()> {
         let addr: usize = addr as usize;
 
         if addr >= self.data.len() {
             Err(MemError::AddressOOB{addr, max: self.data.len()})
+        } else if self.unmapped_range.contains(&addr) {
+            Err(MemError::AddressUnmapped{addr, range: self.unmapped_range.clone()})
         } else {
             self.data[addr] = data;
             Ok(())
