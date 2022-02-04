@@ -27,17 +27,19 @@ And some tests embedded in said documentation can be run:
 If an error occurs during execution, including any issues with unimplemented instructions, the processor state will be dumped and an error message will display.
 
 All instructions that occur in the example program are now implemented, so the program should succeed.
-This is signified by writing 1 (or 0 if the program failed) to the address `0xF000_0000`.
+The result of the program is written to the address `0xF000_0000`.
 When this happens, the Memory module will throw an ""error"" to report the success.
 
 ```
 Error: Failed to execute decoded instruction Store SType { funct3: 2, rs1: 11, rs2: 10, imm: 0 }
 
 Caused by:
-    Program returned a value: 1
+    Program returned a value = 0x1FFF (expected 0x1FFF) = 0b0001111111111111
 ```
 
-As the program has returned 1, it has been successful! 🎉
+As the program has returned the expected value, it has been successful! 🎉
+
+The bits of the output represent the outcomes of various tests - see [programs/vector_memcpy.c](/programs/vector_memcpy.c) to tell which bit corresponds to which test.
 
 ## The Program
 
@@ -53,13 +55,12 @@ Currently the vectorized memcpy tests
 - Unmasked Indexed vector loads,stores (SEW=32)
 - Unmasked Segmented vector loads,stores (SEW=32)
 - Unit ByteMask loads, stores
+- Unit FaultOnlyFirst loads (SEW=32, LMUL=1)
 - Behaviour when the application vector length is not a multiple of elements per register group - i.e. behaviour for vector loads/stores with a tail
+- Accesses to CSRs e.g. `vl`
 
-It does NOT test (and thus the emulator doesn't support)
-- Unit FaultOnlyFirst loads
-  - Supporting this requires the emulator to understand memory faults, which isn't the case currently
+It does NOT test (and thus the emulator doesn't necessarily support)
 - Any changes to `vstart`
-- Any accesses to CSRs e.g. `vtype`
 - Most arithmetic
 
 Some modes are implemented, but can't be triggered directly from intrinsics so are not tested:
