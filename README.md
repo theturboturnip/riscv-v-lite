@@ -52,6 +52,7 @@ Currently the vectorized memcpy tests
 - Unmasked Strided vector loads,stores (SEW=8,16,32)
 - Unmasked Indexed vector loads,stores (SEW=32)
 - Unmasked Segmented vector loads,stores (SEW=32)
+- Unit ByteMask loads, stores
 - Behaviour when the application vector length is not a multiple of elements per register group - i.e. behaviour for vector loads/stores with a tail
 
 It does NOT test (and thus the emulator doesn't support)
@@ -62,7 +63,7 @@ It does NOT test (and thus the emulator doesn't support)
 - Most arithmetic
 
 Some modes are implemented, but can't be triggered directly from intrinsics so are not tested:
-- Unit WholeRegister and ByteMask accesses
+- Unit WholeRegister accesses
 
 **You should not need to compile this program yourself - [programs/build/](/programs/build/) has all the artifacts you need**. 
 

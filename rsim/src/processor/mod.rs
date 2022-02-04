@@ -272,8 +272,8 @@ impl Processor {
                             let old_csr_val = {
                                 if self.has_csr(csr) {
                                     self.csr_atomic_read_write(csr, need_read, write_val)?
-                                // } else if v_unit.has_csr(csr) {
-                                //     v_unit.csr_atomic_read_write(csr, need_read, write_val)?
+                                } else if v_unit.has_csr(csr) {
+                                    v_unit.csr_atomic_read_write(csr, need_read, write_val)?
                                 } else {
                                     bail!("No provider found for Read/Write of CSR 0x{:04x}", csr)
                                 }
@@ -297,8 +297,8 @@ impl Processor {
                             let old_csr_val = {
                                 if self.has_csr(csr) {
                                     self.csr_atomic_read_set(csr, write_val)?
-                                // } else if v_unit.has_csr(csr) {
-                                //     v_unit.csr_atomic_read_set(csr, write_val)?
+                                } else if v_unit.has_csr(csr) {
+                                    v_unit.csr_atomic_read_set(csr, write_val)?
                                 } else {
                                     bail!("No provider found for Read/Set of CSR 0x{:04x}", csr)
                                 }
@@ -319,8 +319,8 @@ impl Processor {
                             let old_csr_val = {
                                 if self.has_csr(csr) {
                                     self.csr_atomic_read_clear(csr, write_val)?
-                                // } else if v_unit.has_csr(csr) {
-                                //     v_unit.csr_atomic_read_clear(csr, write_val)?
+                                } else if v_unit.has_csr(csr) {
+                                    v_unit.csr_atomic_read_clear(csr, write_val)?
                                 } else {
                                     bail!("No provider found for Read/Clear of CSR 0x{:04x}", csr)
                                 }

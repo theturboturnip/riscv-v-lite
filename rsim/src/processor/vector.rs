@@ -1,3 +1,4 @@
+use crate::processor::CSRProvider;
 use std::mem::size_of;
 use std::cmp::min;
 use anyhow::{Context, Result};
@@ -800,6 +801,46 @@ impl VectorUnit {
             println!("v{} = 0x{:032x}", i, self.vreg[i]);
         }
         println!("vl: {}\nvtype: {:?}", self.vl, self.vtype);
+    }
+}
+
+impl CSRProvider for VectorUnit {
+    fn has_csr(&self, csr: u32) -> bool {
+        match csr {
+            // Should be implemented, aren't yet
+            0x008 | 0x009 | 0x00A | 0x00F => todo!(),
+
+            0xC20 | 0xC21 | 0xC22 => true,
+
+            _ => false
+        }
+    }
+
+    fn csr_atomic_read_write(&mut self, csr: u32, need_read: bool, write_val: u32) -> Result<Option<u32>> {
+        match csr {
+            0xC20 | 0xC21 | 0xC22 => bail!("CSR 0x{:04x} is read-only, cannot atomic read/write", csr),
+            _ => todo!()
+        }
+    }
+
+    fn csr_atomic_read_set(&mut self, csr: u32, set_bits: Option<u32>) -> Result<u32> {
+        if set_bits != None {
+            match csr {
+                0xC20 | 0xC21 | 0xC22 => bail!("CSR 0x{:04x} is read-only, cannot atomic set", csr),
+                _ => todo!()
+            }
+        } else {
+            match csr {
+                0xC20 => Ok(self.vl),
+                0xC21 => Ok(self.vtype.encode()),
+                0xC22 => Ok((VLEN/8) as u32),
+
+                _ => todo!()
+            }
+        }
+    }
+    fn csr_atomic_read_clear(&mut self, csr: u32, clear_bits: Option<u32>) -> Result<u32> {
+        todo!()
     }
 }
 
