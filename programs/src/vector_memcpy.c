@@ -488,7 +488,7 @@ int vector_unit_faultonlyfirst_test_under_fault(void) {
     // It does individual fault-only-first loads on the boundary of
     // a known unmapped memory region (set in the emulator)
 
-    int32_t* UNMAPPED_REGION_START = 0xE0000000;
+    int32_t* UNMAPPED_REGION_START = 630000;
 
     // Find the number of 32-bit elements in a single vector register
     size_t vlmax = vsetvlmax_e32m1();
@@ -503,8 +503,10 @@ int vector_unit_faultonlyfirst_test_under_fault(void) {
     for (size_t expected_num_copied = 1; expected_num_copied <= vlmax; expected_num_copied++) {
         const int32_t* in = UNMAPPED_REGION_START - expected_num_copied;
 
-        size_t fof_length = 0;
-        vint32m8_t data = vle32ff_v_i32m8(in, &fof_length, vlmax);
+        // reset the length
+        size_t fof_length = vsetvlmax_e32m1();
+        // do a load, see how the length changes
+        vint32m1_t data = vle32ff_v_i32m1(in, &fof_length, vlmax);
         if (fof_length != expected_num_copied)
             return 0;
     }
@@ -515,6 +517,8 @@ int main(void)
 {
   int *outputDevice = (int*) 0xf0000000; // magic output device
   int result = 0;
+
+
   result |= vector_memcpy_harness(vector_memcpy_8m8) << 0;
   result |= vector_memcpy_harness(vector_memcpy_16m8) << 1;
   result |= vector_memcpy_harness(vector_memcpy_32m8) << 2;
@@ -523,10 +527,14 @@ int main(void)
   #else
   result |= 1 << 3;
   #endif // ENABLE_FRAC
+
+
   result |= vector_memcpy_harness(vector_memcpy_8strided) << 4;
   result |= vector_memcpy_harness(vector_memcpy_16strided) << 5;
   result |= vector_memcpy_harness(vector_memcpy_32strided) << 6;
   result |= vector_memcpy_harness(vector_memcpy_indexed) << 7;
+
+
   result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 8;
   #if ENABLE_SEG
   result |= vector_memcpy_segmented_harness_i32(vector_memcpy_32m2_seg4load) << 9;
@@ -539,7 +547,11 @@ int main(void)
   result |= 1 << 10;
   #endif // ENABLE_BYTEMASKLOAD
   result |= vector_memcpy_harness(vector_memcpy_32m8_faultonlyfirst) << 11;
+
+
   result |= vector_unit_faultonlyfirst_test_under_fault() << 12;
+
+  
   outputDevice[0] = result;
   return result;
 }

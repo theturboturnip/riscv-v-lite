@@ -420,6 +420,52 @@ impl VectorUnit {
                             }
                         }
                     }
+                    (Load, FaultOnlyFirst) => {
+                        // FaultOnlyFirst loads can be strided 
+                        // (https://github.com/riscv/riscv-opcodes/blob/master/opcodes-rvv, non-zero NF is allowed)
+
+                        let stride = 1;
+                        // i = element index in logical vector (which includes groups)
+                        let mut addr = base_addr;
+                        // For each segment
+                        'top_loop: for i in self.vstart..op.evl {
+                            // For each field
+                            for i_field in 0..op.nf {
+                                // If we aren't masked out...
+                                if !self.idx_masked_out(vm, i as usize) {
+                                    // ... load from memory into register
+                                    let load_fault: Result<()> = 
+                                        self.load_to_vreg(&mut conn, op.eew, addr, rd, i + (i_field as u32 * elems_per_group));
+
+                                    if i == 0 {
+                                        // Any potentially faulted load should fault as normal if i == 0
+                                        load_fault?;
+                                    } else if load_fault.is_err() {
+                                        // There was *some* error from the load, check if it was a memory fault
+                                        use crate::memory::MemError;
+                                        let load_err = load_fault.unwrap_err();
+                                        // Only shrink the vlen if it's a MemError related to an invalid address
+                                        let error_reduces_vlen = match load_err.downcast_ref::<MemError>() {
+                                            Some(m) => m.is_invalid_address_error(),
+                                            None => false
+                                        };
+                                        if error_reduces_vlen {
+                                            // "vector length vl is reduced to the index of the 
+                                            // element that would have raised an exception"
+                                            self.vl = i;
+                                            // error received, finish instruction
+                                            break 'top_loop;
+                                        } else {
+                                            // Re-raise error
+                                            return Err(load_err)
+                                        }
+                                    }
+                                }
+                                // Either way increment the address
+                                addr += addr_base_step * stride;
+                            }
+                        }
+                    }
                     (Load, WholeRegister) => {
                         let mut addr = base_addr;
                         // vstart is ignored, except for the vstart >= evl case above
@@ -816,7 +862,7 @@ impl CSRProvider for VectorUnit {
         }
     }
 
-    fn csr_atomic_read_write(&mut self, csr: u32, need_read: bool, write_val: u32) -> Result<Option<u32>> {
+    fn csr_atomic_read_write(&mut self, csr: u32, _need_read: bool, _write_val: u32) -> Result<Option<u32>> {
         match csr {
             0xC20 | 0xC21 | 0xC22 => bail!("CSR 0x{:04x} is read-only, cannot atomic read/write", csr),
             _ => todo!()
@@ -839,7 +885,7 @@ impl CSRProvider for VectorUnit {
             }
         }
     }
-    fn csr_atomic_read_clear(&mut self, csr: u32, clear_bits: Option<u32>) -> Result<u32> {
+    fn csr_atomic_read_clear(&mut self, _csr: u32, _clear_bits: Option<u32>) -> Result<u32> {
         todo!()
     }
 }

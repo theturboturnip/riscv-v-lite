@@ -18,7 +18,7 @@ fn main() -> Result<()> {
         .get_matches();
 
     let memory_bin = matches.value_of("memory_bin").unwrap();
-    let mem = Memory::new_from_file(memory_bin, 640_000, 0xE000_0000..0xE000_FFFF);
+    let mem = Memory::new_from_file(memory_bin, 640_000, 630_000..635_000);
     let (mut processor, mut v_unit) = Processor::new(mem);
 
     loop {

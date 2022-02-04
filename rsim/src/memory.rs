@@ -27,8 +27,18 @@ pub enum MemError {
     AddressOOB{ addr: usize, max: usize },
     #[error("Address {addr:08x} in unmapped range {range:?}")]
     AddressUnmapped{ addr: usize, range: Range<usize> }, 
-    #[error("Program returned a value: 0b{0:016b}")]
+    #[error("Program returned a value = 0x{0:04X} (expected 0x1FFF) = 0b{0:016b}")]
     ResultReturned(u32),
+}
+impl MemError {
+    /// Returns `true` if a MemError represents an invalid-address fault
+    pub fn is_invalid_address_error(&self) -> bool {
+        match &self {
+            MemError::AddressOOB{..} | MemError::AddressUnmapped{..} => true,
+            // TODO should this include misaligned address?
+            _ => false
+        }
+    }
 }
 
 pub type Result<T> = std::result::Result<T, MemError>;
