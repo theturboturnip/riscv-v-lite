@@ -96,9 +96,10 @@ void vector_memcpy_masked(size_t n, const int32_t* __restrict__ in, int32_t* __r
     }
 }
 
-// TODO - Make this work once I figure out which intrinsics actually trigger a unit-stride-mask-load
 // See https://raw.githubusercontent.com/riscv-non-isa/rvv-intrinsic-doc/master/intrinsic_funcs.md
-// This implies vlm_v_bX and vsm_v_bX do it, but clang says they're 'implicit declarations' when I try and use them
+// vlm_v_bX and vsm_v_bX *should* exist as intrinsict for bytemask load/store,
+// but LLVM-13 says they're 'implicit declarations' when I try and use them.
+// LLVM-Trunk is required (e.g. LLVM 14+) to use them
 #if ENABLE_BYTEMASKLOAD
 void vector_memcpy_masked_bytemaskload(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     // Generate mask
@@ -321,6 +322,30 @@ void vector_memcpy_32m8(size_t n, const int32_t* __restrict__ in, int32_t* __res
 
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)
+// out = pointer to output data (should be aligned?)
+void vector_memcpy_32m8_faultonlyfirst(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    size_t copied_per_iter = 0;
+    for (; n > 0; n -= copied_per_iter) {
+        copied_per_iter = vsetvl_e32m8(n);
+        // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
+        // but if you wanted to change it it would do vsetvl to set architectural state
+
+        // fault-only-first may modify the vector length
+        // it should not, given our test cases
+        // but if it does, end early (this should trigger an error)
+        size_t new_vl = 0;
+        vint32m8_t data = vle32ff_v_i32m8(in, &new_vl, copied_per_iter);
+        if (new_vl != copied_per_iter) 
+            return;
+        vse32_v_i32m8(out, data, copied_per_iter);
+
+        in += copied_per_iter;
+        out += copied_per_iter;
+    }
+}
+
+// n = number of elements to copy
+// in = pointer to data (should be aligned to 128-bit?)
 // out_datas = pointer to output datas
 #if ENABLE_SEG
 void vector_memcpy_32m2_seg4load(size_t n_seg, const int32_t* __restrict__ in, int32_t* __restrict__ out[4]) {
@@ -458,6 +483,34 @@ int vector_memcpy_segmented_harness_i32(void (*memcpy_fn)(size_t, const int32_t*
     return 1;
 }
 
+int vector_unit_faultonlyfirst_test_under_fault(void) {
+    // This test is different from others.
+    // It does individual fault-only-first loads on the boundary of
+    // a known unmapped memory region (set in the emulator)
+
+    int32_t* UNMAPPED_REGION_START = 0xE0000000;
+
+    // Find the number of 32-bit elements in a single vector register
+    size_t vlmax = vsetvlmax_e32m1();
+
+    for (size_t i = 0; i < vlmax; i++) {
+        *(UNMAPPED_REGION_START - vlmax + i) = i;
+    }
+
+    // for each N in [1, vlmax]
+    //     run a test case that reads N elements before hitting the UNMAPPED_REGION
+    //     assert the resulting vlen == N
+    for (size_t expected_num_copied = 1; expected_num_copied <= vlmax; expected_num_copied++) {
+        const int32_t* in = UNMAPPED_REGION_START - expected_num_copied;
+
+        size_t fof_length = 0;
+        vint32m8_t data = vle32ff_v_i32m8(in, &fof_length, vlmax);
+        if (fof_length != expected_num_copied)
+            return 0;
+    }
+    return 1;
+}
+
 int main(void)
 {
   int *outputDevice = (int*) 0xf0000000; // magic output device
@@ -485,6 +538,8 @@ int main(void)
   #else
   result |= 1 << 10;
   #endif // ENABLE_BYTEMASKLOAD
+  result |= vector_memcpy_harness(vector_memcpy_32m8_faultonlyfirst) << 11;
+  result |= vector_unit_faultonlyfirst_test_under_fault() << 12;
   outputDevice[0] = result;
   return result;
 }
