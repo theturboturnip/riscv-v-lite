@@ -17,7 +17,8 @@ C_OBJ_FILES := $(patsubst src/%.c,build/%.o,$(C_FILES))
 AS_OBJ_FILES := $(patsubst src/%.s,build/%.o,$(AS_FILES))
 ASP_OBJ_FILES := $(patsubst src/%.S,build/%.o,$(ASP_FILES))
 
-COMPILER=llvm-13
+COMPILER=llvm-trunk
+
 ifeq ($(strip $(COMPILER)),gcc)
 TARGET_ARCH = -march=rv32_v
 RISCV_CONFIG = $(TARGET_ARCH)
@@ -34,6 +35,15 @@ CC = clang-13 $(RISCV_CONFIG)
 LD = lld-13 $(RISCV_CONFIG)
 OBJCOPY = llvm-objcopy-13
 OBJDUMP = llvm-objdump-13
+else ifeq ($(strip $(COMPILER)),llvm-trunk)
+# settings for the compilers
+TARGET_ARCH = -march=rv32gv
+RISCV_CONFIG = --target=riscv32 $(TARGET_ARCH) -menable-experimental-extensions
+LLVM_PATH=~/repos/llvm-project/build/bin
+CC = $(LLVM_PATH)/clang $(RISCV_CONFIG)
+LD = $(LLVM_PATH)/lld $(RISCV_CONFIG)
+OBJCOPY = $(LLVM_PATH)/llvm-objcopy
+OBJDUMP = $(LLVM_PATH)/llvm-objdump
 else
 $(error "Bad COMPILER $(COMPILER)")
 endif

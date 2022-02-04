@@ -19,7 +19,7 @@
 #else
 #define ENABLE_SEG 1
 #define ENABLE_FRAC 1
-#define ENABLE_BYTEMASKLOAD 0
+#define ENABLE_BYTEMASKLOAD 1
 #endif
 
 void* memset(void* dest, int ch, size_t count) {
