@@ -4,10 +4,10 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/lib/llvm-13/lib/clang/13.0.1/include"
+                "~/repos/llvm-project/build/lib/clang/15.0.0/include"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang-13",
+            "compilerPath": "~/repos/llvm-project/build/bin/clang",
             "cStandard": "c11",
             "cppStandard": "c++14",
             "intelliSenseMode": "linux-clang-x64"
