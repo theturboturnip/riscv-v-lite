@@ -34,7 +34,7 @@ When this happens, the Memory module will throw an ""error"" to report the succe
 Error: Failed to execute decoded instruction Store SType { funct3: 2, rs1: 11, rs2: 10, imm: 0 }
 
 Caused by:
-    Program returned a value = 0x1FFF (expected 0x1FFF) = 0b0001111111111111
+    Program returned a value = 0x3FFF (expected 0x3FFF) = 0b0011111111111111
 ```
 
 As the program has returned the expected value, it has been successful! 🎉

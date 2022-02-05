@@ -16,12 +16,13 @@
 
 // My version of GCC intrinsics doesn't have the same functions for segmented loads,
 // doesn't support fractional LMUL,
-// doesn't have byte-mask intrinsics,
-// hasn't been tested with the wholereg ASM
+// doesn't have byte-mask intrinsics
 #define ENABLE_SEG 0
 #define ENABLE_FRAC 0
 #define ENABLE_BYTEMASKLOAD 0
-#define ENABLE_ASM_WHOLEREG 0
+// it has been tested with the inline asm whole-register loads
+#define ENABLE_ASM_WHOLEREG 1
+// TODO it doesn't seem to compile fault-only-first correctly, put that behind a #define?
 #else
 // Clang intrinsics are correct for segmented loads,
 // supports fractional LMUL,
@@ -537,6 +538,8 @@ int vector_memcpy_segmented_harness_i32(void (*memcpy_fn)(size_t, const int32_t*
 }
 
 int vector_unit_faultonlyfirst_test_under_fault(void) {
+    // TODO this breaks on GCC 10.2
+
     // This test is different from others.
     // It does individual fault-only-first loads on the boundary of
     // a known unmapped memory region (set in the emulator)
