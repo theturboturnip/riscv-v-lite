@@ -1,5 +1,7 @@
 # riscv-v-lite
-Simplistic RISC-V emulator including Vector extension instructions
+Simplistic RISC-V 32-bit emulator including Vector extension instructions.
+
+Supports `rv32iv` architecture.
 
 ## The Emulator
 
@@ -66,10 +68,24 @@ It does NOT test (and thus the emulator doesn't necessarily support)
 
 **You should not need to compile this program yourself - [programs/build/](/programs/build/) has all the artifacts you need**. 
 
-This uses an LLVM-based toolchain for RISC-V, and assumes LLVM v13 is installed.
-See [https://apt.llvm.org/](https://apt.llvm.org/) for instructions to download LLVM v13.
+### The Makefile
 
+The Makefile supports three different compiler configurations:
+- `gcc`, which use a custom GNU toolchain for 'rv32gv' that includes vector intrinsics
+  - Make sure to set the path to your toolchain in the Makefile, mine probably won't work for you :)
+- `llvm-13`, which uses LLVM v13
+  - Make sure LLVM v13 tools (e.g. `clang-13`) are on your PATH
+- `llvm-trunk`, which uses a custom LLVM build
+  - As for gcc, make sure to set the path to your LLVM bin directory in the Makefile.
+
+See [https://apt.llvm.org/](https://apt.llvm.org/) for instructions to download LLVM v13.
 Required Packages:
 - llvm-13
 - clang-13
 - lld-13
+
+I used [https://github.com/riscv-collab/riscv-gnu-toolchain/tree/rvv-intrinsic](https://github.com/riscv-collab/riscv-gnu-toolchain/tree/rvv-intrinsic) as my base for building GNU toolchain.
+This had a few issues - the largest was that the `riscv-glibc` submodule has moved from GitHub to [Sourceware](https://sourceware.org/git/?p=glibc.git), and even then apparently that repository's 2.29 branch doesn't have the correct patches to work with RV32.
+Thankfully, you don't need `glibc` to work.
+
+GCC's version is very incomplete - `vector_memcpy.c` has to disable some test cases for it to compile.

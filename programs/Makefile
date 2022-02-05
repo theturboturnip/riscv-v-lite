@@ -17,16 +17,21 @@ C_OBJ_FILES := $(patsubst src/%.c,build/%.o,$(C_FILES))
 AS_OBJ_FILES := $(patsubst src/%.s,build/%.o,$(AS_FILES))
 ASP_OBJ_FILES := $(patsubst src/%.S,build/%.o,$(ASP_FILES))
 
+# compiler configuration
+# COMPILER = gcc OR llvm-13 OR llvm-trunk
 COMPILER=llvm-trunk
+# gcc and llvm-trunk assume you have your own build, set the toolchain path here
+GCC_PATH=/scratch/riscv-gnu-toolchain-rvv-intrinsic/bin/riscv32-unknown-linux-gnu-
+LLVM_TRUNK_PATH=~/repos/llvm-project/build/bin/
+# llvm-13 assumes you have llvm-13 utils (e.g. clang-13) on your PATH.
 
 ifeq ($(strip $(COMPILER)),gcc)
 TARGET_ARCH = -march=rv32_v
 RISCV_CONFIG = $(TARGET_ARCH)
-RISCV_PREFIX = /scratch/riscv-gnu-toolchain-rvv-intrinsic/bin/riscv32-unknown-linux-gnu-
-CC = $(RISCV_PREFIX)gcc
-LD = $(RISCV_PREFIX)ld
-OBJCOPY = $(RISCV_PREFIX)objcopy
-OBJDUMP = $(RISCV_PREFIX)objdump
+CC = $(GCC_PATH)gcc
+LD = $(GCC_PATH)ld
+OBJCOPY = $(GCC_PATH)objcopy
+OBJDUMP = $(GCC_PATH)objdump
 else ifeq ($(strip $(COMPILER)),llvm-13)
 # settings for the compilers
 TARGET_ARCH = -march=rv32gv0p10
@@ -39,11 +44,10 @@ else ifeq ($(strip $(COMPILER)),llvm-trunk)
 # settings for the compilers
 TARGET_ARCH = -march=rv32gv
 RISCV_CONFIG = --target=riscv32 $(TARGET_ARCH) -menable-experimental-extensions
-LLVM_PATH=~/repos/llvm-project/build/bin
-CC = $(LLVM_PATH)/clang $(RISCV_CONFIG)
-LD = $(LLVM_PATH)/lld $(RISCV_CONFIG)
-OBJCOPY = $(LLVM_PATH)/llvm-objcopy
-OBJDUMP = $(LLVM_PATH)/llvm-objdump
+CC = $(LLVM_TRUNK_PATH)clang $(RISCV_CONFIG)
+LD = $(LLVM_TRUNK_PATH)lld $(RISCV_CONFIG)
+OBJCOPY = $(LLVM_TRUNK_PATH)llvm-objcopy
+OBJDUMP = $(LLVM_TRUNK_PATH)llvm-objdump
 else
 $(error "Bad COMPILER $(COMPILER)")
 endif
