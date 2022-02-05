@@ -2,7 +2,7 @@ use std::convert::TryInto;
 use bitutils::sign_extend32;
 use anyhow::Result;
 
-#[derive(Debug,Clone,Copy)]
+#[derive(Debug,Clone,Copy,PartialEq,Eq)]
 pub enum Opcode {
     Load,
     Store,

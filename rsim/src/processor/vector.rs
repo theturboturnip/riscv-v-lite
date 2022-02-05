@@ -468,27 +468,41 @@ impl VectorUnit {
                     }
                     (Load, WholeRegister) => {
                         let mut addr = base_addr;
+
+                        // TODO refactor decoding to make this unnecessary
+                        let eew = Sew::e8;
+                        let vl = (op.nf as u32) * ((VLEN/8) as u32);
+                        let addr_base_step = 1;
                         // vstart is ignored, except for the vstart >= evl case above
                         // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
-                        for i in 0..op.evl {
+                        for i in 0..vl {
                             // We can't be masked out.
                             // Load from memory into register
-                            self.load_to_vreg(&mut conn, op.eew, addr, rd, i)?;
+                            // dbg!("ld", i, addr);
+                            self.load_to_vreg(&mut conn, eew, addr, rd, i)?;
 
                             addr += addr_base_step;
                         }
+                        dbg!(addr);
                     }
                     (Store, WholeRegister) => {
                         let mut addr = base_addr;
+
+                        // TODO refactor decoding to make this unnecessary
+                        let eew = Sew::e8;
+                        let vl = (op.nf as u32) * ((VLEN/8) as u32);
+                        let addr_base_step = 1;
                         // vstart is ignored, except for the vstart >= evl case above
                         // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
-                        for i in 0..op.evl {
+                        for i in 0..vl {
                             // We can't be masked out.
                             // Store from register into memory
-                            self.store_to_mem(&mut conn, op.eew, addr, rd, i)?;
+                            // dbg!("st", i, addr);
+                            self.store_to_mem(&mut conn, eew, addr, rd, i)?;
 
                             addr += addr_base_step;
                         }
+                        dbg!(addr);
                     }
                     (Load, ByteMask) => {
                         if op.eew != Sew::e8 {
@@ -757,16 +771,12 @@ impl VectorUnit {
                         // We don't have div_ceil in Rust yet, so do (vl + 7) / 8 which is equivalent
                         (self.vl + 7) / 8
                     }
-                    // For WholeRegister, LMUL is ignored
-                    OverallMemOpKind::WholeRegister => (nf as u32)*(VLEN as u32)/eew_num,
+                    // For WholeRegister, this is ignored
+                    OverallMemOpKind::WholeRegister => self.vl,
                     _ => self.vl
                 },
                 kind,
-                nf: match kind {
-                    // WholeRegister loads incorporate NF into EVL calculations, so we don't need it here
-                    OverallMemOpKind::WholeRegister => 1,
-                    _ => nf
-                }
+                nf: nf
             })
         } else {
             bail!("decode_load_store MUST be passed an instruction of FLdStType, got {:?}", inst)

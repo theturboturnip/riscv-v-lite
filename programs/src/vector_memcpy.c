@@ -13,13 +13,28 @@
 // Patch over differences between GCC vector intrinsics and clang ones
 #if defined(__GNUC__) && !defined(__llvm__) && !defined(__INTEL_COMPILER)
 // GNU exts enabled, not in LLVM or Intel, => in GCC
+
+// My version of GCC intrinsics doesn't have the same functions for segmented loads,
+// doesn't support fractional LMUL,
+// doesn't have byte-mask intrinsics,
+// hasn't been tested with the wholereg ASM
 #define ENABLE_SEG 0
 #define ENABLE_FRAC 0
-#define ENABLE_BYTEMASKLOAD 1
+#define ENABLE_BYTEMASKLOAD 0
+#define ENABLE_ASM_WHOLEREG 0
 #else
+// Clang intrinsics are correct for segmented loads,
+// supports fractional LMUL,
+// clang 14+ has the correct intrinsics for bytemask loads,
+// and clang has been tested with wholereg ASM
 #define ENABLE_SEG 1
 #define ENABLE_FRAC 1
-#define ENABLE_BYTEMASKLOAD 1
+    #if __clang_major__ >= 14
+    #define ENABLE_BYTEMASKLOAD 1
+    #else
+    #define ENABLE_BYTEMASKLOAD 0
+    #endif
+#define ENABLE_ASM_WHOLEREG 1
 #endif
 
 void* memset(void* dest, int ch, size_t count) {
@@ -320,6 +335,44 @@ void vector_memcpy_32m8(size_t n, const int32_t* __restrict__ in, int32_t* __res
     }
 }
 
+
+#if ENABLE_ASM_WHOLEREG
+void vector_memcpy_32m1_wholereg(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    size_t vlmax = vsetvlmax_e32m1();
+
+    size_t copied_per_iter = 0;
+    for (; n > 0; n -= copied_per_iter) {
+        copied_per_iter = vsetvl_e32m1(n);
+
+        vint32m1_t data;
+
+        if (copied_per_iter == vlmax) {
+            // wholereg loads do not have intrinsics, use inline assembly instead
+            // By creating the `data' variable beforehand, we can have the compiler
+            // allocate registers for us.
+            asm volatile(
+                "vl1r.v %0, (%1)" 
+                : "=vr"(data) // output, '=' -> overwrite old value, 'v' -> vector, 'r' -> register
+                : "r"(in)     // input, 'r' -> register
+            );
+            asm volatile(
+                "vs1r.v %1, (%0)" 
+                : "+r"(out)   // output, '+' -> don't overwrite
+                : "vr"(data)
+            );
+
+        } else {
+            data = vle32_v_i32m1(in, copied_per_iter);
+            vse32_v_i32m1(out, data, copied_per_iter);
+        }
+
+        in += copied_per_iter;
+        out += copied_per_iter;
+    }
+}
+#endif // ENABLE_ASM_WHOLEREG
+
+
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)
 // out = pointer to output data (should be aligned?)
@@ -525,7 +578,7 @@ int main(void)
   #if ENABLE_FRAC
   result |= vector_memcpy_harness(vector_memcpy_32mf2) << 3;
   #else
-  result |= 1 << 3;
+  result |= 0 << 3;
   #endif // ENABLE_FRAC
 
 
@@ -539,19 +592,23 @@ int main(void)
   #if ENABLE_SEG
   result |= vector_memcpy_segmented_harness_i32(vector_memcpy_32m2_seg4load) << 9;
   #else
-  result |= 1 << 9;
+  result |= 0 << 9;
   #endif // ENABLE_SEG
   #if ENABLE_BYTEMASKLOAD
   result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 10;
   #else
-  result |= 1 << 10;
+  result |= 0 << 10;
   #endif // ENABLE_BYTEMASKLOAD
   result |= vector_memcpy_harness(vector_memcpy_32m8_faultonlyfirst) << 11;
 
 
   result |= vector_unit_faultonlyfirst_test_under_fault() << 12;
+  #if ENABLE_ASM_WHOLEREG
+  result |= vector_memcpy_harness(vector_memcpy_32m1_wholereg) << 13;
+  #else
+  result |= 0 << 13;
+  #endif // ENABLE_ASM_WHOLEREG
 
-  
   outputDevice[0] = result;
   return result;
 }

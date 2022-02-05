@@ -56,15 +56,13 @@ Currently the vectorized memcpy tests
 - Unmasked Segmented vector loads,stores (SEW=32)
 - Unit ByteMask loads, stores
 - Unit FaultOnlyFirst loads (SEW=32, LMUL=1)
+- Unit WholeRegister accesses (SEW=32, LMUL=1)
 - Behaviour when the application vector length is not a multiple of elements per register group - i.e. behaviour for vector loads/stores with a tail
 - Accesses to CSRs e.g. `vl`
 
 It does NOT test (and thus the emulator doesn't necessarily support)
 - Any changes to `vstart`
 - Most arithmetic
-
-Some modes are implemented, but can't be triggered directly from intrinsics so are not tested:
-- Unit WholeRegister accesses
 
 **You should not need to compile this program yourself - [programs/build/](/programs/build/) has all the artifacts you need**. 
 

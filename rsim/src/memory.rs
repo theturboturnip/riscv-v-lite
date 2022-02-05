@@ -27,7 +27,7 @@ pub enum MemError {
     AddressOOB{ addr: usize, max: usize },
     #[error("Address {addr:08x} in unmapped range {range:?}")]
     AddressUnmapped{ addr: usize, range: Range<usize> }, 
-    #[error("Program returned a value = 0x{0:04X} (expected 0x1FFF) = 0b{0:016b}")]
+    #[error("Program returned a value = 0x{0:04X} (expected 0x3FFF) = 0b{0:016b}")]
     ResultReturned(u32),
 }
 impl MemError {
