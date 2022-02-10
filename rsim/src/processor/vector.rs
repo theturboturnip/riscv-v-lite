@@ -55,7 +55,15 @@ pub struct VectorUnit {
 
     vtype: VType,
     vl: u32,
-    vstart: u32, // Always 0????
+
+    /// This is used by the hardware to support resuming vector instructions after traps.
+    /// e.g. if a vector load hits a page fault at element #N, set vstart to N before taking the trap,
+    /// and the load will resume from vstart when you get back.
+    /// Reset to zero after every vector load instruction.
+    /// 
+    /// This potentially impacts fast paths, 
+    /// e.g. if a fast-path load pulls full lines from memory into a vector register, vstart must be 0.
+    vstart: u32,
 }
 
 /// References to all scalar resources touched by the vector unit.
@@ -557,6 +565,10 @@ impl VectorUnit {
 
             _ => bail!("Unexpected opcode/InstructionBits pair at vector unit")
         }
+
+        // If we get this far, the vector instruction has completed
+        // As per RVVspec 3.7, we "reset the vstart CSR to zero at the end of execution"
+        self.vstart = 0;
 
         Ok(())
     }
