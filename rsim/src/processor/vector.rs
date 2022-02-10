@@ -175,7 +175,7 @@ impl VectorUnit {
 
             Ok(())
         } else {
-            bail!("vector::exec_config instruction MUST be InstructionBits::VType, got {:?} instead", inst);
+            unreachable!("vector::exec_config instruction MUST be InstructionBits::VType, got {:?} instead", inst);
         }
     }
 
@@ -1017,7 +1017,8 @@ impl VType {
             0b010 => Sew::e32,
             0b011 => Sew::e64,
 
-            invalid => bail!("Bad vtype - invalid SEW selected {:b}", invalid)
+            // can't have >2bits
+            invalid => unreachable!("Bad vtype - invalid SEW selected {:b}", invalid)
         };
         let vlmul = match bits!(vtype_bits, 0:2) {
             0b000 => Lmul::e1,
@@ -1030,7 +1031,8 @@ impl VType {
             0b111 => Lmul::eHalf,
 
             0b100 => bail!("Reserved Lmul selected 0b100"), 
-            invalid => bail!("Bad vtype - invalid Lmul selected {:b}", invalid),
+            // can't have >3bits
+            invalid => unreachable!("Bad vtype - invalid Lmul selected {:b}", invalid),
         };
 
         match bits!(vtype_bits, 8:(XLEN-2)) {

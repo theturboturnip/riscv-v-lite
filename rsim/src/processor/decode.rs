@@ -14,7 +14,6 @@ pub enum Opcode {
     LoadUpperImm,
     JumpAndLink,
     JumpAndLinkRegister,
-    MiscMem,
     Branch,
     Vector,
     System
@@ -39,7 +38,6 @@ impl TryInto<Opcode> for u8 {
             0b11_001_11 => Opcode::JumpAndLinkRegister,
             0b11_011_11 => Opcode::JumpAndLink,
             0b11_000_11 => Opcode::Branch,
-            0b00_011_11 => Opcode::MiscMem,
 
             0b10_101_11 => Opcode::Vector,
 
@@ -247,8 +245,6 @@ pub fn decode(inst: u32) -> Result<(Opcode, InstructionBits)> {
         Branch =>           InstructionBits::from_b(inst),
         Vector =>           InstructionBits::from_v(inst),
         System =>           InstructionBits::from_i(inst, false),
-
-        _ => bail!("opcode {:?} not decoded yet", opcode)
     };
 
     Ok((opcode, instr))

@@ -178,7 +178,7 @@ impl Processor {
                         }
                     }
 
-                    _ => bail!("Unexpected OpImm funct3 {:03b}", funct3)
+                    _ => unreachable!("Unexpected OpImm funct3 {:03b}", funct3)
                 };
             }
 
@@ -329,7 +329,7 @@ impl Processor {
                             self.sreg[rd as usize] = old_csr_val;
                         }
 
-                        0b000 | _ => bail!("impossible funct3")
+                        0b000 | _ => unreachable!("impossible funct3")
                     }
                 } else {
                     // funct3 != 0 but EXT_Zicsr not enabled
