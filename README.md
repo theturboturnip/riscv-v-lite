@@ -16,7 +16,7 @@ It is split across multiple files:
 To run the emulator on the example program:
 1. Install Rust as directed by [rust-lang.org](https://www.rust-lang.org/tools/install)
 2. Enter the [rsim/](/rsim/) directory
-3. ```$ cargo run ../programs/build/mem.bin```
+3. ```$ cargo run direct ../programs/build/mem.bin```
 
 Further documentation can be also be generated:
 
