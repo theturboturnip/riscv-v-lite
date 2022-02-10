@@ -1,3 +1,4 @@
+use crate::processor::IllegalInstructionException::UnknownOpcode;
 use std::convert::TryInto;
 use bitutils::sign_extend32;
 use anyhow::Result;
@@ -43,7 +44,7 @@ impl TryInto<Opcode> for u8 {
 
             0b11_100_11 => Opcode::System,
 
-            _ => bail!("unhandled opcode {:07b}", self),
+            _ => bail!(UnknownOpcode(self)),
         })
     }
 }

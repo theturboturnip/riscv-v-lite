@@ -4,10 +4,11 @@ use thiserror::Error;
 pub enum IllegalInstructionException {
     #[error("Unhandled Opcode {0:07b}")]
     UnknownOpcode(u8),
-    #[error("Unsupported {kind} parameter {param} 0x{value:X}")]
-    UnsupportedParam{kind: &'static str, param: &'static str, value: u32},
-    #[error("Haven't implemented instruction {name} yet")]
-    UnimplementedInstruction{name: &'static str},
+    /// Indended use: `UnsupportedParam(format!("Load funct3 {:03b}", funct3))`
+    #[error("Unsupported parameter: {0}")]
+    UnsupportedParam(String),
+    #[error("Haven't implemented instruction {0} yet")]
+    UnimplementedInstruction(&'static str),
     #[error("{0}")]
     MiscDecodeException(String)
 }

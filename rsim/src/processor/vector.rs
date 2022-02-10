@@ -1,3 +1,4 @@
+use crate::processor::IllegalInstructionException::*;
 use crate::processor::CSRProvider;
 use std::mem::size_of;
 use std::cmp::min;
@@ -170,6 +171,8 @@ impl VectorUnit {
                 conn.sreg[rd as usize] = self.vl;
             } else {
                 self.vtype = VType::illegal();
+                // TODO - move this bail to the next vector instruction that executes
+                // Setting vtype to an illegal type is fine, but trying to do anything (other than reconfigure) with invalid vtype isn't
                 bail!("Valid but unsupported vtype: {:b} -> {:?}, elems_per_group {}", vtype_bits, req_vtype, elems_per_group);
             }
 
@@ -219,7 +222,7 @@ impl VectorUnit {
                         let imm = rs1 as u32;
 
                         if self.vtype.vsew != Sew::e32 {
-                            bail!("Sew {:?} != 32 for arithmetic not supported", self.vtype.vsew);
+                            bail!(UnsupportedParam(format!("Sew {:?} != 32 for arithmetic not supported", self.vtype.vsew)));
                         }
 
                         match funct6 {
@@ -251,7 +254,7 @@ impl VectorUnit {
 
                             0b010111 => {
                                 if (!vm) && rd == 0 {
-                                    bail!("Can't handle vmerge on the mask register, because it uses the mask register :)")
+                                    bail!(UnsupportedParam("Can't handle vmerge on the mask register, because it uses the mask register :)".to_string()));
                                 }
 
                                 // vmerge or vmv
@@ -285,14 +288,14 @@ impl VectorUnit {
                                         4 => Lmul::e4,
                                         8 => Lmul::e8,
 
-                                        _ => bail!("Invalid nr encoding in vmv<nr>r.v: nr = {}", nr)
+                                        _ => bail!(UnsupportedParam(format!("Invalid nr encoding in vmv<nr>r.v: nr = {}", nr)))
                                     };
 
                                     let eew = self.vtype.vsew;
 
                                     let evl = val_times_lmul_over_sew(VLEN as u32, eew, emul);
                                     if self.vstart >= evl {
-                                        bail!("evl {} <= vstart {} therefore vector move is no op", evl, self.vstart)
+                                        bail!(UnsupportedParam(format!("evl {} <= vstart {} therefore vector move is no op", evl, self.vstart)))
                                     }
                                     if rd == rs2 {
                                         // architetural no-op
@@ -303,17 +306,17 @@ impl VectorUnit {
                                         self.vreg[rd as usize + vx] = self.vreg[rs2 as usize + vx];
                                     }
                                 } else {
-                                    bail!("vsmul not implemented");
+                                    bail!(UnimplementedInstruction("vsmul"));
                                 }
                             }
 
-                            _ => bail!("Vector arithmetic funct3 {:03b} funct6 {:06b} not yet handled", funct3, funct6)
+                            _ => bail!(MiscDecodeException(format!(
+                                    "Vector arithmetic funct3 {:03b} funct6 {:06b} not yet handled", funct3, funct6)
+                            ))
                         }
                     }
 
-
-
-                    _ => bail!("Vector arithmetic funct3 {:03b} currently not supported", funct3)
+                    _ => bail!(UnsupportedParam(format!("Vector arithmetic funct3 {:03b} currently not supported", funct3)))
                 }
             }
 
@@ -346,7 +349,7 @@ impl VectorUnit {
                 match (op.dir, op.kind) {
                     (Load, Strided(stride)) => {
                         if stride > 1 && op.nf > 1 {
-                            bail!("Non-unit stride Load with NFIELDS != 1 ({}) not checked", op.nf);
+                            println!("Non-unit stride Load with NFIELDS != 1 ({}) not checked", op.nf);
                         }
 
                         // i = element index in logical vector (which includes groups)
@@ -367,7 +370,7 @@ impl VectorUnit {
                     }
                     (Store, Strided(stride)) => {
                         if stride > 1 && op.nf > 1 {
-                            bail!("Non-unit stride Store with NFIELDS != 1 ({}) not checked", op.nf);
+                            println!("Non-unit stride Store with NFIELDS != 1 ({}) not checked", op.nf);
                         }
 
                         // i = element index in logical vector (which includes groups)
@@ -1039,6 +1042,8 @@ impl VType {
             0 => {
                 // As expected, all middle bits should be zero
             },
+            // TODO - how to handle this? the vector spec says these encodings are "reserved",
+            // do we throw a parseable error on that?
             invalid => bail!("Bad vtype - reserved middle bits nonzero: {:b}", invalid)
         }
 

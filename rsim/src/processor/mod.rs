@@ -1,3 +1,5 @@
+use crate::processor::IllegalInstructionException::MiscDecodeException;
+use crate::processor::IllegalInstructionException::UnsupportedParam;
 use std::mem::size_of;
 use anyhow::{Context,Result};
 
@@ -142,7 +144,7 @@ impl Processor {
                     0b100 => self.memory.load_u8(addr)? as u32, // LBU
                     0b101 => self.memory.load_u16(addr)? as u32, // LBU
 
-                    _ => bail!("Unexpected Load funct3 {:03b}", funct3)
+                    _ => bail!(UnsupportedParam(format!("Load funct3 {:03b}", funct3)))
                 };
             }
             (Store, InstructionBits::SType{funct3, rs1, rs2, imm}) => {
@@ -152,7 +154,7 @@ impl Processor {
                     0b001 => self.memory.store_u16(addr, (self.sreg[rs2 as usize] & 0xFFFF) as u16)?,
                     0b010 => self.memory.store_u32(addr, self.sreg[rs2 as usize])?,
                     
-                    _ => bail!("Unexpected Store funct3 {:03b}", funct3)
+                    _ => bail!(UnsupportedParam(format!("Store funct3 {:03b}", funct3)))
                 };
             }
 
@@ -182,7 +184,7 @@ impl Processor {
                         }
                     }
 
-                    _ => unreachable!("Unexpected OpImm funct3 {:03b}", funct3)
+                    _ => unreachable!("OpImm funct3 {:03b}", funct3)
                 };
             }
 
@@ -205,7 +207,7 @@ impl Processor {
                     (0, 0b110) => x | y, // OR
                     (0, 0b111) => x & y, // AND
 
-                    _ => bail!("Unexpected Op funct7/3: {:07b}, {:03b}", funct7, funct3)
+                    _ => bail!(UnsupportedParam(format!("Op funct7/3: {:07b}, {:03b}", funct7, funct3)))
                 };
             }
 
@@ -242,7 +244,7 @@ impl Processor {
                     0b110 => (src1 as u32) < (src2 as u32), // BLTU
                     0b111 => (src1 as u32) > (src2 as u32), // BGEU
 
-                    _ => bail!("Unexpected funct3 for branch {:03b}", funct3)
+                    _ => bail!(UnsupportedParam(format!("funct3 for branch {:03b}", funct3)))
                 };
 
                 if take_branch {
@@ -348,15 +350,17 @@ impl Processor {
             (LoadFP | StoreFP, InstructionBits::FLdStType{width, ..}) => {
                 // Check the access width
                 match width {
-                    0b0001 | 0b0010 | 0b0011 | 0b0100 => bail!("LoadFP/StoreFP uses width for actual floats, not supported"),
-                    0b1000..=0b1111 => bail!("LoadFP/StoreFP using reserved width {}", width),
+                    0b0001 | 0b0010 | 0b0011 | 0b0100 => 
+                        bail!(UnsupportedParam(format!("LoadFP/StoreFP uses width for actual floats, not supported"))),
+                    0b1000..=0b1111 => 
+                        bail!(UnsupportedParam(format!("LoadFP/StoreFP using reserved width {}", width))),
 
                     // This width corresponds to a vector, delegate this instruction to the vector unit
                     _ => v_unit.exec_inst(opcode, inst, inst_bits, self.vector_conn())?
                 }
             },
 
-            _ => bail!("Unexpected opcode/InstructionBits pair")
+            _ => bail!(MiscDecodeException("Unexpected opcode/InstructionBits pair".to_string()))
         }
 
         Ok(next_pc)
@@ -403,6 +407,7 @@ impl Processor {
                     println!("Found Memory error");
                     return Err(err)
                 } else {
+                    println!("Untrappable error");
                     return Err(err)
                 }
             }
