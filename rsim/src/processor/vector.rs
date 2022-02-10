@@ -4,7 +4,7 @@ use std::cmp::min;
 use anyhow::{Context, Result};
 use std::convert::{TryInto};
 
-use crate::memory::Memory;
+use crate::processor::memory::Memory;
 
 use super::decode::{Opcode,InstructionBits};
 
@@ -449,13 +449,13 @@ impl VectorUnit {
                                         // Any potentially faulted load should fault as normal if i == 0
                                         load_fault?;
                                     } else if load_fault.is_err() {
+                                        use crate::processor::MemoryException;
                                         // There was *some* error from the load, check if it was a memory fault
-                                        use crate::memory::MemError;
                                         let load_err = load_fault.unwrap_err();
                                         // Only shrink the vlen if it's a MemError related to an invalid address
-                                        let error_reduces_vlen = match load_err.downcast_ref::<MemError>() {
-                                            Some(m) => m.is_invalid_address_error(),
-                                            None => false
+                                        let error_reduces_vlen = match load_err.downcast_ref::<MemoryException>() {
+                                            Some(MemoryException::AddressUnmapped{..}) => true,
+                                            _ => false
                                         };
                                         if error_reduces_vlen {
                                             // "vector length vl is reduced to the index of the 

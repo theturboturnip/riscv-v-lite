@@ -7,8 +7,6 @@ extern crate anyhow;
 #[macro_use]
 extern crate static_assertions;
 
-pub mod memory;
 pub mod processor;
 
-pub use memory::Memory;
-pub use processor::Processor;
+pub use processor::{Processor,Memory};

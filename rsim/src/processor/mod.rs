@@ -3,7 +3,11 @@ use anyhow::{Context,Result};
 
 use bitutils::sign_extend32;
 
-use super::memory::Memory;
+pub mod memory;
+pub use memory::Memory;
+
+pub mod exceptions;
+use exceptions::{IllegalInstructionException,MemoryException};
 
 pub mod decode;
 use decode::{decode, InstructionBits};
@@ -366,25 +370,48 @@ impl Processor {
     pub fn exec_step(&mut self, v_unit: &mut VectorUnit) -> Result<()> {
         self.running = true;
 
-        // Fetch
-        let inst_bits = self.memory.load_u32(self.pc).context("Couldn't load next instruction")?;
+        let next_pc_res: Result<u32> = {
+            // Fetch
+            let inst_bits = self.memory.load_u32(self.pc).context("Couldn't load next instruction")?;
 
-        // Decode
-        let (opcode, inst) = decode(inst_bits)
-            .with_context(|| format!("Failed to decode instruction {:08x}", inst_bits))?;
+            // Decode
+            let (opcode, inst) = decode(inst_bits)
+                .with_context(|| format!("Failed to decode instruction {:08x}", inst_bits))?;
 
-        // Execute
-        let next_pc = self.process_inst(v_unit, inst_bits, opcode, inst)
-            .with_context(|| format!("Failed to execute decoded instruction {:?} {:?}", opcode, inst))
-            ?;
+            // Execute
+            self.process_inst(v_unit, inst_bits, opcode, inst)
+                .with_context(|| format!("Failed to execute decoded instruction {:?} {:?}", opcode, inst))
+        };
+
+        let next_pc = match next_pc_res {
+            Ok(val) => {
+                if val % 4 != 0 {
+                    return Err(anyhow!(
+                        MemoryException::JumpMisaligned{addr: val as usize, expected: 4}
+                    ))
+                } else {
+                    val
+                }
+            },
+            Err(err) => {
+                if let Some(_iie) = err.downcast_ref::<IllegalInstructionException>() {
+                    // TODO - trap, return new PC
+                    println!("Found Illegal Instruction error");
+                    return Err(err)
+                } else if let Some(_mem) = err.downcast_ref::<MemoryException>() {
+                    // TODO - trap, return new PC
+                    println!("Found Memory error");
+                    return Err(err)
+                } else {
+                    return Err(err)
+                }
+            }
+        };
 
         // Restore x0 => 0
         self.sreg[0] = 0;
 
         // Increment PC
-        if next_pc % 4 != 0 {
-            bail!("PC was set to a misaligned value {:?}", next_pc);
-        }
         self.pc = next_pc;
 
         Ok(())
