@@ -39,7 +39,10 @@ const EXT_Zicsr: bool = true;
 pub trait CSRProvider {
     /// Does the Provider provide access to a given CSR?
     fn has_csr(&self, csr: u32) -> bool;
+    
     /// Atomic Read/Write a CSR
+    /// 
+    /// Will only be called on `csr` if `has_csr(csr) == true`
     /// 
     /// Reads can have side-effects, and some variants of the instruction disable that.
     /// If `need_read == false', it won't perform a read or any side-effects, and will return an Ok(None).
@@ -48,11 +51,15 @@ pub trait CSRProvider {
 
     /// Atomically read and set specific bits in a CSR
     /// 
+    /// Will only be called on `csr` if `has_csr(csr) == true`
+    /// 
     /// If `set_bits == None', no write will be performed (thus no side-effects of the write will happen).
     /// The CSR will always be read, and those side-effects will always be applied.
     fn csr_atomic_read_set(&mut self, csr: u32, set_bits: Option<u32>) -> Result<u32>;
 
     /// Atomically read and clear specific bits in a CSR
+    /// 
+    /// Will only be called on `csr` if `has_csr(csr) == true`
     /// 
     /// If `clear_bits == None', no write will be performed (thus no side-effects of the write will happen).
     /// The CSR will always be read, and those side-effects will always be applied.
@@ -383,20 +390,18 @@ impl Processor {
                 .with_context(|| format!("Failed to decode instruction {:08x}", inst_bits))?;
 
             // Execute
-            self.process_inst(v_unit, inst_bits, opcode, inst)
-                .with_context(|| format!("Failed to execute decoded instruction {:?} {:?}", opcode, inst))
+            let next_pc = self.process_inst(v_unit, inst_bits, opcode, inst)
+                .with_context(|| format!("Failed to execute decoded instruction {:?} {:?}", opcode, inst))?;
+
+            if next_pc % 4 != 0 {
+                anyhow!(MemoryException::JumpMisaligned{addr: next_pc as usize, expected: 4})
+            } else {
+                Ok(next_pc)
+            }
         };
 
         let next_pc = match next_pc_res {
-            Ok(val) => {
-                if val % 4 != 0 {
-                    return Err(anyhow!(
-                        MemoryException::JumpMisaligned{addr: val as usize, expected: 4}
-                    ))
-                } else {
-                    val
-                }
-            },
+            Ok(val) => val,
             Err(err) => {
                 if let Some(_iie) = err.downcast_ref::<IllegalInstructionException>() {
                     // TODO - trap, return new PC
