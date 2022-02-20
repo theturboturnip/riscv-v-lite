@@ -394,7 +394,7 @@ impl Processor {
                 .with_context(|| format!("Failed to execute decoded instruction {:?} {:?}", opcode, inst))?;
 
             if next_pc % 4 != 0 {
-                anyhow!(MemoryException::JumpMisaligned{addr: next_pc as usize, expected: 4})
+                Err(MemoryException::JumpMisaligned{addr: next_pc as usize, expected: 4})?
             } else {
                 Ok(next_pc)
             }
