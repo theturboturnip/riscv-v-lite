@@ -17,6 +17,9 @@ use decode::{decode, InstructionBits};
 pub mod vector;
 use vector::{VectorUnit, VectorUnitConnection};
 
+mod elements;
+use elements::{RV32RegisterFile,RegisterFile};
+
 /// Scalar register length in bits
 pub const XLEN: usize = 32;
 
@@ -72,7 +75,7 @@ pub struct Processor {
     pub running: bool,
     pub memory: Memory,
     pc: uXLEN,
-    sreg: [uXLEN; 32],
+    sreg: RV32RegisterFile,
 }
 
 impl Processor {
@@ -86,7 +89,7 @@ impl Processor {
             running: false,
             memory: mem,
             pc: 0,
-            sreg: [0; 32]
+            sreg: RV32RegisterFile::default()
         };
         let mut v = VectorUnit::new();
 
@@ -122,7 +125,7 @@ impl Processor {
     pub fn reset(&mut self, v_unit: &mut VectorUnit) {
         self.running = false;
         self.pc = 0;
-        self.sreg = [0; 32];
+        self.sreg.reset();
 
         v_unit.reset();
     }
@@ -141,8 +144,8 @@ impl Processor {
         use decode::Opcode::*;
         match (opcode, inst) {
             (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
-                let addr = self.sreg[rs1 as usize].wrapping_add(imm);
-                self.sreg[rd as usize] = match funct3 {
+                let addr = self.sreg.read(rs1)?.wrapping_add(imm);
+                let new_val = match funct3 {
                     // LB, LH, LW sign-extend if necessary
                     0b000 => sign_extend32(self.memory.load_u8(addr)? as u32, 8) as u32, // LB
                     0b001 => sign_extend32(self.memory.load_u16(addr)? as u32, 16) as u32, // LH
@@ -153,21 +156,22 @@ impl Processor {
 
                     _ => bail!(UnsupportedParam(format!("Load funct3 {:03b}", funct3)))
                 };
+                self.sreg.write(rd, new_val)?;
             }
             (Store, InstructionBits::SType{funct3, rs1, rs2, imm}) => {
-                let addr = self.sreg[rs1 as usize].wrapping_add(imm);
+                let addr = self.sreg.read(rs1)?.wrapping_add(imm);
                 match funct3 {
-                    0b000 => self.memory.store_u8(addr, (self.sreg[rs2 as usize] & 0xFF) as u8)?,
-                    0b001 => self.memory.store_u16(addr, (self.sreg[rs2 as usize] & 0xFFFF) as u16)?,
-                    0b010 => self.memory.store_u32(addr, self.sreg[rs2 as usize])?,
+                    0b000 => self.memory.store_u8(addr, (self.sreg.read(rs2)? & 0xFF) as u8)?,
+                    0b001 => self.memory.store_u16(addr, (self.sreg.read(rs2)? & 0xFFFF) as u16)?,
+                    0b010 => self.memory.store_u32(addr, (self.sreg.read(rs2)? & 0xFFFF_FFFF) as u32)?,
                     
                     _ => bail!(UnsupportedParam(format!("Store funct3 {:03b}", funct3)))
                 };
             }
 
             (OpImm, InstructionBits::IType{rd, funct3, rs1, imm}) => {
-                let input = self.sreg[rs1 as usize];
-                self.sreg[rd as usize] = match (imm, funct3) {
+                let input = self.sreg.read(rs1)?;
+                let new_val = match (imm, funct3) {
                     (imm, 0b000) => input.wrapping_add(imm), // ADDI
                     (imm, 0b010) => if (input as i32) < (imm as i32) { 1 } else { 0 }, // SLTI
                     (imm, 0b011) => if input < imm { 1 } else { 0 }, // SLTU
@@ -193,13 +197,14 @@ impl Processor {
 
                     _ => unreachable!("OpImm funct3 {:03b}", funct3)
                 };
+                self.sreg.write(rd, new_val)?;
             }
 
             (Op, InstructionBits::RType{rd, funct3, rs1, rs2, funct7}) => {
                 const ALT: u8 = 0b0100000;
-                let x = self.sreg[rs1 as usize];
-                let y = self.sreg[rs2 as usize];
-                self.sreg[rd as usize] = match (funct7, funct3) {
+                let x = self.sreg.read(rs1)?;
+                let y = self.sreg.read(rs2)?;
+                let new_val = match (funct7, funct3) {
                     (0, 0b000) => x.wrapping_add(y), // ADD
                     (ALT, 0b000) => x.wrapping_sub(y), // SUB
 
@@ -216,32 +221,33 @@ impl Processor {
 
                     _ => bail!(UnsupportedParam(format!("Op funct7/3: {:07b}, {:03b}", funct7, funct3)))
                 };
+                self.sreg.write(rd, new_val)?;
             }
 
             (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
                 let addr = imm + self.pc;
-                self.sreg[rd as usize] = addr;
+                self.sreg.write(rd, addr)?;
             }
 
             (LoadUpperImm, InstructionBits::UType{rd, imm}) => {
-                self.sreg[rd as usize] = imm;
+                self.sreg.write(rd, imm)?;
             }
 
             (JumpAndLink, InstructionBits::JType{rd, imm}) => {
-                self.sreg[rd as usize] = self.pc + 4;
+                self.sreg.write(rd, self.pc + 4)?;
                 next_pc = self.pc.wrapping_add(imm);
             }
             (JumpAndLinkRegister, InstructionBits::IType{rd, funct3: 0b000, rs1, imm}) => {
-                next_pc = self.sreg[rs1 as usize].wrapping_add(imm);
+                next_pc = self.sreg.read(rs1)?.wrapping_add(imm);
                 // Unset bottom bit
-                next_pc = next_pc & 0xFFFF_FFFE;
+                next_pc = next_pc & (!1);
 
-                self.sreg[rd as usize] = self.pc + 4;
+                self.sreg.write(rd, self.pc + 4)?;
             }
 
             (Branch, InstructionBits::BType{funct3, rs1, rs2, imm}) => {
-                let src1 = self.sreg[rs1 as usize];
-                let src2 = self.sreg[rs2 as usize];
+                let src1 = self.sreg.read(rs1)?;
+                let src2 = self.sreg.read(rs2)?;
 
                 let take_branch = match funct3 {
                     0b000 => src1 == src2, // BEQ
@@ -272,7 +278,7 @@ impl Processor {
                     let rs1_val = if is_imm_instruction {
                         rs1 as uXLEN
                     } else {
-                        self.sreg[rs1 as usize]
+                        self.sreg.read(rs1)?
                     };
 
                     match funct3 {
@@ -293,7 +299,7 @@ impl Processor {
                             };
 
                             if need_read {
-                                self.sreg[rd as usize] = old_csr_val.unwrap();
+                                self.sreg.write(rd, old_csr_val.unwrap())?;
                             }
                         }
 
@@ -317,7 +323,7 @@ impl Processor {
                                 }
                             };
 
-                            self.sreg[rd as usize] = old_csr_val;
+                            self.sreg.write(rd, old_csr_val)?;
                         }
                         0b011 | 0b111 => {
                             // Atomic Read-Clear CSR
@@ -339,7 +345,7 @@ impl Processor {
                                 }
                             };
 
-                            self.sreg[rd as usize] = old_csr_val;
+                            self.sreg.write(rd, old_csr_val)?;
                         }
 
                         0b000 | _ => unreachable!("impossible funct3")
@@ -381,6 +387,8 @@ impl Processor {
     pub fn exec_step(&mut self, v_unit: &mut VectorUnit) -> Result<()> {
         self.running = true;
 
+        self.sreg.start_tracking()?;
+
         let next_pc_res: Result<u32> = {
             // Fetch
             let inst_bits = self.memory.load_u32(self.pc).context("Couldn't load next instruction")?;
@@ -400,6 +408,9 @@ impl Processor {
             }
         };
 
+        // TODO use this for something
+        let _register_file_actions = self.sreg.end_tracking()?;
+
         let next_pc = match next_pc_res {
             Ok(val) => val,
             Err(err) => {
@@ -418,9 +429,6 @@ impl Processor {
             }
         };
 
-        // Restore x0 => 0
-        self.sreg[0] = 0;
-
         // Increment PC
         self.pc = next_pc;
 
@@ -429,21 +437,8 @@ impl Processor {
 
     /// Dump processor and vector unit state to standard output.
     pub fn dump(&self, v_unit: &mut VectorUnit) {
-        const REGISTER_NAMES: [&str; 32] = [
-            "zero", "ra", "sp", "gp",
-            "tp", "t0", "t1", "t2",
-            "fp", "s1", "a0", "a1",
-            "a2", "a3", "a4", "a5",
-            "a6", "a7", "s2", "s3",
-            "s4", "s5", "s6", "s7",
-            "s8", "s9", "s10", "s11",
-            "t3", "t4", "t5", "t6"
-        ];
-
         println!("running: {:?}\npc: 0x{:08x}", self.running, self.pc);
-        for i in 0..32 {
-            println!("x{} = {} = 0x{:08x}", i, REGISTER_NAMES[i], self.sreg[i]);
-        }
+        self.sreg.dump();
         v_unit.dump();
     }
 }

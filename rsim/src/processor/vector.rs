@@ -1,3 +1,4 @@
+use crate::processor::RegisterFile;
 use crate::processor::IllegalInstructionException::*;
 use crate::processor::CSRProvider;
 use std::mem::size_of;
@@ -69,7 +70,7 @@ pub struct VectorUnit {
 
 /// References to all scalar resources touched by the vector unit.
 pub struct VectorUnitConnection<'a> {
-    pub sreg: &'a mut [uXLEN; 32],
+    pub sreg: &'a mut dyn RegisterFile<u32>,
     pub memory: &'a mut Memory,
 }
 
@@ -114,7 +115,7 @@ impl VectorUnit {
                     // Read AVL from a register
                     if rs1 != 0 {
                         // default case, just read it out
-                        conn.sreg[rs1 as usize]
+                        conn.sreg.read(rs1)?
                     } else {
                         if rd != 0 {
                             // rs1 == 0, rd != 0
@@ -145,7 +146,7 @@ impl VectorUnit {
                     zimm10 as u32
                 },
                 ConfigKind::vsetvl => {
-                    conn.sreg[rs2 as usize] 
+                    conn.sreg.read(rs2)? 
                 },
             };
             // Try to parse vtype bits
@@ -168,7 +169,7 @@ impl VectorUnit {
                 // TODO - section 6.3 shows more constraints on setting VL
                 self.vl = min(elems_per_group, avl);
 
-                conn.sreg[rd as usize] = self.vl;
+                conn.sreg.write(rd, self.vl)?;
             } else {
                 self.vtype = VType::illegal();
                 // TODO - move this bail to the next vector instruction that executes
@@ -321,7 +322,7 @@ impl VectorUnit {
             }
 
             (LoadFP | StoreFP, InstructionBits::FLdStType{rd, rs1, rs2, vm, ..}) => {
-                let op = self.decode_load_store(opcode, inst, &conn)?;
+                let op = self.decode_load_store(opcode, inst, &mut conn)?;
                 use MemOpDir::*;
 
                 if op.dir == Load && (!vm) && rd == 0 {
@@ -334,7 +335,7 @@ impl VectorUnit {
                     return Ok(())
                 }
 
-                let base_addr = conn.sreg[rs1 as usize];
+                let base_addr = conn.sreg.read(rs1)?;
 
                 let addr_base_step = match op.eew {
                     Sew::e8 => 1,
@@ -625,7 +626,7 @@ impl VectorUnit {
 
     /// Decode a Load/Store opcode into an OverallMemOp structure.
     /// Performs all checks to ensure the instruction is a valid RISC-V V vector load/store.
-    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &VectorUnitConnection) -> Result<OverallMemOp> {
+    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &mut VectorUnitConnection) -> Result<OverallMemOp> {
         if let InstructionBits::FLdStType{width, rs2, mew, mop, nf, ..} = inst {
             // MEW = Memory Expanded Width(?)
             // Expected to be used for larger widths, because it's right next to the width field,
@@ -703,7 +704,7 @@ impl VectorUnit {
             // Determines indexing mode
             let mop = match mop {
                 0b00 => Mop::UnitStride,
-                0b10 => Mop::Strided(conn.sreg[rs2 as usize]),
+                0b10 => Mop::Strided(conn.sreg.read(rs2)?),
                 0b01 => Mop::Indexed{ordered: false},
                 0b11 => Mop::Indexed{ordered: true},
     
