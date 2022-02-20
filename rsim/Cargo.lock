@@ -55,6 +55,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "cc"
+version = "1.0.73"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fff2a6927b3bb87f9595d67196a70493f627687a71d87a0d692242c33f58c11"
+
+[[package]]
 name = "clap"
 version = "2.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -127,8 +133,17 @@ dependencies = [
  "anyhow",
  "bitutils",
  "clap",
+ "rust-cheri-compressed-cap",
  "static_assertions",
  "thiserror",
+]
+
+[[package]]
+name = "rust-cheri-compressed-cap"
+version = "0.1.0"
+source = "git+https://github.com/theturboturnip/cheri-compressed-cap#3676a0314d05892912202b4caa443ce57dc1670e"
+dependencies = [
+ "cc",
 ]
 
 [[package]]

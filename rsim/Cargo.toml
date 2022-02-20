@@ -12,3 +12,4 @@ bitutils = "3.0.1"
 anyhow = "1.0.51"
 thiserror = "1.0"
 static_assertions = "1.1.0"
+rust-cheri-compressed-cap = { git = "https://github.com/theturboturnip/cheri-compressed-cap" }
