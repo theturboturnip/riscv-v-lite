@@ -18,7 +18,7 @@ pub mod vector;
 use vector::{VectorUnit, VectorUnitConnection};
 
 mod elements;
-use elements::{RV32RegisterFile,RegisterFile};
+use elements::{RV32RegisterFile,RegisterFile,RegisterTracking};
 
 /// Scalar register length in bits
 pub const XLEN: usize = 32;

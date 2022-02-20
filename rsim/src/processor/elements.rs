@@ -4,13 +4,15 @@ pub trait RegisterFile<TData> {
     fn read(&mut self, idx: u8) -> Result<TData, RegisterFileError>;
     fn write(&mut self, idx: u8, val: TData) -> Result<(), RegisterFileError>;
 
+    // Reset
+    fn reset(&mut self);
+}
+
+pub trait RegisterTracking<TData> {
     // Access Tracking
     // Used to track the register accesses done per tick, as necessary for TestRIG
     fn start_tracking(&mut self) -> Result<(), RegisterFileError>;
     fn end_tracking(&mut self) -> Result<Vec<RegisterAction<TData>>, RegisterFileError>;
-
-    // Reset
-    fn reset(&mut self);
 }
 
 pub enum RegisterAction<TData> {
@@ -84,6 +86,12 @@ impl RegisterFile<u32> for RV32RegisterFile {
         Ok(())
     }
 
+    fn reset(&mut self) {
+        self.regs = [0; 31];
+        self.tracking = None;
+    }
+}
+impl RegisterTracking<u32> for RV32RegisterFile {
     fn start_tracking(&mut self) -> Result<(), RegisterFileError> {
         if self.tracking.is_some() {
             Err(RegisterFileError::AlreadyTracking)
@@ -98,11 +106,6 @@ impl RegisterFile<u32> for RV32RegisterFile {
         } else {
             Err(RegisterFileError::NotTracking)
         }
-    }
-
-    fn reset(&mut self) {
-        self.regs = [0; 31];
-        self.tracking = None;
     }
 }
 impl Default for RV32RegisterFile {
