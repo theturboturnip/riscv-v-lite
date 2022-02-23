@@ -3,9 +3,6 @@ use thiserror::Error;
 pub trait RegisterFile<TData> {
     fn read(&mut self, idx: u8) -> Result<TData, RegisterFileError>;
     fn write(&mut self, idx: u8, val: TData) -> Result<(), RegisterFileError>;
-
-    // Reset
-    fn reset(&mut self);
 }
 
 pub trait RegisterTracking<TData> {
@@ -54,6 +51,10 @@ impl RV32RegisterFile {
             });
         }
     }
+    pub fn reset(&mut self) {
+        self.regs = [0; 31];
+        self.tracking = None;
+    }
 }
 impl RegisterFile<u32> for RV32RegisterFile {    
     fn read(&mut self, idx: u8) -> Result<u32, RegisterFileError> {
@@ -84,11 +85,6 @@ impl RegisterFile<u32> for RV32RegisterFile {
         }
 
         Ok(())
-    }
-
-    fn reset(&mut self) {
-        self.regs = [0; 31];
-        self.tracking = None;
     }
 }
 impl RegisterTracking<u32> for RV32RegisterFile {
