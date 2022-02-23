@@ -1,6 +1,8 @@
 use rust_cheri_compressed_cap::Cc64Cap;
 use thiserror::Error;
 
+pub type ProcessorResult<T> = anyhow::Result<T>;
+
 #[derive(Debug,Clone,PartialEq,Eq,Error)]
 pub enum IllegalInstructionException {
     #[error("Unhandled Opcode {0:07b}")]

@@ -1,3 +1,6 @@
+use crate::processor::isa_mods::ProcessorResult;
+use crate::processor::isa_mods::IsaModConn;
+use crate::processor::isa_mods::IsaMod;
 use crate::processor::RegisterFile;
 use crate::processor::IllegalInstructionException::*;
 use crate::processor::CSRProvider;
@@ -8,7 +11,7 @@ use std::convert::{TryInto};
 
 use crate::processor::elements::Memory;
 
-use super::decode::{Opcode,InstructionBits};
+use crate::processor::decode::{Opcode,InstructionBits};
 
 use crate::processor::{uXLEN,XLEN};
 
@@ -50,9 +53,10 @@ const_assert!(size_of::<uVLEN>() * 8 == VLEN);
 
 /// The Vector Unit for the processor.
 /// Stores all vector state, including registers.
-/// Call [VectorUnit::exec_inst()] on it when you encounter a vector instruction.
-/// This requires a [VectorUnitConnection] to access other resources.
-pub struct VectorUnit {
+/// Call [Rvv::exec_inst()] on it when you encounter a vector instruction.
+/// This requires a [RvvConn] to access other resources.
+pub struct Rvv {
+    // TODO use a RegisterFile for this?
     vreg: [uVLEN; 32],
 
     vtype: VType,
@@ -69,15 +73,16 @@ pub struct VectorUnit {
 }
 
 /// References to all scalar resources touched by the vector unit.
-pub struct VectorUnitConnection<'a> {
+pub struct RvvConn<'a> {
     pub sreg: &'a mut dyn RegisterFile<u32>,
     pub memory: &'a mut dyn Memory,
 }
+impl<'a> IsaModConn for RvvConn<'a> {}
 
-impl VectorUnit {
-    /// Returns an initialized VectorUnit.
-    pub fn new() -> VectorUnit {
-        VectorUnit {
+impl Rvv {
+    /// Returns an initialized vector unit.
+    pub fn new() -> Rvv {
+        Rvv {
             vreg: [0; 32],
 
             vtype: VType::illegal(),
@@ -95,14 +100,14 @@ impl VectorUnit {
     }
 
     /// (Internal) Execute a configuration instruction, e.g. vsetvli family
-    /// Requires a [VectorUnitConnection].
+    /// Requires a [RvvConn].
     /// 
     /// # Arguments
     /// 
     /// * `inst_kind` - Which kind of configuration instruction to execute
     /// * `inst` - Decoded instruction bits
     /// * `conn` - Connection to external resources
-    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: VectorUnitConnection) -> Result<()> {
+    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: RvvConn) -> Result<()> {
         if let InstructionBits::VType{rd, funct3, rs1, rs2, zimm11, zimm10, ..} = inst {
             assert_eq!(funct3, 0b111);
 
@@ -182,9 +187,34 @@ impl VectorUnit {
             unreachable!("vector::exec_config instruction MUST be InstructionBits::VType, got {:?} instead", inst);
         }
     }
+}
 
+impl IsaMod<RvvConn<'_>> for Rvv {
+    type Pc = u32;
+
+    fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
+        use crate::processor::decode::Opcode::*;
+        match (opcode, inst) {
+            // Delegate all instructions under the Vector opcode to the vector unit
+            (Vector, _) => true,
+
+            (LoadFP | StoreFP, InstructionBits::FLdStType{width, ..}) => {
+                // Check the access width
+                match width {
+                    0b0001 | 0b0010 | 0b0011 | 0b0100 => false,
+                    0b1000..=0b1111 => false,
+
+                    // This width corresponds to a vector, delegate this instruction to the vector unit
+                    _ => true
+                }
+            },
+
+            _ => false
+        }
+    }
+    
     /// Execute a vector-specific instruction, e.g. vector arithmetic, loads, configuration
-    /// Requires a [VectorUnitConnection].
+    /// Requires a [RvvConn].
     /// 
     /// # Arguments
     /// 
@@ -192,7 +222,7 @@ impl VectorUnit {
     /// * `inst` - Decoded instruction bits
     /// * `inst_bits` - Raw instruction bits (TODO - we shouldn't need this)
     /// * `conn` - Connection to external resources
-    pub fn exec_inst(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, mut conn: VectorUnitConnection) -> Result<()> {
+    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, mut conn: RvvConn) -> ProcessorResult<Option<u32>> {
         use Opcode::*;
         match (opcode, inst) {
             (Vector, InstructionBits::VType{funct3, funct6, rs1, rs2, rd, vm, ..}) => {
@@ -300,7 +330,7 @@ impl VectorUnit {
                                     }
                                     if rd == rs2 {
                                         // architetural no-op
-                                        return Ok(())
+                                        return Ok(None)
                                     }
 
                                     for vx in 0..nr {
@@ -332,7 +362,7 @@ impl VectorUnit {
 
                 if op.evl <= self.vstart {
                     println!("EVL {} <= vstart {} => vector {:?} is no-op", op.evl, self.vstart, op.dir);
-                    return Ok(())
+                    return Ok(None)
                 }
 
                 let base_addr = conn.sreg.read(rs1)?;
@@ -572,12 +602,14 @@ impl VectorUnit {
         // As per RVVspec 3.7, we "reset the vstart CSR to zero at the end of execution"
         self.vstart = 0;
 
-        Ok(())
+        Ok(None)
     }
+}
 
+impl Rvv {
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
-    fn load_to_vreg(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn load_to_vreg(&mut self, conn: &mut RvvConn, eew: Sew, addr: u32, vd_base: u8, idx_from_base: u32) -> Result<()> {
         match eew {
             Sew::e8 => {
                 let val = conn.memory.load_u8(addr)?;
@@ -597,7 +629,7 @@ impl VectorUnit {
     }
     /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
     /// vector register group starting at `vd_base` into a given address `addr` 
-    fn store_to_mem(&mut self, conn: &mut VectorUnitConnection, eew: Sew, addr: u32, vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn store_to_mem(&mut self, conn: &mut RvvConn, eew: Sew, addr: u32, vd_base: u8, idx_from_base: u32) -> Result<()> {
         match eew {
             Sew::e8 => {
                 let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
@@ -624,7 +656,7 @@ impl VectorUnit {
 
     /// Decode a Load/Store opcode into an OverallMemOp structure.
     /// Performs all checks to ensure the instruction is a valid RISC-V V vector load/store.
-    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &mut VectorUnitConnection) -> Result<OverallMemOp> {
+    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &mut RvvConn) -> Result<OverallMemOp> {
         if let InstructionBits::FLdStType{width, rs2, mew, mop, nf, ..} = inst {
             // MEW = Memory Expanded Width(?)
             // Expected to be used for larger widths, because it's right next to the width field,
@@ -874,7 +906,7 @@ impl VectorUnit {
     }
 }
 
-impl CSRProvider for VectorUnit {
+impl CSRProvider for Rvv {
     fn has_csr(&self, csr: u32) -> bool {
         match csr {
             // Should be implemented, aren't yet

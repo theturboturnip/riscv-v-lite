@@ -11,11 +11,11 @@ use exceptions::{IllegalInstructionException,MemoryException};
 pub mod decode;
 use decode::{decode, InstructionBits};
 
-pub mod vector;
-use vector::{VectorUnit, VectorUnitConnection};
-
 pub mod elements;
 use elements::{AggregateMemory,ProcessorMemory,RV32RegisterFile,RegisterFile,RegisterTracking};
+
+pub mod isa_mods;
+use isa_mods::{IsaMod, Rvv, RvvConn};
 
 /// Scalar register length in bits
 pub const XLEN: usize = 32;
@@ -81,14 +81,14 @@ impl Processor {
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(mem: AggregateMemory) -> (Processor, VectorUnit) {
+    pub fn new(mem: AggregateMemory) -> (Processor, Rvv) {
         let mut p = Processor {
             running: false,
             memory: mem,
             pc: 0,
             sreg: RV32RegisterFile::default()
         };
-        let mut v = VectorUnit::new();
+        let mut v = Rvv::new();
 
         p.reset(&mut v);
 
@@ -101,25 +101,25 @@ impl Processor {
     /// # Associated Lifetimes
     /// 
     /// * `'a` - The lifetime of the Processor
-    /// * `'b` - The lifetime of the references held in the VectorUnitConnection
+    /// * `'b` - The lifetime of the references held in the RvvConn
     /// 
     /// `'a : 'b` => `'a` outlives `'b`, e.g. the Processor will live longer than the references to its fields.
     /// Rust needs this guarantee.
     /// 
     /// Because Rust isn't smart enough to understand *which* fields in the processor are referenced,
-    /// and the references inside the [VectorUnitConnection] are mutable,
-    /// holding a [VectorUnitConnection] is equivalent to holding a *mutable reference to the Processor and all its fields*.
+    /// and the references inside the [RvvConn] are mutable,
+    /// holding a [RvvConn] is equivalent to holding a *mutable reference to the Processor and all its fields*.
     /// This means you couldn't, say, store the [VectorUnit] inside the Processor and do `processor.v_unit.exec_inst(connection)`,
     /// because [VectorUnit::exec_inst()] tries to take a mutable reference to [VectorUnit], but the `connection` holds that reference already.
-    fn vector_conn<'a,'b>(&'a mut self) -> VectorUnitConnection<'b> where 'a: 'b {
-        VectorUnitConnection {
+    fn vector_conn<'a,'b>(&'a mut self) -> RvvConn<'b> where 'a: 'b {
+        RvvConn {
             sreg: &mut self.sreg,
             memory: &mut self.memory,
         }
     }
 
     /// Reset the processor and associated vector unit
-    pub fn reset(&mut self, v_unit: &mut VectorUnit) {
+    pub fn reset(&mut self, v_unit: &mut Rvv) {
         self.running = false;
         self.pc = 0;
         self.sreg.reset();
@@ -135,9 +135,17 @@ impl Processor {
     /// * `inst_bits` - The raw instruction bits
     /// * `opcode` - The major opcode of the decoded instruction
     /// * `inst` - The fields of the decoded instruction
-    fn process_inst(&mut self, v_unit: &mut VectorUnit, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u32> {
+    fn process_inst(&mut self, v_unit: &mut Rvv, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u32> {
         let mut next_pc = self.pc + 4;
         
+        if v_unit.will_handle(opcode, inst) {
+            let requested_pc = v_unit.execute(opcode, inst, inst_bits, self.vector_conn())?;
+            if let Some(requested_pc) = requested_pc {
+                next_pc = requested_pc;
+            }
+            return Ok(next_pc);
+        }
+
         use decode::Opcode::*;
         match (opcode, inst) {
             (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
@@ -354,22 +362,6 @@ impl Processor {
                 
             }
 
-            // Delegate all instructions under the Vector opcode to the vector unit
-            (Vector, inst) => v_unit.exec_inst(opcode, inst, inst_bits, self.vector_conn())?,
-
-            (LoadFP | StoreFP, InstructionBits::FLdStType{width, ..}) => {
-                // Check the access width
-                match width {
-                    0b0001 | 0b0010 | 0b0011 | 0b0100 => 
-                        bail!(UnsupportedParam(format!("LoadFP/StoreFP uses width for actual floats, not supported"))),
-                    0b1000..=0b1111 => 
-                        bail!(UnsupportedParam(format!("LoadFP/StoreFP using reserved width {}", width))),
-
-                    // This width corresponds to a vector, delegate this instruction to the vector unit
-                    _ => v_unit.exec_inst(opcode, inst, inst_bits, self.vector_conn())?
-                }
-            },
-
             _ => bail!(MiscDecodeException("Unexpected opcode/InstructionBits pair".to_string()))
         }
 
@@ -381,7 +373,7 @@ impl Processor {
     /// # Arguments
     /// 
     /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
-    pub fn exec_step(&mut self, v_unit: &mut VectorUnit) -> Result<()> {
+    pub fn exec_step(&mut self, v_unit: &mut Rvv) -> Result<()> {
         self.running = true;
 
         self.sreg.start_tracking()?;
@@ -433,7 +425,7 @@ impl Processor {
     }
 
     /// Dump processor and vector unit state to standard output.
-    pub fn dump(&self, v_unit: &mut VectorUnit) {
+    pub fn dump(&self, v_unit: &mut Rvv) {
         println!("running: {:?}\npc: 0x{:08x}", self.running, self.pc);
         self.sreg.dump();
         v_unit.dump();
