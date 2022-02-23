@@ -1,3 +1,4 @@
+use rust_cheri_compressed_cap::Cc64Cap;
 use thiserror::Error;
 
 #[derive(Debug,Clone,PartialEq,Eq,Error)]
@@ -25,8 +26,10 @@ pub enum MemoryException {
     // #[error("Address {addr:08x} out-of-bounds, bounds = {max:08x}")]
     // AddressOOB{ addr: usize, max: usize },
     #[error("Address {addr:08x} not mapped")]
-    AddressUnmapped{ addr: usize }, 
-
+    AddressUnmapped{ addr: usize },
+    /// For when an address is dereferenced in integer mode, with respect to a default capability (DDC/PCC)
+    #[error("Address {addr:08x} dereferenced, but out of bounds from default capability {cap:?}")]
+    AddressOobDefaultCapability { addr: usize, cap: Cc64Cap },
     #[error("Program returned a value = 0x{0:04X} (expected 0x3FFF) = 0b{0:016b}")]
     ResultReturned(u32),
 }
