@@ -35,9 +35,20 @@ pub trait CSRProvider {
 /// References to all CSR providers
 pub struct ZicsrConn<'a> {
     pub sreg: &'a mut dyn RegisterFile<u32>,
-    // pub csr_providers: Vec<&'a mut dyn CSRProvider>
-    pub processor_csr: &'a mut dyn CSRProvider,
-    pub vector_csr: &'a mut dyn CSRProvider
+    pub csr_providers: Vec<&'a mut dyn CSRProvider>
+}
+impl<'a> ZicsrConn<'a> {
+    /// Explanation of return type: OK, so this is really annoying.
+    /// We want to return a reference to one of the mutrefs inside csr_providers.
+    /// However, we can't just copy the mutref out, because that would mean two copies exist - one in csr_providers, and one in our return value.
+    /// => we have to return a reference to the mutref - `&(&'a mut dyn CSRProvider)`.
+    /// Because we want to modify the thing at the end of the mutref, Rust complains and wants the *outer* reference to be mutable as well.
+    /// => `& mut (&'a mut dyn CSRProvider)`
+    /// And, because we may not find anything, wrap the whole thing in an Option
+    /// => `Option<& mut &'a mut dyn CSRProvider>`
+    fn provider_of_csr(&mut self, csr: u32) -> Option<& mut &'a mut dyn CSRProvider> {
+        self.csr_providers.iter_mut().find(|provider| provider.has_csr(csr))
+    }
 }
 impl<'a> IsaModConn for ZicsrConn<'a> {}
 
@@ -51,7 +62,7 @@ impl IsaMod<ZicsrConn<'_>> for Zicsr {
         opcode == System
     }
 
-    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, conn: ZicsrConn) -> ProcessorResult<Option<Self::Pc>> {
+    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, mut conn: ZicsrConn) -> ProcessorResult<Option<Self::Pc>> {
         if let (System, InstructionBits::IType{rd, funct3, rs1, imm}) = (opcode, inst) {
             if funct3 == 0b000 {
                 bail!("Non-CSR System instructions not supported")
@@ -74,18 +85,15 @@ impl IsaMod<ZicsrConn<'_>> for Zicsr {
                         let write_val = rs1_val;
 
                         // Perform the read/write
-                        let old_csr_val = {
-                            if conn.processor_csr.has_csr(csr) {
-                                conn.processor_csr.csr_atomic_read_write(csr, need_read, write_val)?
-                            } else if conn.vector_csr.has_csr(csr) {
-                                conn.vector_csr.csr_atomic_read_write(csr, need_read, write_val)?
-                            } else {
-                                bail!("No provider found for Read/Write of CSR 0x{:04x}", csr)
-                            }
-                        };
+                        match conn.provider_of_csr(csr) {
+                            None => bail!("No provider found for Read/Write of CSR 0x{:04x}", csr),
+                            Some(csr_provider) => {
+                                let old_csr_val = csr_provider.csr_atomic_read_write(csr, need_read, write_val)?;
 
-                        if need_read {
-                            conn.sreg.write(rd, old_csr_val.unwrap())?;
+                                if need_read {
+                                    conn.sreg.write(rd, old_csr_val.unwrap())?;
+                                }
+                            }
                         }
                     }
 
@@ -99,17 +107,14 @@ impl IsaMod<ZicsrConn<'_>> for Zicsr {
                         };
 
                         // Perform the read/write
-                        let old_csr_val = {
-                            if conn.processor_csr.has_csr(csr) {
-                                conn.processor_csr.csr_atomic_read_set(csr, write_val)?
-                            } else if conn.vector_csr.has_csr(csr) {
-                                conn.vector_csr.csr_atomic_read_set(csr, write_val)?
-                            } else {
-                                bail!("No provider found for Read/Set of CSR 0x{:04x}", csr)
+                        match conn.provider_of_csr(csr) {
+                            None => bail!("No provider found for Read/Set of CSR 0x{:04x}", csr),
+                            Some(csr_provider) => {
+                                let old_csr_val = csr_provider.csr_atomic_read_set(csr, write_val)?;
+                                
+                                conn.sreg.write(rd, old_csr_val)?;
                             }
-                        };
-
-                        conn.sreg.write(rd, old_csr_val)?;
+                        }
                     }
                     0b011 | 0b111 => {
                         // Atomic Read-Clear CSR
@@ -121,17 +126,14 @@ impl IsaMod<ZicsrConn<'_>> for Zicsr {
                         };
 
                         // Perform the read/write
-                        let old_csr_val = {
-                            if conn.processor_csr.has_csr(csr) {
-                                conn.processor_csr.csr_atomic_read_clear(csr, write_val)?
-                            } else if conn.vector_csr.has_csr(csr) {
-                                conn.vector_csr.csr_atomic_read_clear(csr, write_val)?
-                            } else {
-                                bail!("No provider found for Read/Clear of CSR 0x{:04x}", csr)
+                        match conn.provider_of_csr(csr) {
+                            None => bail!("No provider found for Read/Clear of CSR 0x{:04x}", csr),
+                            Some(csr_provider) => {
+                                let old_csr_val = csr_provider.csr_atomic_read_clear(csr, write_val)?;
+                                
+                                conn.sreg.write(rd, old_csr_val)?;
                             }
-                        };
-
-                        conn.sreg.write(rd, old_csr_val)?;
+                        }
                     }
 
                     0b000 | _ => unreachable!("impossible funct3")

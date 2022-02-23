@@ -94,15 +94,13 @@ impl Processor {
     }
 
     fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Option<Rvv>) -> ZicsrConn<'b> where 'a: 'b {
-        // let mut csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider];
-        // if let Some(rvv) = mods.rvv.as_mut() {
-        //     csr_providers.push(rvv as &mut dyn CSRProvider)
-        // }
+        let mut csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider];
+        if let Some(rvv) = rvv.as_mut() {
+            csr_providers.push(rvv as &mut dyn CSRProvider)
+        }
         ZicsrConn {
             sreg: &mut self.sreg,
-            // csr_providers
-            processor_csr: &mut self.csrs as &mut dyn CSRProvider,
-            vector_csr: rvv.as_mut().unwrap() as &mut dyn CSRProvider
+            csr_providers
         }
     }
 
