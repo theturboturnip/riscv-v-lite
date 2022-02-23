@@ -111,17 +111,24 @@ impl Default for CheriRV32RegisterFile {
 }
 
 /// Wrapper for AggregateMemory that keeps tags, supports Memory<TaggedCap> for reading/writing capabilities.
-/// All other Memory variants clear associated tag bits
+/// All other Memory variants clear associated tag bits on write.
+/// 
+/// If base_cap is set, the memory is in Integer mode - all accesses will be checked against base_cap
+/// Otherwise, memory is in Capability mode - all accesses are assumed to have been checked before.
 struct CheriAggregateMemory {
     base_mem: AggregateMemory,
     base_cap: Option<Cc64Cap>,
+    // Store tags in a hash-set
+    // Less complicated, likely less memory intensive than storing
+    // a bool for each 64-bits in the valid address range
     tag_mem: HashSet<u32>
 }
 impl CheriAggregateMemory {
-    fn set_base_cap(&mut self, base_cap: Cc64Cap) {
+    fn enter_integer_mode(&mut self, base_cap: Cc64Cap) {
+        // TODO - check base_cap is actually valid in some way
         self.base_cap = Some(base_cap);
     }
-    fn reset_base_cap(&mut self) {
+    fn enter_capability_mode(&mut self) {
         self.base_cap = None;
     }
 }
@@ -131,35 +138,43 @@ impl<TData> Memory<TData> for CheriAggregateMemory where AggregateMemory: Memory
         self.base_mem.full_range.clone()
     }
     fn read(&mut self, addr: u32) -> Result<TData, MemoryException> {
-        // If we're reading from a raw address, we should have a base capability
-        let base_cap = self.base_cap.as_ref().unwrap();
-        // If the addr is below the base of the capability range,
-        // or the topmost byte of TData is above the top of the capability range,
-        // return an exception
-        if !base_cap.addr_in_bounds(addr, std::mem::size_of::<TData>() as u32) {
-            Err(MemoryException::AddressOobDefaultCapability{ addr: addr as usize, cap: *base_cap })
-        } else {
-            self.base_mem.read(addr)
+        // If we're reading from a raw address, we may need to check against a base capability
+        if let Some(base_cap) = self.base_cap {
+            // If the addr is below the base of the capability range,
+            // or the topmost byte of TData is above the top of the capability range,
+            // return an exception
+            if (base_cap.permissions() & Cc64::PERM_LOAD) == 0 {
+                return Err(MemoryException::CapabilityPermission{perm: Cc64::PERM_LOAD, cap: base_cap})
+            }
+            if !base_cap.addr_in_bounds(addr, std::mem::size_of::<TData>() as u32) {
+                return Err(MemoryException::AddressOobDefaultCapability{ addr: addr as usize, cap: base_cap });
+            }
         }
+
+        self.base_mem.read(addr)
     }
     fn write(&mut self, addr: u32, val: TData) -> Result<(), MemoryException> {
-        // If we're reading from a raw address, we should have a base capability
-        let base_cap = self.base_cap.as_ref().unwrap();
-        // If the addr is below the base of the capability range,
-        // or the topmost byte of TData is above the top of the capability range,
-        // return an exception
-        if !base_cap.addr_in_bounds(addr, std::mem::size_of::<TData>() as u32) {
-            Err(MemoryException::AddressOobDefaultCapability{ addr: addr as usize, cap: *base_cap })
-        } else {
-            // Set the tag on the 64-byte range containing (addr) to false
-            self.tag_mem.remove(&(addr / 8));
-            // We don't need to overwrite any other tags - tags are aligned to 8-byte boundaries, 
-            // and TData is u8,u16,u32 which are aligned to 1,2,4 respectively.
-            // There's no possibility of a write 
-            assert!(std::mem::size_of::<TData>() <= std::mem::size_of::<u64>());
-
-            self.base_mem.write(addr, val)
+        // If we're reading from a raw address, we may need to check against a base capability
+        if let Some(base_cap) = self.base_cap {
+            // If the addr is below the base of the capability range,
+            // or the topmost byte of TData is above the top of the capability range,
+            // return an exception
+            if (base_cap.permissions() & Cc64::PERM_STORE) == 0 {
+                return Err(MemoryException::CapabilityPermission{perm: Cc64::PERM_STORE, cap: base_cap})
+            }
+            if !base_cap.addr_in_bounds(addr, std::mem::size_of::<TData>() as u32) {
+                return Err(MemoryException::AddressOobDefaultCapability{ addr: addr as usize, cap: base_cap });
+            }
         }
+
+        // Set the tag on the 64-byte range containing (addr) to false
+        self.tag_mem.remove(&(addr / 8));
+        // We don't need to overwrite any other tags - tags are aligned to 8-byte boundaries, 
+        // and TData is u8,u16,u32 which are aligned to 1,2,4 respectively.
+        // There's no possibility of a write 
+        assert!(std::mem::size_of::<TData>() <= std::mem::size_of::<u64>());
+
+        self.base_mem.write(addr, val)
     }
 }
 /// Impl a capability-aware view of memory for CHERI instructions
@@ -170,6 +185,10 @@ impl Memory<TaggedCap> for CheriAggregateMemory {
     }
     // read/write funcs that set correct tag bits on reads/writes
     fn read(&mut self, addr: u32) -> Result<TaggedCap, MemoryException> {
+        // If we're reading and writing actual capabilities, we need to be in "capability mode"
+        // This assumes that all reads/writes are checked before we get there, so we shouldn't have a base_cap
+        assert_eq!(self.base_cap, None);
+
         let addr = addr as usize;
         if addr % 8 != 0 {
             Err(MemoryException::AddressMisaligned{addr, expected: 8})
@@ -196,6 +215,10 @@ impl Memory<TaggedCap> for CheriAggregateMemory {
         }
     }
     fn write(&mut self, addr: u32, val: TaggedCap) -> Result<(), MemoryException> {
+        // If we're reading and writing actual capabilities, we need to be in "capability mode"
+        // This assumes that all reads/writes are checked before we get there, so we shouldn't have a base_cap
+        assert_eq!(self.base_cap, None);
+
         let addr = addr as usize;
         if addr % 8 != 0 {
             Err(MemoryException::AddressMisaligned{addr, expected: 8})
