@@ -800,8 +800,7 @@ vector_unit_faultonlyfirst_test_under_fault:
 	beqz	a1, .LBB17_3
 	li	a0, 0
 	slli	a2, a1, 2
-	lui	a3, 154
-	addi	a3, a3, -784
+	lui	a3, 37
 	sub	a2, a3, a2
 .LBB17_2:
 	sw	a0, 0(a2)
@@ -812,13 +811,13 @@ vector_unit_faultonlyfirst_test_under_fault:
 	seqz	a0, a1
 	beqz	a1, .LBB17_9
 	vsetvli	a2, zero, e32, m1, ta, mu
-	lui	a3, 154
-	addi	a2, a3, -788
+	lui	a3, 37
+	addi	a2, a3, -4
 	vle32ff.v	v8, (a2)
 	csrr	a4, vl
 	li	a2, 1
 	bne	a4, a2, .LBB17_9
-	addi	a0, a3, -792
+	addi	a0, a3, -8
 .LBB17_6:
 	mv	a3, a2
 	beq	a1, a2, .LBB17_8

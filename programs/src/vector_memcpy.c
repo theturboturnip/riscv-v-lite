@@ -544,7 +544,7 @@ int vector_unit_faultonlyfirst_test_under_fault(void) {
     // It does individual fault-only-first loads on the boundary of
     // a known unmapped memory region (set in the emulator)
 
-    int32_t* UNMAPPED_REGION_START = 630000;
+    int32_t* UNMAPPED_REGION_START = 0x25000;
 
     // Find the number of 32-bit elements in a single vector register
     size_t vlmax = vsetvlmax_e32m1();

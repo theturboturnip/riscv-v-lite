@@ -32,6 +32,6 @@ pub enum MemoryException {
     AddressOobDefaultCapability { addr: usize, cap: Cc64Cap },
     #[error("Capability permission violated: required permission 0b{perm:b} not set in capability {cap:?}")]
     CapabilityPermission { perm: u32, cap: Cc64Cap },
-    #[error("Program returned a value = 0x{0:04X} (expected 0x3FFF) = 0b{0:016b}")]
-    ResultReturned(u32),
+    #[error("Program returned a value = 0x{got:08X} (expected 0x{expected:08X}) = 0b{got:016b}")]
+    ResultReturned{got: u32, expected: u32},
 }

@@ -154,31 +154,42 @@ const_assert!(size_of::<usize>() >= size_of::<u32>());
 /// Reads from this address return 0
 /// Writes to this address through MemoryException::ResultReturned
 pub struct IOMemory {
-    range: Range<usize>
+    range: Range<usize>,
+    expected: u32,
 }
 impl IOMemory {
-    pub fn return_address(addr: usize) -> Box<dyn Memory> {
+    pub fn return_address(addr: usize, expected: u32) -> Box<dyn Memory> {
         Box::new(IOMemory{
-            range: Range{ start: addr, end: addr+4 }
+            range: Range{ start: addr, end: addr+4 },
+            expected
         })
     }
 }
 impl MemoryOf<u8> for IOMemory {
     fn read(&mut self, _: u32) -> Result<u8, MemoryException> { Ok(0) }
     fn write(&mut self, _: u32, val: u8) -> Result<(), MemoryException> {
-        Err(MemoryException::ResultReturned(val as u32))
+        Err(MemoryException::ResultReturned{
+            got: val as u32,
+            expected: self.expected
+        })
     }
 }
 impl MemoryOf<u16> for IOMemory {
     fn read(&mut self, _: u32) -> Result<u16, MemoryException> { Ok(0) }
     fn write(&mut self, _: u32, val: u16) -> Result<(), MemoryException> {
-        Err(MemoryException::ResultReturned(val as u32))
+        Err(MemoryException::ResultReturned{
+            got: val as u32,
+            expected: self.expected
+        })
     }
 }
 impl MemoryOf<u32> for IOMemory {
     fn read(&mut self, _: u32) -> Result<u32, MemoryException> { Ok(0) }
     fn write(&mut self, _: u32, val: u32) -> Result<(), MemoryException> {
-        Err(MemoryException::ResultReturned(val as u32))
+        Err(MemoryException::ResultReturned{
+            got: val as u32,
+            expected: self.expected
+        })
     }
 }
 impl ProcessorMemory for IOMemory {
