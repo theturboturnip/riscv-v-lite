@@ -20,8 +20,8 @@ pub trait IsaMod<TConn: IsaModConn> {
 
 // mod rv32i;
 // pub use rv32i::{Rv32i,Rv32iConn};
-// mod csrs;
-// pub use csrs::{Zicsr, ZicsrConn};
+mod csrs;
+pub use csrs::{Zicsr, ZicsrConn, CSRProvider};
 mod vector;
 pub use vector::{Rvv,RvvConn};
 // mod cheri;

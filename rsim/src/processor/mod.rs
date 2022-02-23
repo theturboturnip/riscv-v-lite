@@ -15,7 +15,7 @@ pub mod elements;
 use elements::{AggregateMemory,ProcessorMemory,RV32RegisterFile,RegisterFile,RegisterTracking};
 
 pub mod isa_mods;
-use isa_mods::{IsaMod, Rvv, RvvConn};
+use isa_mods::{IsaMod, Rvv, RvvConn, Zicsr, ZicsrConn, CSRProvider};
 
 /// Scalar register length in bits
 pub const XLEN: usize = 32;
@@ -32,40 +32,6 @@ pub const XLEN: usize = 32;
 pub type uXLEN = u32;
 const_assert!(size_of::<uXLEN>() * 8 == XLEN);
 
-/// Defines if Zicsr extension (CSR instructions) is enabled
-#[allow(non_upper_case_globals)]
-const EXT_Zicsr: bool = true;
-
-pub trait CSRProvider {
-    /// Does the Provider provide access to a given CSR?
-    fn has_csr(&self, csr: u32) -> bool;
-    
-    /// Atomic Read/Write a CSR
-    /// 
-    /// Will only be called on `csr` if `has_csr(csr) == true`
-    /// 
-    /// Reads can have side-effects, and some variants of the instruction disable that.
-    /// If `need_read == false', it won't perform a read or any side-effects, and will return an Ok(None).
-    /// Otherwise will return an Ok(Some()) with the previous CSR value, and execute side-effects.
-    fn csr_atomic_read_write(&mut self, csr: u32, need_read: bool, write_val: u32) -> Result<Option<u32>>;
-
-    /// Atomically read and set specific bits in a CSR
-    /// 
-    /// Will only be called on `csr` if `has_csr(csr) == true`
-    /// 
-    /// If `set_bits == None', no write will be performed (thus no side-effects of the write will happen).
-    /// The CSR will always be read, and those side-effects will always be applied.
-    fn csr_atomic_read_set(&mut self, csr: u32, set_bits: Option<u32>) -> Result<u32>;
-
-    /// Atomically read and clear specific bits in a CSR
-    /// 
-    /// Will only be called on `csr` if `has_csr(csr) == true`
-    /// 
-    /// If `clear_bits == None', no write will be performed (thus no side-effects of the write will happen).
-    /// The CSR will always be read, and those side-effects will always be applied.
-    fn csr_atomic_read_clear(&mut self, csr: u32, clear_bits: Option<u32>) -> Result<u32>;
-}
-
 /// The processor.
 /// Holds scalar registers and configuration, all vector-related stuff is in [VectorUnit]. 
 pub struct Processor {
@@ -73,6 +39,11 @@ pub struct Processor {
     pub memory: AggregateMemory,
     pc: uXLEN,
     sreg: RV32RegisterFile,
+    csrs: ProcessorCSRs,
+}
+pub struct ProcessorModules {
+    rvv: Option<Rvv>,
+    zicsr: Option<Zicsr>
 }
 
 impl Processor {
@@ -81,18 +52,22 @@ impl Processor {
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(mem: AggregateMemory) -> (Processor, Rvv) {
+    pub fn new(mem: AggregateMemory) -> (Processor, ProcessorModules) {
         let mut p = Processor {
             running: false,
             memory: mem,
             pc: 0,
-            sreg: RV32RegisterFile::default()
+            sreg: RV32RegisterFile::default(),
+            csrs: ProcessorCSRs{}
         };
-        let mut v = Rvv::new();
+        let mut mods = ProcessorModules {
+            rvv: Some(Rvv::new()),
+            zicsr: Some(Zicsr{})
+        };
 
-        p.reset(&mut v);
+        p.reset(&mut mods);
 
-        (p, v)
+        (p, mods)
     }
 
     /// Get a short-lived connection to scalar resources, usable by the vector unit.
@@ -118,13 +93,28 @@ impl Processor {
         }
     }
 
+    fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Option<Rvv>) -> ZicsrConn<'b> where 'a: 'b {
+        // let mut csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider];
+        // if let Some(rvv) = mods.rvv.as_mut() {
+        //     csr_providers.push(rvv as &mut dyn CSRProvider)
+        // }
+        ZicsrConn {
+            sreg: &mut self.sreg,
+            // csr_providers
+            processor_csr: &mut self.csrs as &mut dyn CSRProvider,
+            vector_csr: rvv.as_mut().unwrap() as &mut dyn CSRProvider
+        }
+    }
+
     /// Reset the processor and associated vector unit
-    pub fn reset(&mut self, v_unit: &mut Rvv) {
+    pub fn reset(&mut self, mods: &mut ProcessorModules) {
         self.running = false;
         self.pc = 0;
         self.sreg.reset();
 
-        v_unit.reset();
+        if let Some(v_unit) = mods.rvv.as_mut() {
+            v_unit.reset();
+        }
     }
 
     /// Process an instruction, returning the new PC value or any execution error
@@ -135,15 +125,26 @@ impl Processor {
     /// * `inst_bits` - The raw instruction bits
     /// * `opcode` - The major opcode of the decoded instruction
     /// * `inst` - The fields of the decoded instruction
-    fn process_inst(&mut self, v_unit: &mut Rvv, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u32> {
+    fn process_inst(&mut self, mods: &mut ProcessorModules, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u32> {
         let mut next_pc = self.pc + 4;
         
-        if v_unit.will_handle(opcode, inst) {
-            let requested_pc = v_unit.execute(opcode, inst, inst_bits, self.vector_conn())?;
-            if let Some(requested_pc) = requested_pc {
-                next_pc = requested_pc;
+        if let Some(zicsr) = mods.zicsr.as_mut() {
+            if zicsr.will_handle(opcode, inst) {
+                let requested_pc = zicsr.execute(opcode, inst, inst_bits, self.zicsr_conn(&mut mods.rvv))?;
+                if let Some(requested_pc) = requested_pc {
+                    next_pc = requested_pc;
+                }
+                return Ok(next_pc);
             }
-            return Ok(next_pc);
+        }
+        if let Some(rvv) = mods.rvv.as_mut() {
+            if rvv.will_handle(opcode, inst) {
+                let requested_pc = rvv.execute(opcode, inst, inst_bits, self.vector_conn())?;
+                if let Some(requested_pc) = requested_pc {
+                    next_pc = requested_pc;
+                }
+                return Ok(next_pc);
+            }
         }
 
         use decode::Opcode::*;
@@ -270,98 +271,6 @@ impl Processor {
                 }
             }
 
-            (System, InstructionBits::IType{rd, funct3, rs1, imm}) => {
-
-                if funct3 == 0b000 {
-                    bail!("Non-CSR System instructions not supported")
-                } else if EXT_Zicsr {
-                    let csr = imm;
-
-                    let is_imm_instruction = (funct3 & 0b100) != 0;
-                    // rs1 can be an immediate value if the top bit of funct3 is set
-                    // Take the "rs1 value" as either the immediate or the register[rs1]
-                    let rs1_val = if is_imm_instruction {
-                        rs1 as uXLEN
-                    } else {
-                        self.sreg.read(rs1)?
-                    };
-
-                    match funct3 {
-                        0b001 | 0b101 => {
-                            // Atomic Read-Write CSR
-                            let need_read = rd == 0;
-                            let write_val = rs1_val;
-
-                            // Perform the read/write
-                            let old_csr_val = {
-                                if self.has_csr(csr) {
-                                    self.csr_atomic_read_write(csr, need_read, write_val)?
-                                } else if v_unit.has_csr(csr) {
-                                    v_unit.csr_atomic_read_write(csr, need_read, write_val)?
-                                } else {
-                                    bail!("No provider found for Read/Write of CSR 0x{:04x}", csr)
-                                }
-                            };
-
-                            if need_read {
-                                self.sreg.write(rd, old_csr_val.unwrap())?;
-                            }
-                        }
-
-                        0b010 | 0b110 => {
-                            // Atomic Read-Set CSR
-                            // If the register index (or immediate value) is equal to 0, then no write is performed
-                            let write_val = if rs1 == 0 {
-                                None
-                            } else {
-                                Some(rs1_val)
-                            };
-
-                            // Perform the read/write
-                            let old_csr_val = {
-                                if self.has_csr(csr) {
-                                    self.csr_atomic_read_set(csr, write_val)?
-                                } else if v_unit.has_csr(csr) {
-                                    v_unit.csr_atomic_read_set(csr, write_val)?
-                                } else {
-                                    bail!("No provider found for Read/Set of CSR 0x{:04x}", csr)
-                                }
-                            };
-
-                            self.sreg.write(rd, old_csr_val)?;
-                        }
-                        0b011 | 0b111 => {
-                            // Atomic Read-Clear CSR
-                            // If the register index (or immediate value) is equal to 0, then no write is performed
-                            let write_val = if rs1 == 0 {
-                                None
-                            } else {
-                                Some(rs1_val)
-                            };
-
-                            // Perform the read/write
-                            let old_csr_val = {
-                                if self.has_csr(csr) {
-                                    self.csr_atomic_read_clear(csr, write_val)?
-                                } else if v_unit.has_csr(csr) {
-                                    v_unit.csr_atomic_read_clear(csr, write_val)?
-                                } else {
-                                    bail!("No provider found for Read/Clear of CSR 0x{:04x}", csr)
-                                }
-                            };
-
-                            self.sreg.write(rd, old_csr_val)?;
-                        }
-
-                        0b000 | _ => unreachable!("impossible funct3")
-                    }
-                } else {
-                    // funct3 != 0 but EXT_Zicsr not enabled
-                    bail!("CSR extension not enabled, CSR instruction won't work");
-                }
-                
-            }
-
             _ => bail!(MiscDecodeException("Unexpected opcode/InstructionBits pair".to_string()))
         }
 
@@ -373,7 +282,7 @@ impl Processor {
     /// # Arguments
     /// 
     /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
-    pub fn exec_step(&mut self, v_unit: &mut Rvv) -> Result<()> {
+    pub fn exec_step(&mut self, mods: &mut ProcessorModules) -> Result<()> {
         self.running = true;
 
         self.sreg.start_tracking()?;
@@ -387,7 +296,7 @@ impl Processor {
                 .with_context(|| format!("Failed to decode instruction {:08x}", inst_bits))?;
 
             // Execute
-            let next_pc = self.process_inst(v_unit, inst_bits, opcode, inst)
+            let next_pc = self.process_inst(mods, inst_bits, opcode, inst)
                 .with_context(|| format!("Failed to execute decoded instruction {:?} {:?}", opcode, inst))?;
 
             if next_pc % 4 != 0 {
@@ -425,14 +334,17 @@ impl Processor {
     }
 
     /// Dump processor and vector unit state to standard output.
-    pub fn dump(&self, v_unit: &mut Rvv) {
+    pub fn dump(&self, mods: &mut ProcessorModules) {
         println!("running: {:?}\npc: 0x{:08x}", self.running, self.pc);
         self.sreg.dump();
-        v_unit.dump();
+        if let Some(rvv) = mods.rvv.as_mut() {
+            rvv.dump();
+        }
     }
 }
 
-impl CSRProvider for Processor {
+struct ProcessorCSRs {}
+impl CSRProvider for ProcessorCSRs {
     fn has_csr(&self, _csr: u32) -> bool {
         false
     }
