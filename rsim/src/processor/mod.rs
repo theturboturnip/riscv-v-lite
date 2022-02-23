@@ -5,9 +5,6 @@ use anyhow::{Context,Result};
 
 use bitutils::sign_extend32;
 
-pub mod memory;
-pub use memory::Memory;
-
 pub mod exceptions;
 use exceptions::{IllegalInstructionException,MemoryException};
 
@@ -17,8 +14,8 @@ use decode::{decode, InstructionBits};
 pub mod vector;
 use vector::{VectorUnit, VectorUnitConnection};
 
-mod elements;
-use elements::{RV32RegisterFile,RegisterFile,RegisterTracking};
+pub mod elements;
+use elements::{AggregateMemory,ProcessorMemory,RV32RegisterFile,RegisterFile,RegisterTracking};
 
 /// Scalar register length in bits
 pub const XLEN: usize = 32;
@@ -73,7 +70,7 @@ pub trait CSRProvider {
 /// Holds scalar registers and configuration, all vector-related stuff is in [VectorUnit]. 
 pub struct Processor {
     pub running: bool,
-    pub memory: Memory,
+    pub memory: AggregateMemory,
     pc: uXLEN,
     sreg: RV32RegisterFile,
 }
@@ -84,7 +81,7 @@ impl Processor {
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(mem: Memory) -> (Processor, VectorUnit) {
+    pub fn new(mem: AggregateMemory) -> (Processor, VectorUnit) {
         let mut p = Processor {
             running: false,
             memory: mem,

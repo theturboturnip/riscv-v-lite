@@ -6,7 +6,7 @@ use std::cmp::min;
 use anyhow::{Context, Result};
 use std::convert::{TryInto};
 
-use crate::processor::memory::Memory;
+use crate::processor::elements::Memory;
 
 use super::decode::{Opcode,InstructionBits};
 
@@ -71,7 +71,7 @@ pub struct VectorUnit {
 /// References to all scalar resources touched by the vector unit.
 pub struct VectorUnitConnection<'a> {
     pub sreg: &'a mut dyn RegisterFile<u32>,
-    pub memory: &'a mut Memory,
+    pub memory: &'a mut dyn Memory,
 }
 
 impl VectorUnit {
@@ -448,7 +448,7 @@ impl VectorUnit {
                                     // ... load from memory into register
                                     let load_fault: Result<()> = 
                                         self.load_to_vreg(&mut conn, op.eew, addr, rd, i + (i_field as u32 * elems_per_group));
-
+                                    
                                     if i == 0 {
                                         // Any potentially faulted load should fault as normal if i == 0
                                         load_fault?;
@@ -495,7 +495,6 @@ impl VectorUnit {
 
                             addr += addr_base_step;
                         }
-                        dbg!(addr);
                     }
                     (Store, WholeRegister) => {
                         let mut addr = base_addr;
@@ -514,7 +513,6 @@ impl VectorUnit {
 
                             addr += addr_base_step;
                         }
-                        dbg!(addr);
                     }
                     (Load, ByteMask) => {
                         if op.eew != Sew::e8 {

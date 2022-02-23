@@ -110,7 +110,7 @@ impl Default for CheriRV32RegisterFile {
     }
 }
 
-/// Wrapper for AggregateMemory that keeps tags, supports Memory<TaggedCap> for reading/writing capabilities.
+/// Wrapper for AggregateMemory that keeps tags, supports MemoryOf<TaggedCap> for reading/writing capabilities.
 /// All other Memory variants clear associated tag bits on write.
 /// 
 /// If base_cap is set, the memory is in Integer mode - all accesses will be checked against base_cap
@@ -132,11 +132,8 @@ impl CheriAggregateMemory {
         self.base_cap = None;
     }
 }
-/// Reimplement basic Memory<TData> 
-impl<TData> Memory<TData> for CheriAggregateMemory where AggregateMemory: Memory<TData> {
-    fn range(&self) -> Range<usize> {
-        self.base_mem.full_range.clone()
-    }
+/// Reimplement basic MemoryOf<TData> 
+impl<TData> MemoryOf<TData> for CheriAggregateMemory where AggregateMemory: MemoryOf<TData> {
     fn read(&mut self, addr: u32) -> Result<TData, MemoryException> {
         // If we're reading from a raw address, we may need to check against a base capability
         if let Some(base_cap) = self.base_cap {
@@ -177,12 +174,16 @@ impl<TData> Memory<TData> for CheriAggregateMemory where AggregateMemory: Memory
         self.base_mem.write(addr, val)
     }
 }
-/// Impl a capability-aware view of memory for CHERI instructions
-/// e.g. a CHERI Load instruction, which is allowed to load capabilities, would use this version.
-impl Memory<TaggedCap> for CheriAggregateMemory {
+/// Now we've defined MemoryOf<u8,u16,u32>, combine them into a single Memory trait
+impl ProcessorMemory for CheriAggregateMemory {
     fn range(&self) -> Range<usize> {
         self.base_mem.full_range.clone()
     }
+}
+impl Memory for CheriAggregateMemory {}
+/// Impl a capability-aware view of memory for CHERI instructions
+/// e.g. a CHERI Load instruction, which is allowed to load capabilities, would use this version.
+impl MemoryOf<TaggedCap> for CheriAggregateMemory {
     // read/write funcs that set correct tag bits on reads/writes
     fn read(&mut self, addr: u32) -> Result<TaggedCap, MemoryException> {
         // If we're reading and writing actual capabilities, we need to be in "capability mode"
@@ -195,7 +196,7 @@ impl Memory<TaggedCap> for CheriAggregateMemory {
         } else if !self.base_mem.full_range.contains(&addr) || !self.base_mem.full_range.contains(&(addr + 3)) {
             Err(MemoryException::AddressUnmapped{addr})
         } else {
-            let base_mem = &mut self.base_mem as &mut dyn Memory<u32>;
+            let base_mem = &mut self.base_mem as &mut dyn MemoryOf<u32>;
             let addr = addr as u32;
             // Must be aligned and in-bounds
             let tag = self.tag_mem.contains(&(addr / 8));
@@ -226,7 +227,7 @@ impl Memory<TaggedCap> for CheriAggregateMemory {
             Err(MemoryException::AddressUnmapped{addr})
         } else {
             // TODO - this shouldn't have to be a dyn object, right?
-            let base_mem = &mut self.base_mem as &mut dyn Memory<u32>;
+            let base_mem = &mut self.base_mem as &mut dyn MemoryOf<u32>;
             let addr = addr as u32;
             match val {
                 Either::Left(val) => {

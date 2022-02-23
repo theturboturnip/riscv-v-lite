@@ -9,4 +9,7 @@ extern crate static_assertions;
 
 pub mod processor;
 
-pub use processor::{Processor,Memory};
+pub use processor::{Processor};
+pub mod memory {
+    pub use crate::processor::elements::{AggregateMemory,MemoryBacking,IOMemory};
+}
