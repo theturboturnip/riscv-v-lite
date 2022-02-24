@@ -5,7 +5,7 @@ use rust_cheri_compressed_cap::{CompressedCapability, Cc64, Cc64Cap};
 
 type TaggedCap = Either<u64, Cc64Cap>;
 
-struct CheriRV32RegisterFile {
+pub struct CheriRV32RegisterFile {
     regs: [TaggedCap; 31],
     tracking: Option<Vec<RegisterAction<TaggedCap>>>
 }
