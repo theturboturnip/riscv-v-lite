@@ -18,8 +18,8 @@ pub trait IsaMod<TConn: IsaModConn> {
     fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: TConn) -> ProcessorResult<Option<Self::Pc>>;
 }
 
-// mod rv32i;
-// pub use rv32i::{Rv32i,Rv32iConn};
+mod rv32i;
+pub use rv32i::{Rv32i,Rv32iConn};
 mod csrs;
 pub use csrs::{Zicsr, ZicsrConn, CSRProvider};
 mod vector;
