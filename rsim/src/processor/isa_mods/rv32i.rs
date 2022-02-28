@@ -1,4 +1,4 @@
-use crate::processor::elements::Memory32;
+use crate::processor::elements::memory::Memory32;
 use crate::processor::RegisterFile;
 use crate::processor::isa_mods::*;
 

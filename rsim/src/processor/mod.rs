@@ -8,7 +8,8 @@ pub mod decode;
 use decode::{decode, InstructionBits};
 
 pub mod elements;
-use elements::{AggregateMemory32,Memory32,RV32RegisterFile,RegisterFile,RegisterTracking};
+use elements::memory::{AggregateMemory32,Memory32};
+use elements::registers::{RV32RegisterFile,RegisterFile,RegisterTracking};
 
 pub mod isa_mods;
 use isa_mods::{IsaMod, Rv32i, Rv32iConn, Rv32v, Rv32vConn, Zicsr32, Zicsr32Conn, CSRProvider};

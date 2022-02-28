@@ -1,3 +1,7 @@
+/*! TODO remove this.
+The new version is in elements/memory.rs
+!*/
+
 use crate::processor::MemoryException;
 use std::ops::Range;
 use std::convert::TryInto;

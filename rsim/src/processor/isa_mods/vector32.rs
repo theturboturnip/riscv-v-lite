@@ -9,7 +9,7 @@ use std::cmp::min;
 use anyhow::{Context, Result};
 use std::convert::{TryInto};
 
-use crate::processor::elements::Memory32;
+use crate::processor::elements::memory::Memory32;
 
 use crate::processor::decode::{Opcode,InstructionBits};
 

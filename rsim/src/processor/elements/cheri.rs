@@ -1,6 +1,9 @@
+use std::ops::Range;
+use crate::processor::MemoryException;
 use std::collections::HashSet;
 use either::Either;
-use super::*;
+use super::registers::*;
+use super::memory::*;
 use rust_cheri_compressed_cap::{CompressedCapability, Cc128, Cc128Cap};
 
 type TaggedCap = Either<u128, Cc128Cap>;
@@ -177,7 +180,7 @@ impl<TData> MemoryOf<TData> for CheriAggregateMemory where AggregateMemory64: Me
 /// Now we've defined MemoryOf<u8,u16,u32>, combine them into a single Memory trait
 impl Memory32 for CheriAggregateMemory {
     fn range(&self) -> Range<usize> {
-        self.base_mem.full_range.clone()
+        self.base_mem.range().clone()
     }
 }
 impl Memory64 for CheriAggregateMemory {}
@@ -193,7 +196,7 @@ impl MemoryOf<TaggedCap> for CheriAggregateMemory {
         let addr = addr as usize;
         if addr % 8 != 0 {
             Err(MemoryException::AddressMisaligned{addr, expected: 8})
-        } else if !self.base_mem.full_range.contains(&addr) || !self.base_mem.full_range.contains(&(addr + 3)) {
+        } else if !self.base_mem.range().contains(&addr) || !self.base_mem.range().contains(&(addr + 3)) {
             Err(MemoryException::AddressUnmapped{addr})
         } else {
             let base_mem = &mut self.base_mem as &mut dyn MemoryOf<u64>;
@@ -223,7 +226,7 @@ impl MemoryOf<TaggedCap> for CheriAggregateMemory {
         let addr = addr as usize;
         if addr % 8 != 0 {
             Err(MemoryException::AddressMisaligned{addr, expected: 8})
-        } else if !self.base_mem.full_range.contains(&addr) || !self.base_mem.full_range.contains(&(addr + 7)) {
+        } else if !self.base_mem.range().contains(&addr) || !self.base_mem.range().contains(&(addr + 7)) {
             Err(MemoryException::AddressUnmapped{addr})
         } else {
             // TODO - this shouldn't have to be a dyn object, right?
