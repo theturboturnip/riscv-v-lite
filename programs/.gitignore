@@ -1,0 +1,12 @@
+# Ignore everything in the build subdirectory
+build/*/*
+# except the vector_memcpy directories
+!build/*/vector_memcpy/
+
+# Ignore all files *within* vector_memcpy
+build/*/vector_memcpy/*
+# but allow the outputs we like
+!build/*/vector_memcpy/vector_memcpy.elf
+!build/*/vector_memcpy/vector_memcpy.elf.dump
+!build/*/vector_memcpy/vector_memcpy.s
+!build/*/vector_memcpy/mem.bin

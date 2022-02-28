@@ -1,122 +1,54 @@
-# the name of the program we're going to build
-PROJECT = vector_memcpy
+# This script builds
+
 # build directory
 BUILD = build
+# the programs we're going to build
+PROGRAMS := vector_memcpy
 
-# # name of the Quartus program
-# FPGA_PROJECT_PATH = ../quartus
-# FPGA_PROJECT = clarvi
+# The source files for all programs
+# If any of these are changed, CMake should be invoked for each toolchain
+ALL_PROGRAMS_SOURCES := $(wildcard *.c)
+ALL_PROGRAMS_CMAKELISTS := $(wildcard */CMakeLists.txt)
 
-# source files
-C_FILES := $(wildcard src/*.c)
-AS_FILES := $(wildcard src/*.s)
-ASP_FILES := $(wildcard src/*.S)
+# The CMake toolchains we will use
+TOOLCHAIN_FILES := $(wildcard TC-*.cmake)
+# Get the names from the toolchains
+TOOLCHAINS := $(patsubst TC-%.cmake,%,$(TOOLCHAIN_FILES))
+# # Build folders for each toolchain/program combination
+# TOOLCHAIN_PROGRAM_BUILD_FOLDERS := $(foreach TC,$(TOOLCHAINS),$(foreach PROGRAM,$(PROGRAMS),$(BUILD)/$(TC)/$(PROGRAM)))
+# The "output" files generated for each toolchain
+TOOLCHAIN_OUTPUTS := $(foreach TC,$(TOOLCHAINS),$(BUILD)/$(TC)/CMakeCache.txt)
+# The build directories for each toolchain
+TOOLCHAIN_DIRS := $(foreach TC,$(TOOLCHAINS),$(BUILD)/$(TC))
 
-# object files
-C_OBJ_FILES := $(patsubst src/%.c,build/%.o,$(C_FILES))
-AS_OBJ_FILES := $(patsubst src/%.s,build/%.o,$(AS_FILES))
-ASP_OBJ_FILES := $(patsubst src/%.S,build/%.o,$(ASP_FILES))
+all: dirs $(TOOLCHAIN_OUTPUTS)
 
-# compiler configuration
-# COMPILER = gcc OR llvm-13 OR llvm-trunk
-COMPILER=llvm-trunk
-# gcc and llvm-trunk assume you have your own build, set the toolchain path here
-GCC_PATH=/scratch/riscv-gnu-toolchain-rvv-intrinsic/bin/riscv32-unknown-linux-gnu-
-LLVM_TRUNK_PATH=~/repos/llvm-project/build/bin/
-# llvm-13 assumes you have llvm-13 utils (e.g. clang-13) on your PATH.
+# Each CMake invocation for a toolchain creates a CMakeCache.txt
+$(BUILD)/%/CMakeCache.txt: TC-%.cmake $(ALL_PROGRAMS_SOURCES) $(ALL_PROGRAMS_CMAKELISTS)
+	# $* = pattern "stem", the bit matched with % in the rule
+	# Tell CMake to build the programs with a specific toolchain
+	# If it fails, don't worry - maybe the user doesn't have this specific toolchain installed, and should still try the others
+	- (cd $(BUILD)/$* && cmake -DCMAKE_TOOLCHAIN_FILE=../../TC-$*.cmake ../../ && cmake --build .)
 
-ifeq ($(strip $(COMPILER)),gcc)
-TARGET_ARCH = -march=rv32_v
-RISCV_CONFIG = $(TARGET_ARCH)
-CC = $(GCC_PATH)gcc
-LD = $(GCC_PATH)ld
-OBJCOPY = $(GCC_PATH)objcopy
-OBJDUMP = $(GCC_PATH)objdump
-else ifeq ($(strip $(COMPILER)),llvm-13)
-# settings for the compilers
-TARGET_ARCH = -march=rv32gv0p10
-RISCV_CONFIG = --target=riscv32 $(TARGET_ARCH) -menable-experimental-extensions
-CC = clang-13 $(RISCV_CONFIG)
-LD = lld-13 $(RISCV_CONFIG)
-OBJCOPY = llvm-objcopy-13
-OBJDUMP = llvm-objdump-13
-else ifeq ($(strip $(COMPILER)),llvm-trunk)
-# settings for the compilers
-TARGET_ARCH = -march=rv32gv
-RISCV_CONFIG = --target=riscv32 $(TARGET_ARCH) -menable-experimental-extensions
-CC = $(LLVM_TRUNK_PATH)clang $(RISCV_CONFIG)
-LD = $(LLVM_TRUNK_PATH)lld $(RISCV_CONFIG)
-OBJCOPY = $(LLVM_TRUNK_PATH)llvm-objcopy
-OBJDUMP = $(LLVM_TRUNK_PATH)llvm-objdump
-else
-$(error "Bad COMPILER $(COMPILER)")
-endif
 
-CCFLAGS = -O1 -fno-inline-functions -ffreestanding -Werror=implicit-function-declaration
+# $(BUILD)/mem.bin $(BUILD)/$(PROGRAM).dump $(BUILD)/$(PROGRAM).s
 
-# Lists of rules: the name of a file, followed by the files it depends on.
-# When typing 'make' not followed by a rule name, the first rule is followed.  This rule depends on
-# everything, causing all the parts to be built
 
-all: dirs $(BUILD)/mem.bin $(BUILD)/$(PROJECT).dump $(BUILD)/$(PROJECT).s
 
-# how to build a .o file from a .c file
-$(BUILD)/%.o: src/%.c
-	$(CC) -c -o $@ $< $(CCFLAGS)
+# # build an elf executable
+# $(BUILD)/$(PROGRAM).dump: $(BUILD)/$(PROGRAM).elf
+# 	$(OBJDUMP) -S -s $< > $@
 
-# how to build a .o file from a .s file
-$(BUILD)/%.o: src/%.s
-	$(CC) -c -o $@ $< $(CCFLAGS)
-
-# how to build a .o file from a .S file
-$(BUILD)/%.o: src/%.S
-	$(CC) -c -o $@ $< $(CCFLAGS)
-
-# generate C .s file
-$(BUILD)/%.s: src/%.c
-	$(CC) -S -o $@ $< $(CCFLAGS)
-
-# link with gcc
-$(BUILD)/$(PROJECT).elf: ${AS_OBJ_FILES} ${C_OBJ_FILES} ${ASP_OBJ_FILES}
-	$(CC) -o $@ $^ -T link.ld -nostdlib
-
-# build an elf executable
-$(BUILD)/$(PROJECT).dump: $(BUILD)/$(PROJECT).elf
-	$(OBJDUMP) -S -s $< > $@
-
-# extract the binary data from data and text sections to get a binary image of memory
-$(BUILD)/mem.bin: $(BUILD)/$(PROJECT).elf
-	$(OBJCOPY) -O binary --only-section=.data* --only-section=.text* $< $@
-
-# # convert to an ASCII hex file for simulation
-# $(BUILD)/mem.txt: $(BUILD)/mem.bin
-# 	hexdump -v -e '"%08x\n"' $< > $@
-
-# # convert to an Intel HEX file for downloading to the FPGA
-# $(BUILD)/mem.hex: $(BUILD)/mem.txt
-# 	python txt2hex.py $< $@ 4
-
+# # extract the binary data from data and text sections to get a binary image of memory
+# $(BUILD)/mem.bin: $(BUILD)/$(PROGRAM).elf
+# 	$(OBJCOPY) -O binary --only-section=.data* --only-section=.text* $< $@
 
 # make software project folder
 dirs:
-	mkdir -p $(BUILD)
-
-# # update the memory files inside the FPGA bitfile
-# update-mem:	all
-# 	cd ${FPGA_PROJECT_PATH} && quartus_cdb ${FPGA_PROJECT} -c ${FPGA_PROJECT} --update_mif
-# 	cd ${FPGA_PROJECT_PATH} && quartus_asm --read_settings_files=on --write_settings_files=off ${FPGA_PROJECT} -c ${FPGA_PROJECT}
-
-# # download the bitfile to your board
-# download:
-# 	cd ${FPGA_PROJECT_PATH} && quartus_pgm -m jtag -o P\;output_files/${FPGA_PROJECT}.sof@2
-
-# # build the whole FPGA from the command line
-# # not that it's harder to spot warnings in this output compared with the GUI
-# build_fpga:
-# 	cd ${FPGA_PROJECT_PATH} && quartus_sh --flow compile ${FPGA_PROJECT}
+	mkdir -p $(BUILD) $(TOOLCHAIN_DIRS)
 
 # 'clean' rule: delete all the files so we can start afresh
 clean:
-	rm -rf $(BUILD)
+	rm -rf $(TOOLCHAIN_DIRS)
 
 rebuild: clean all

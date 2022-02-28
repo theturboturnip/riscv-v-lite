@@ -16,7 +16,7 @@ It is split across multiple files:
 To run the emulator on the example program:
 1. Install Rust as directed by [rust-lang.org](https://www.rust-lang.org/tools/install)
 2. Enter the [rsim/](/rsim/) directory
-3. ```$ cargo run direct ../programs/build/mem.bin```
+3. ```$ cargo run direct ../programs/build/llvm-13-rv32iv/vector_memcpy/mem.bin```
 
 Further documentation can be also be generated:
 
@@ -41,7 +41,7 @@ Caused by:
 
 As the program has returned the expected value, it has been successful! 🎉
 
-The bits of the output represent the outcomes of various tests - see [programs/vector_memcpy.c](/programs/vector_memcpy.c) to tell which bit corresponds to which test.
+The bits of the output represent the outcomes of various tests - see [programs/vector_memcpy/vector_memcpy.c](/programs/vector_memcpy/vector_memcpy.c) to tell which bit corresponds to which test.
 
 ## The Program
 
@@ -68,15 +68,18 @@ It does NOT test (and thus the emulator doesn't necessarily support)
 
 **You should not need to compile this program yourself - [programs/build/](/programs/build/) has all the artifacts you need**. 
 
-### The Makefile
+### Compiling the program
 
-The Makefile supports three different compiler configurations:
-- `gcc`, which use a custom GNU toolchain for 'rv32gv' that includes vector intrinsics
-  - Make sure to set the path to your toolchain in the Makefile, mine probably won't work for you :)
+The top-level Makefile in [programs/](/programs/) will invoke CMake to build the program with each toolchain file.
+Toolchains are specified in CMake files e.g. `programs/TC-gcc-rv32iv.cmake`.
+
+Currently, three toolchains are supported:
+- `gcc`, which use a custom GNU toolchain for 'rv32iv' that includes vector intrinsics
+  - This uses the riscv gcc toolchain from the path, may change later to use a specific version/environment variable
 - `llvm-13`, which uses LLVM v13
   - Make sure LLVM v13 tools (e.g. `clang-13`) are on your PATH
 - `llvm-trunk`, which uses a custom LLVM build
-  - As for gcc, make sure to set the path to your LLVM bin directory in the Makefile.
+  - Make sure to set the path to your LLVM bin directory in the toolchain file `TC-llvm-trunk-rv32iv.cmake`.
 
 See [https://apt.llvm.org/](https://apt.llvm.org/) for instructions to download LLVM v13.
 Required Packages:
