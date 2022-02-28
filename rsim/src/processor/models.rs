@@ -9,3 +9,5 @@ pub trait Processor<TModules> {
 
 mod rv32iv;
 pub use rv32iv::{Processor32,ProcessorModules32};
+mod rv64i;
+pub use rv64i::{Rv64iProcessor,Rv64iProcessorModules};

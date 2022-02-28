@@ -11,6 +11,8 @@ pub enum Opcode {
     StoreFP,
     OpImm,
     Op,
+    OpImm32,
+    Op32,
     AddUpperImmPC,
     LoadUpperImm,
     JumpAndLink,
@@ -32,6 +34,9 @@ impl TryInto<Opcode> for u8 {
 
             0b00_100_11 => Opcode::OpImm,
             0b01_100_11 => Opcode::Op,
+
+            0b00_110_11 => Opcode::OpImm32,
+            0b01_110_11 => Opcode::Op32,
 
             0b00_101_11 => Opcode::AddUpperImmPC,
             0b01_101_11 => Opcode::LoadUpperImm,
@@ -239,6 +244,8 @@ pub fn decode(inst: u32) -> Result<(Opcode, InstructionBits)> {
         StoreFP =>          InstructionBits::from_f_ld_st(inst),
         OpImm =>            InstructionBits::from_i(inst, true),
         Op =>               InstructionBits::from_r(inst),
+        OpImm32 =>          InstructionBits::from_i(inst, true),
+        Op32 =>             InstructionBits::from_r(inst),
         AddUpperImmPC =>    InstructionBits::from_u(inst),
         LoadUpperImm =>     InstructionBits::from_u(inst),
         JumpAndLink =>      InstructionBits::from_j(inst),

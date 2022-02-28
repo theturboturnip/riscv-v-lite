@@ -30,10 +30,10 @@ pub trait Memory32: MemoryOf<u8> + MemoryOf<u16> + MemoryOf<u32> {
     }
 }
 pub trait Memory64: Memory32 + MemoryOf<u64> {
-    fn load_u32(&mut self, addr: u64) -> Result<u64, MemoryException> {
+    fn load_u64(&mut self, addr: u64) -> Result<u64, MemoryException> {
         <Self as MemoryOf<u64>>::read(self, addr)
     }
-    fn store_u32(&mut self, addr: u64, val: u64) -> Result<(), MemoryException> {
+    fn store_u64(&mut self, addr: u64, val: u64) -> Result<(), MemoryException> {
         <Self as MemoryOf<u64>>::write(self, addr, val)
     }
 }

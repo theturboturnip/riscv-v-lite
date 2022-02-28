@@ -1,10 +1,11 @@
 extern crate clap;
+use rsim::models::Rv64iProcessor;
 use clap::{Arg, App};
 
 use anyhow::Result;
 
 use rsim::models::{Processor,Processor32};
-use rsim::memory::{AggregateMemory32,MemoryBacking,IOMemory};
+use rsim::memory::{AggregateMemory64,AggregateMemory32,MemoryBacking,IOMemory};
 
 fn run_binary_in_processor<T>(mut processor: Box<dyn Processor<T>>, mut mods: T) -> Result<()> where T: Sized {
     loop {
@@ -40,7 +41,7 @@ fn main() -> Result<()> {
             .arg(
                 Arg::with_name("memory_bin")
                 .required(true)
-                .index(1)
+                .index(2)
             ))
         
         .get_matches();
@@ -50,20 +51,38 @@ fn main() -> Result<()> {
             // Get the filepath for program memory
             let memory_bin = sub_matches.value_of("memory_bin").unwrap();
 
-            // Create the memory map
-            let mem = AggregateMemory32::from_mappings(vec![
-                // Allocate 4KB for the program
-                Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x1000)),
-                // Allocate ~96KB for RAM
-                Box::new(MemoryBacking::zeros(0x1000..0x25_000)),
-                // Add one I/O memory address, which expects 0x3FFF as a return value
-                Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
-            ]);
+            match sub_matches.value_of("riscv_profile") {
+                Some("rv32iv") => {
+                    // Create the memory map
+                    let mem = AggregateMemory32::from_mappings(vec![
+                        // Allocate 4KB for the program
+                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x1000)),
+                        // Allocate ~96KB for RAM
+                        Box::new(MemoryBacking::zeros(0x1000..0x25_000)),
+                        // Add one I/O memory address, which expects 0x3FFF as a return value
+                        Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
+                    ]);
 
-            // Create the processor and vector unit
-            let (processor, mods) = Processor32::new(mem);
+                    let (processor, mods) = Processor32::new(mem);
+                    run_binary_in_processor(Box::new(processor), mods)
+                },
+                Some("rv64i") => {
+                    // Create the memory map
+                    let mem = AggregateMemory64::from_mappings(vec![
+                        // Allocate 4KB for the program
+                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x1000)),
+                        // Allocate ~96KB for RAM
+                        Box::new(MemoryBacking::zeros(0x1000..0x25_000)),
+                        // Add one I/O memory address, which expects 0x3FFF as a return value
+                        Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
+                    ]);
 
-            run_binary_in_processor(Box::new(processor), mods)
+                    let (processor, mods) = Rv64iProcessor::new(mem);
+                    run_binary_in_processor(Box::new(processor), mods)
+                },
+                _ => unreachable!("invalid riscv profile")
+            }
+
         }
         _ => unreachable!("invalid subcommand name")
     }
