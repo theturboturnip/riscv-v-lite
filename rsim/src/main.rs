@@ -1,10 +1,9 @@
 extern crate clap;
-use rsim::processor::elements::Memory32;
 use clap::{Arg, App};
 
 use anyhow::Result;
 
-use rsim::{Processor};
+use rsim::{Processor32};
 use rsim::memory::{AggregateMemory32,MemoryBacking,IOMemory};
 
 fn main() -> Result<()> {
@@ -14,6 +13,11 @@ fn main() -> Result<()> {
         .about("Simplistic RISC-V emulator for Vector extension")
         .subcommand(App::new("direct")
             .about("Run a RISC-V program binary directly")
+            // .arg(Arg::with_name("riscv_profile")
+            //     .required(true)
+            //     .index(1)
+            //     .possible_values(&["rv32iv", "rv64i"])
+            // )
             .arg(
                 Arg::with_name("memory_bin")
                 .required(true)
@@ -38,7 +42,7 @@ fn main() -> Result<()> {
             ]);
 
             // Create the processor and vector unit
-            let (mut processor, mut v_unit) = Processor::new(mem);
+            let (mut processor, mut v_unit) = Processor32::new(mem);
 
             loop {
                 let res = processor.exec_step(&mut v_unit);

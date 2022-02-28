@@ -13,9 +13,6 @@ use crate::processor::elements::Memory32;
 
 use crate::processor::decode::{Opcode,InstructionBits};
 
-use crate::processor::{uXLEN,XLEN};
-
-
 
 /// Maximum element length in bits
 pub const ELEN: usize = 32;
@@ -53,9 +50,9 @@ const_assert!(size_of::<uVLEN>() * 8 == VLEN);
 
 /// The Vector Unit for the processor.
 /// Stores all vector state, including registers.
-/// Call [Rvv::exec_inst()] on it when you encounter a vector instruction.
-/// This requires a [RvvConn] to access other resources.
-pub struct Rvv {
+/// Call [Rv32v::exec_inst()] on it when you encounter a vector instruction.
+/// This requires a [Rv32vConn] to access other resources.
+pub struct Rv32v {
     // TODO use a RegisterFile for this?
     vreg: [uVLEN; 32],
 
@@ -73,16 +70,16 @@ pub struct Rvv {
 }
 
 /// References to all scalar resources touched by the vector unit.
-pub struct RvvConn<'a> {
+pub struct Rv32vConn<'a> {
     pub sreg: &'a mut dyn RegisterFile<u32>,
     pub memory: &'a mut dyn Memory32,
 }
-impl<'a> IsaModConn for RvvConn<'a> {}
+impl<'a> IsaModConn for Rv32vConn<'a> {}
 
-impl Rvv {
+impl Rv32v {
     /// Returns an initialized vector unit.
-    pub fn new() -> Rvv {
-        Rvv {
+    pub fn new() -> Rv32v {
+        Rv32v {
             vreg: [0; 32],
 
             vtype: VType::illegal(),
@@ -100,14 +97,14 @@ impl Rvv {
     }
 
     /// (Internal) Execute a configuration instruction, e.g. vsetvli family
-    /// Requires a [RvvConn].
+    /// Requires a [Rv32vConn].
     /// 
     /// # Arguments
     /// 
     /// * `inst_kind` - Which kind of configuration instruction to execute
     /// * `inst` - Decoded instruction bits
     /// * `conn` - Connection to external resources
-    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: RvvConn) -> Result<()> {
+    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: Rv32vConn) -> Result<()> {
         if let InstructionBits::VType{rd, funct3, rs1, rs2, zimm11, zimm10, ..} = inst {
             assert_eq!(funct3, 0b111);
 
@@ -189,7 +186,7 @@ impl Rvv {
     }
 }
 
-impl IsaMod<RvvConn<'_>> for Rvv {
+impl IsaMod<Rv32vConn<'_>> for Rv32v {
     type Pc = u32;
 
     fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
@@ -214,7 +211,7 @@ impl IsaMod<RvvConn<'_>> for Rvv {
     }
     
     /// Execute a vector-specific instruction, e.g. vector arithmetic, loads, configuration
-    /// Requires a [RvvConn].
+    /// Requires a [Rv32vConn].
     /// 
     /// # Arguments
     /// 
@@ -222,7 +219,7 @@ impl IsaMod<RvvConn<'_>> for Rvv {
     /// * `inst` - Decoded instruction bits
     /// * `inst_bits` - Raw instruction bits (TODO - we shouldn't need this)
     /// * `conn` - Connection to external resources
-    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, mut conn: RvvConn) -> ProcessorResult<Option<u32>> {
+    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, mut conn: Rv32vConn) -> ProcessorResult<Option<u32>> {
         use Opcode::*;
         match (opcode, inst) {
             (Vector, InstructionBits::VType{funct3, funct6, rs1, rs2, rd, vm, ..}) => {
@@ -606,10 +603,10 @@ impl IsaMod<RvvConn<'_>> for Rvv {
     }
 }
 
-impl Rvv {
+impl Rv32v {
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
-    fn load_to_vreg(&mut self, conn: &mut RvvConn, eew: Sew, addr: u64, vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn load_to_vreg(&mut self, conn: &mut Rv32vConn, eew: Sew, addr: u64, vd_base: u8, idx_from_base: u32) -> Result<()> {
         match eew {
             Sew::e8 => {
                 let val = conn.memory.load_u8(addr)?;
@@ -629,7 +626,7 @@ impl Rvv {
     }
     /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
     /// vector register group starting at `vd_base` into a given address `addr` 
-    fn store_to_mem(&mut self, conn: &mut RvvConn, eew: Sew, addr: u64, vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn store_to_mem(&mut self, conn: &mut Rv32vConn, eew: Sew, addr: u64, vd_base: u8, idx_from_base: u32) -> Result<()> {
         match eew {
             Sew::e8 => {
                 let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
@@ -656,7 +653,7 @@ impl Rvv {
 
     /// Decode a Load/Store opcode into an OverallMemOp structure.
     /// Performs all checks to ensure the instruction is a valid RISC-V V vector load/store.
-    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &mut RvvConn) -> Result<OverallMemOp> {
+    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &mut Rv32vConn) -> Result<OverallMemOp> {
         if let InstructionBits::FLdStType{width, rs2, mew, mop, nf, ..} = inst {
             // MEW = Memory Expanded Width(?)
             // Expected to be used for larger widths, because it's right next to the width field,
@@ -906,7 +903,7 @@ impl Rvv {
     }
 }
 
-impl CSRProvider for Rvv {
+impl CSRProvider<u32> for Rv32v {
     fn has_csr(&self, csr: u32) -> bool {
         match csr {
             // Should be implemented, aren't yet
@@ -949,7 +946,7 @@ impl CSRProvider for Rvv {
 /// Vector type information
 /// 
 /// Records the current vector state the program has requested, including element width.
-/// Convertible to/from uXLEN, e.g. a register value.
+/// Convertible to/from u32, e.g. a register value.
 /// 
 /// ```
 /// use rsim::processor::vector::{VType,Sew,Lmul};
@@ -992,7 +989,7 @@ impl VType {
     /// Generate a VType with the illegal bit `vill` set, and all other bits zeroed.
     /// This should be used when an unsupported vtype is requested by the program.
     pub fn illegal() -> Self {
-        VType::decode(1 << (XLEN - 1)).unwrap()
+        VType::decode(1 << (32 - 1)).unwrap()
     }
 
     /// Shorthand for [VType::val_times_lmul_over_sew] with x = VLEN
@@ -1002,14 +999,14 @@ impl VType {
         self.val_times_lmul_over_sew(VLEN as u32)
     }
 
-    /// Encode the VType structure into a uXLEN
+    /// Encode the VType structure into a u32
     /// This is necessary when a program queries the vector type CSR.
-    pub fn encode(&self) -> uXLEN {
-        let mut val: uXLEN = 0;
+    pub fn encode(&self) -> u32 {
+        let mut val: u32 = 0;
 
         if self.vill {
             // Set top bit
-            val |= 1 << (XLEN - 1);
+            val |= 1 << (32 - 1);
         }
 
         if self.vma {
@@ -1042,7 +1039,7 @@ impl VType {
         val
     }
 
-    /// Attempt to decode a uXLEN vtype value (e.g. one encoded in a register value)
+    /// Attempt to decode a u32 vtype value (e.g. one encoded in a register value)
     /// into an actual VType.
     pub fn decode(vtype_bits: u32) -> Result<VType> {
         let vsew = match bits!(vtype_bits, 3:5) {
@@ -1069,7 +1066,7 @@ impl VType {
             invalid => unreachable!("Bad vtype - invalid Lmul selected {:b}", invalid),
         };
 
-        match bits!(vtype_bits, 8:(XLEN-2)) {
+        match bits!(vtype_bits, 8:(32-2)) {
             0 => {
                 // As expected, all middle bits should be zero
             },
@@ -1079,7 +1076,7 @@ impl VType {
         }
 
         Ok(VType {
-            vill: bits!(vtype_bits, (XLEN-1):(XLEN-1)) == 1,
+            vill: bits!(vtype_bits, (32-1):(32-1)) == 1,
             vma:  bits!(vtype_bits, 7:7) == 1,
             vta:  bits!(vtype_bits, 6:6) == 1,
             vsew,

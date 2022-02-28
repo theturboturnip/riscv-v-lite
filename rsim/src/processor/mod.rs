@@ -1,5 +1,4 @@
 use crate::processor::IllegalInstructionException::MiscDecodeException;
-use std::mem::size_of;
 use anyhow::{Context,Result};
 
 pub mod exceptions;
@@ -12,56 +11,41 @@ pub mod elements;
 use elements::{AggregateMemory32,Memory32,RV32RegisterFile,RegisterFile,RegisterTracking};
 
 pub mod isa_mods;
-use isa_mods::{IsaMod, Rv32i, Rv32iConn, Rvv, RvvConn, Zicsr, ZicsrConn, CSRProvider};
+use isa_mods::{IsaMod, Rv32i, Rv32iConn, Rv32v, Rv32vConn, Zicsr32, Zicsr32Conn, CSRProvider};
 
-/// Scalar register length in bits
-pub const XLEN: usize = 32;
-
-/// Unsigned type of length [XLEN]
-/// 
-/// ```
-/// use rsim::processor::{uXLEN, XLEN};
-/// use std::mem::size_of;
-/// 
-/// assert_eq!(size_of::<uXLEN>() * 8, XLEN);
-/// ```
-#[allow(non_camel_case_types)]
-pub type uXLEN = u32;
-const_assert!(size_of::<uXLEN>() * 8 == XLEN);
-
-/// The processor.
+/// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all vector-related stuff is in [VectorUnit]. 
-pub struct Processor {
+pub struct Processor32 {
     pub running: bool,
     pub memory: AggregateMemory32,
-    pc: uXLEN,
+    pc: u32,
     sreg: RV32RegisterFile,
-    csrs: ProcessorCSRs,
+    csrs: ProcessorCSRs32,
 }
-pub struct ProcessorModules {
+pub struct ProcessorModules32 {
     rv32i: Rv32i,
-    rvv: Option<Rvv>,
-    zicsr: Option<Zicsr>
+    rvv: Option<Rv32v>,
+    zicsr: Option<Zicsr32>
 }
 
-impl Processor {
+impl Processor32 {
     /// Create a new processor and vector unit which operates on given memory.
     ///
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(mem: AggregateMemory32) -> (Processor, ProcessorModules) {
-        let mut p = Processor {
+    pub fn new(mem: AggregateMemory32) -> (Processor32, ProcessorModules32) {
+        let mut p = Processor32 {
             running: false,
             memory: mem,
             pc: 0,
             sreg: RV32RegisterFile::default(),
-            csrs: ProcessorCSRs{}
+            csrs: ProcessorCSRs32{}
         };
-        let mut mods = ProcessorModules {
+        let mut mods = ProcessorModules32 {
             rv32i: Rv32i{},
-            rvv: Some(Rvv::new()),
-            zicsr: Some(Zicsr{})
+            rvv: Some(Rv32v::new()),
+            zicsr: Some(Zicsr32::default())
         };
 
         p.reset(&mut mods);
@@ -70,34 +54,34 @@ impl Processor {
     }
 
     /// Get a short-lived connection to scalar resources, usable by the vector unit.
-    /// This connection holds mutable references to fields in the Processor.
+    /// This connection holds mutable references to fields in the Processor32.
     /// 
     /// # Associated Lifetimes
     /// 
-    /// * `'a` - The lifetime of the Processor
+    /// * `'a` - The lifetime of the Processor32
     /// * `'b` - The lifetime of the references held in the RvvConn
     /// 
-    /// `'a : 'b` => `'a` outlives `'b`, e.g. the Processor will live longer than the references to its fields.
+    /// `'a : 'b` => `'a` outlives `'b`, e.g. the Processor32 will live longer than the references to its fields.
     /// Rust needs this guarantee.
     /// 
     /// Because Rust isn't smart enough to understand *which* fields in the processor are referenced,
     /// and the references inside the [RvvConn] are mutable,
-    /// holding a [RvvConn] is equivalent to holding a *mutable reference to the Processor and all its fields*.
-    /// This means you couldn't, say, store the [VectorUnit] inside the Processor and do `processor.v_unit.exec_inst(connection)`,
+    /// holding a [RvvConn] is equivalent to holding a *mutable reference to the Processor32 and all its fields*.
+    /// This means you couldn't, say, store the [VectorUnit] inside the Processor32 and do `processor.v_unit.exec_inst(connection)`,
     /// because [VectorUnit::exec_inst()] tries to take a mutable reference to [VectorUnit], but the `connection` holds that reference already.
-    fn vector_conn<'a,'b>(&'a mut self) -> RvvConn<'b> where 'a: 'b {
-        RvvConn {
+    fn vector_conn<'a,'b>(&'a mut self) -> Rv32vConn<'b> where 'a: 'b {
+        Rv32vConn {
             sreg: &mut self.sreg,
             memory: &mut self.memory,
         }
     }
 
-    fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Option<Rvv>) -> ZicsrConn<'b> where 'a: 'b {
-        let mut csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider];
+    fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Option<Rv32v>) -> Zicsr32Conn<'b> where 'a: 'b {
+        let mut csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider<u32>];
         if let Some(rvv) = rvv.as_mut() {
-            csr_providers.push(rvv as &mut dyn CSRProvider)
+            csr_providers.push(rvv as &mut dyn CSRProvider<u32>)
         }
-        ZicsrConn {
+        Zicsr32Conn {
             sreg: &mut self.sreg,
             csr_providers
         }
@@ -112,7 +96,7 @@ impl Processor {
     }
 
     /// Reset the processor and associated vector unit
-    pub fn reset(&mut self, mods: &mut ProcessorModules) {
+    pub fn reset(&mut self, mods: &mut ProcessorModules32) {
         self.running = false;
         self.pc = 0;
         self.sreg.reset();
@@ -130,7 +114,7 @@ impl Processor {
     /// * `inst_bits` - The raw instruction bits
     /// * `opcode` - The major opcode of the decoded instruction
     /// * `inst` - The fields of the decoded instruction
-    fn process_inst(&mut self, mods: &mut ProcessorModules, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u32> {
+    fn process_inst(&mut self, mods: &mut ProcessorModules32, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u32> {
         let mut next_pc = self.pc + 4;
         
         if mods.rv32i.will_handle(opcode, inst) {
@@ -167,7 +151,7 @@ impl Processor {
     /// # Arguments
     /// 
     /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
-    pub fn exec_step(&mut self, mods: &mut ProcessorModules) -> Result<()> {
+    pub fn exec_step(&mut self, mods: &mut ProcessorModules32) -> Result<()> {
         self.running = true;
 
         self.sreg.start_tracking()?;
@@ -219,7 +203,7 @@ impl Processor {
     }
 
     /// Dump processor and vector unit state to standard output.
-    pub fn dump(&self, mods: &mut ProcessorModules) {
+    pub fn dump(&self, mods: &mut ProcessorModules32) {
         println!("running: {:?}\npc: 0x{:08x}", self.running, self.pc);
         self.sreg.dump();
         if let Some(rvv) = mods.rvv.as_mut() {
@@ -228,8 +212,8 @@ impl Processor {
     }
 }
 
-struct ProcessorCSRs {}
-impl CSRProvider for ProcessorCSRs {
+struct ProcessorCSRs32 {}
+impl CSRProvider<u32> for ProcessorCSRs32 {
     fn has_csr(&self, _csr: u32) -> bool {
         false
     }
