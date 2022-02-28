@@ -11,5 +11,5 @@ pub mod processor;
 
 pub use processor::{Processor};
 pub mod memory {
-    pub use crate::processor::elements::{AggregateMemory,MemoryBacking,IOMemory};
+    pub use crate::processor::elements::{AggregateMemory32,AggregateMemory64,MemoryBacking,IOMemory};
 }

@@ -1,4 +1,4 @@
-use rust_cheri_compressed_cap::Cc64Cap;
+use rust_cheri_compressed_cap::Cc128Cap;
 use thiserror::Error;
 
 pub type ProcessorResult<T> = anyhow::Result<T>;
@@ -31,9 +31,9 @@ pub enum MemoryException {
     AddressUnmapped{ addr: usize },
     /// For when an address is dereferenced in integer mode, with respect to a default capability (DDC/PCC)
     #[error("Address {addr:08x} dereferenced, but out of bounds from default capability {cap:?}")]
-    AddressOobDefaultCapability { addr: usize, cap: Cc64Cap },
+    AddressOobDefaultCapability { addr: usize, cap: Cc128Cap },
     #[error("Capability permission violated: required permission 0b{perm:b} not set in capability {cap:?}")]
-    CapabilityPermission { perm: u32, cap: Cc64Cap },
+    CapabilityPermission { perm: u32, cap: Cc128Cap },
     #[error("Program returned a value = 0x{got:08X} (expected 0x{expected:08X}) = 0b{got:016b}")]
     ResultReturned{got: u32, expected: u32},
 }

@@ -163,7 +163,7 @@ dependencies = [
 [[package]]
 name = "rust-cheri-compressed-cap"
 version = "0.1.0"
-source = "git+https://github.com/theturboturnip/cheri-compressed-cap#e7e752e81e99a8731dad8dd55b2a1601e4ede74d"
+source = "git+https://github.com/theturboturnip/cheri-compressed-cap#6d8284d57e71bdf26f9dc29f1ce7668ba7160831"
 dependencies = [
  "cc",
  "num-traits",

@@ -9,7 +9,7 @@ use std::cmp::min;
 use anyhow::{Context, Result};
 use std::convert::{TryInto};
 
-use crate::processor::elements::Memory;
+use crate::processor::elements::Memory32;
 
 use crate::processor::decode::{Opcode,InstructionBits};
 
@@ -75,7 +75,7 @@ pub struct Rvv {
 /// References to all scalar resources touched by the vector unit.
 pub struct RvvConn<'a> {
     pub sreg: &'a mut dyn RegisterFile<u32>,
-    pub memory: &'a mut dyn Memory,
+    pub memory: &'a mut dyn Memory32,
 }
 impl<'a> IsaModConn for RvvConn<'a> {}
 
@@ -365,7 +365,7 @@ impl IsaMod<RvvConn<'_>> for Rvv {
                     return Ok(None)
                 }
 
-                let base_addr = conn.sreg.read(rs1)?;
+                let base_addr = conn.sreg.read(rs1)? as u64;
 
                 let addr_base_step = match op.eew {
                     Sew::e8 => 1,
@@ -432,7 +432,7 @@ impl IsaMod<RvvConn<'_>> for Rvv {
                         for i in self.vstart..op.evl {
                             // Get our index
                             let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
-                            let addr = base_addr + addr_base_step * idx;
+                            let addr = base_addr + addr_base_step * (idx as u64);
 
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
@@ -453,7 +453,7 @@ impl IsaMod<RvvConn<'_>> for Rvv {
                         for i in self.vstart..op.evl {
                             // Get our index
                             let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
-                            let addr = base_addr + addr_base_step * idx;
+                            let addr = base_addr + addr_base_step * (idx as u64);
 
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
@@ -609,7 +609,7 @@ impl IsaMod<RvvConn<'_>> for Rvv {
 impl Rvv {
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
-    fn load_to_vreg(&mut self, conn: &mut RvvConn, eew: Sew, addr: u32, vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn load_to_vreg(&mut self, conn: &mut RvvConn, eew: Sew, addr: u64, vd_base: u8, idx_from_base: u32) -> Result<()> {
         match eew {
             Sew::e8 => {
                 let val = conn.memory.load_u8(addr)?;
@@ -629,7 +629,7 @@ impl Rvv {
     }
     /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
     /// vector register group starting at `vd_base` into a given address `addr` 
-    fn store_to_mem(&mut self, conn: &mut RvvConn, eew: Sew, addr: u32, vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn store_to_mem(&mut self, conn: &mut RvvConn, eew: Sew, addr: u64, vd_base: u8, idx_from_base: u32) -> Result<()> {
         match eew {
             Sew::e8 => {
                 let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
@@ -734,7 +734,7 @@ impl Rvv {
             // Determines indexing mode
             let mop = match mop {
                 0b00 => Mop::UnitStride,
-                0b10 => Mop::Strided(conn.sreg.read(rs2)?),
+                0b10 => Mop::Strided(conn.sreg.read(rs2)? as u64),
                 0b01 => Mop::Indexed{ordered: false},
                 0b11 => Mop::Indexed{ordered: true},
     
@@ -1201,7 +1201,7 @@ fn val_times_lmul_over_sew(x: u32, s: Sew, l: Lmul) -> u32 {
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 enum Mop {
     UnitStride,
-    Strided(u32),
+    Strided(u64),
     Indexed{ordered: bool},
 }
 
@@ -1239,7 +1239,7 @@ enum MemOpDir {
 /// Used by [OverallMemOp].
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 enum OverallMemOpKind {
-    Strided(u32),
+    Strided(u64),
     Indexed{ordered: bool, index_ew: Sew},
     WholeRegister,
     ByteMask,

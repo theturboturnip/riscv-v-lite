@@ -1,10 +1,11 @@
 extern crate clap;
+use rsim::processor::elements::Memory32;
 use clap::{Arg, App};
 
 use anyhow::Result;
 
 use rsim::{Processor};
-use rsim::memory::{AggregateMemory,MemoryBacking,IOMemory};
+use rsim::memory::{AggregateMemory32,MemoryBacking,IOMemory};
 
 fn main() -> Result<()> {
     let matches = App::new("risc-v-v-lite")
@@ -27,13 +28,13 @@ fn main() -> Result<()> {
             let memory_bin = sub_matches.value_of("memory_bin").unwrap();
 
             // Create the memory map
-            let mem = AggregateMemory::from_mappings(vec![
+            let mem = AggregateMemory32::from_mappings(vec![
                 // Allocate 4KB for the program
-                MemoryBacking::from_file(memory_bin, 0x0..0x1000),
+                Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x1000)),
                 // Allocate ~96KB for RAM
-                MemoryBacking::zeros(0x1000..0x25_000),
+                Box::new(MemoryBacking::zeros(0x1000..0x25_000)),
                 // Add one I/O memory address, which expects 0x3FFF as a return value
-                IOMemory::return_address(0xF000_0000, 0x3FFF)
+                Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
             ]);
 
             // Create the processor and vector unit

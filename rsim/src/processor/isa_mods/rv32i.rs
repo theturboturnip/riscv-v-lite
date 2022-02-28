@@ -1,4 +1,4 @@
-use crate::processor::elements::Memory;
+use crate::processor::elements::Memory32;
 use crate::processor::RegisterFile;
 use crate::processor::isa_mods::*;
 
@@ -8,7 +8,7 @@ use bitutils::sign_extend32;
 pub struct Rv32iConn<'a> {
     pub pc: u32,
     pub sreg: &'a mut dyn RegisterFile<u32>,
-    pub memory: &'a mut dyn Memory,
+    pub memory: &'a mut dyn Memory32,
 }
 impl<'a> IsaModConn for Rv32iConn<'a> {}
 
@@ -35,12 +35,12 @@ impl IsaMod<Rv32iConn<'_>> for Rv32i {
                 let addr = conn.sreg.read(rs1)?.wrapping_add(imm);
                 let new_val = match funct3 {
                     // LB, LH, LW sign-extend if necessary
-                    0b000 => sign_extend32(conn.memory.load_u8(addr)? as u32, 8) as u32, // LB
-                    0b001 => sign_extend32(conn.memory.load_u16(addr)? as u32, 16) as u32, // LH
-                    0b010 => conn.memory.load_u32(addr)?, // LW
+                    0b000 => sign_extend32(conn.memory.load_u8(addr as u64)? as u32, 8) as u32, // LB
+                    0b001 => sign_extend32(conn.memory.load_u16(addr as u64)? as u32, 16) as u32, // LH
+                    0b010 => conn.memory.load_u32(addr as u64)?, // LW
                     // LBU, LHU don't sign-extend
-                    0b100 => conn.memory.load_u8(addr)? as u32, // LBU
-                    0b101 => conn.memory.load_u16(addr)? as u32, // LBU
+                    0b100 => conn.memory.load_u8(addr as u64)? as u32, // LBU
+                    0b101 => conn.memory.load_u16(addr as u64)? as u32, // LBU
 
                     _ => bail!(UnsupportedParam(format!("Load funct3 {:03b}", funct3)))
                 };
@@ -49,9 +49,9 @@ impl IsaMod<Rv32iConn<'_>> for Rv32i {
             (Store, InstructionBits::SType{funct3, rs1, rs2, imm}) => {
                 let addr = conn.sreg.read(rs1)?.wrapping_add(imm);
                 match funct3 {
-                    0b000 => conn.memory.store_u8(addr, (conn.sreg.read(rs2)? & 0xFF) as u8)?,
-                    0b001 => conn.memory.store_u16(addr, (conn.sreg.read(rs2)? & 0xFFFF) as u16)?,
-                    0b010 => conn.memory.store_u32(addr, (conn.sreg.read(rs2)? & 0xFFFF_FFFF) as u32)?,
+                    0b000 => conn.memory.store_u8(addr as u64, (conn.sreg.read(rs2)? & 0xFF) as u8)?,
+                    0b001 => conn.memory.store_u16(addr as u64, (conn.sreg.read(rs2)? & 0xFFFF) as u16)?,
+                    0b010 => conn.memory.store_u32(addr as u64, (conn.sreg.read(rs2)? & 0xFFFF_FFFF) as u32)?,
                     
                     _ => bail!(UnsupportedParam(format!("Store funct3 {:03b}", funct3)))
                 };

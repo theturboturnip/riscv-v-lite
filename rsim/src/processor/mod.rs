@@ -9,7 +9,7 @@ pub mod decode;
 use decode::{decode, InstructionBits};
 
 pub mod elements;
-use elements::{AggregateMemory,ProcessorMemory,RV32RegisterFile,RegisterFile,RegisterTracking};
+use elements::{AggregateMemory32,Memory32,RV32RegisterFile,RegisterFile,RegisterTracking};
 
 pub mod isa_mods;
 use isa_mods::{IsaMod, Rv32i, Rv32iConn, Rvv, RvvConn, Zicsr, ZicsrConn, CSRProvider};
@@ -33,7 +33,7 @@ const_assert!(size_of::<uXLEN>() * 8 == XLEN);
 /// Holds scalar registers and configuration, all vector-related stuff is in [VectorUnit]. 
 pub struct Processor {
     pub running: bool,
-    pub memory: AggregateMemory,
+    pub memory: AggregateMemory32,
     pc: uXLEN,
     sreg: RV32RegisterFile,
     csrs: ProcessorCSRs,
@@ -50,7 +50,7 @@ impl Processor {
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(mem: AggregateMemory) -> (Processor, ProcessorModules) {
+    pub fn new(mem: AggregateMemory32) -> (Processor, ProcessorModules) {
         let mut p = Processor {
             running: false,
             memory: mem,
@@ -174,7 +174,7 @@ impl Processor {
 
         let next_pc_res: Result<u32> = {
             // Fetch
-            let inst_bits = self.memory.load_u32(self.pc).context("Couldn't load next instruction")?;
+            let inst_bits = self.memory.load_u32(self.pc as u64).context("Couldn't load next instruction")?;
 
             // Decode
             let (opcode, inst) = decode(inst_bits)
