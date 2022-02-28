@@ -3,8 +3,27 @@ use clap::{Arg, App};
 
 use anyhow::Result;
 
-use rsim::{Processor32};
+use rsim::models::{Processor,Processor32};
 use rsim::memory::{AggregateMemory32,MemoryBacking,IOMemory};
+
+fn run_binary_in_processor<T>(mut processor: Box<dyn Processor<T>>, mut mods: T) -> Result<()> where T: Sized {
+    loop {
+        let res = processor.exec_step(&mut mods);
+
+        match res {
+            Err(e) => {
+                processor.dump(&mods);
+                return Err(e)
+            },
+            Ok(()) => {}
+        }
+        if !processor.running() {
+            break
+        }
+    }
+
+    Ok(())
+}
 
 fn main() -> Result<()> {
     let matches = App::new("risc-v-v-lite")
@@ -13,11 +32,11 @@ fn main() -> Result<()> {
         .about("Simplistic RISC-V emulator for Vector extension")
         .subcommand(App::new("direct")
             .about("Run a RISC-V program binary directly")
-            // .arg(Arg::with_name("riscv_profile")
-            //     .required(true)
-            //     .index(1)
-            //     .possible_values(&["rv32iv", "rv64i"])
-            // )
+            .arg(Arg::with_name("riscv_profile")
+                .required(true)
+                .index(1)
+                .possible_values(&["rv32iv", "rv64i"])
+            )
             .arg(
                 Arg::with_name("memory_bin")
                 .required(true)
@@ -42,24 +61,9 @@ fn main() -> Result<()> {
             ]);
 
             // Create the processor and vector unit
-            let (mut processor, mut v_unit) = Processor32::new(mem);
+            let (processor, mods) = Processor32::new(mem);
 
-            loop {
-                let res = processor.exec_step(&mut v_unit);
-
-                match res {
-                    Err(e) => {
-                        processor.dump(&mut v_unit);
-                        return Err(e)
-                    },
-                    Ok(()) => {}
-                }
-                if !processor.running {
-                    break
-                }
-            }
-
-            Ok(())
+            run_binary_in_processor(Box::new(processor), mods)
         }
         _ => unreachable!("invalid subcommand name")
     }

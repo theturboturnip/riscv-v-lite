@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use crate::processor::RegisterFile;
+use crate::processor::elements::registers::RegisterFile;
 use crate::processor::isa_mods::*;
 
 pub trait CSRProvider<T> {

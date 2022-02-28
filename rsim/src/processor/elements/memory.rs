@@ -1,4 +1,4 @@
-use crate::processor::MemoryException;
+use crate::processor::exceptions::MemoryException;
 use std::ops::Range;
 
 pub trait MemoryOf<TData> where TData: Sized {

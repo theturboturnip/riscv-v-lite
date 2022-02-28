@@ -155,6 +155,7 @@ dependencies = [
  "bitutils",
  "clap",
  "either",
+ "num-traits",
  "rust-cheri-compressed-cap",
  "static_assertions",
  "thiserror",

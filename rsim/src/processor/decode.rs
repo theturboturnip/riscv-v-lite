@@ -1,4 +1,4 @@
-use crate::processor::IllegalInstructionException::UnknownOpcode;
+use crate::processor::exceptions::IllegalInstructionException::UnknownOpcode;
 use std::convert::TryInto;
 use bitutils::sign_extend32;
 use anyhow::Result;

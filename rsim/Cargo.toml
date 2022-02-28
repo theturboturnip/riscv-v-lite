@@ -14,3 +14,4 @@ thiserror = "1.0"
 static_assertions = "1.1.0"
 rust-cheri-compressed-cap = { git = "https://github.com/theturboturnip/cheri-compressed-cap" }
 either = "1.6.1"
+num-traits = "0.2.14"

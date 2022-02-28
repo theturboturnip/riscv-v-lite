@@ -1,3 +1,4 @@
+use num_traits::Num;
 use thiserror::Error;
 
 pub trait RegisterFile<TData> {
@@ -27,11 +28,17 @@ pub enum RegisterFileError {
     InvalidIndex(u8),
 }
 
-pub struct RV32RegisterFile {
-    regs: [u32; 31],
-    tracking: Option<Vec<RegisterAction<u32>>>
+/// Internal trait, used to implement RvRegisterFile as a generic over u32 and u64
+/// TODO - should not be pub, but has to be: RvRegisterFile32 exposes RvRegisterFile<T> as public, which requires RegisterNumT to be public as well.
+pub trait RegisterNumT: Num + std::fmt::LowerHex + Copy {}
+impl RegisterNumT for u32 {}
+impl RegisterNumT for u64 {}
+
+pub struct RvRegisterFile<T: RegisterNumT> {
+    regs: [T; 31],
+    tracking: Option<Vec<RegisterAction<T>>>
 }
-impl RV32RegisterFile {
+impl<T> RvRegisterFile<T> where T: RegisterNumT {
     pub fn dump(&self) {
         const REGISTER_NAMES: [&str; 32] = [
             "zero", "ra", "sp", "gp",
@@ -44,22 +51,22 @@ impl RV32RegisterFile {
             "t3", "t4", "t5", "t6"
         ];
 
-        for i in 1..32 {
+        for i in 0..32 {
             println!("x{} = {} = 0x{:08x}", i, REGISTER_NAMES[i], match i {
-                0 => 0,
+                0 => T::zero(),
                 _ => self.regs[i - 1]
             });
         }
     }
     pub fn reset(&mut self) {
-        self.regs = [0; 31];
+        self.regs = [T::zero(); 31];
         self.tracking = None;
     }
 }
-impl RegisterFile<u32> for RV32RegisterFile {    
-    fn read(&mut self, idx: u8) -> Result<u32, RegisterFileError> {
+impl<T> RegisterFile<T> for RvRegisterFile<T> where T: RegisterNumT {    
+    fn read(&mut self, idx: u8) -> Result<T, RegisterFileError> {
         let val = match idx {
-            0    => Ok(0),
+            0    => Ok(T::zero()),
             1..=31 => Ok(self.regs[(idx - 1) as usize]),
             _ => Err(RegisterFileError::InvalidIndex(idx))
         }?;
@@ -70,7 +77,7 @@ impl RegisterFile<u32> for RV32RegisterFile {
 
         Ok(val)
     }
-    fn write(&mut self, idx: u8, val: u32) -> Result<(), RegisterFileError> {
+    fn write(&mut self, idx: u8, val: T) -> Result<(), RegisterFileError> {
         match idx {
             0    => Ok(()),
             1..=31 => {
@@ -87,7 +94,7 @@ impl RegisterFile<u32> for RV32RegisterFile {
         Ok(())
     }
 }
-impl RegisterTracking<u32> for RV32RegisterFile {
+impl<T> RegisterTracking<T> for RvRegisterFile<T> where T: RegisterNumT {
     fn start_tracking(&mut self) -> Result<(), RegisterFileError> {
         if self.tracking.is_some() {
             Err(RegisterFileError::AlreadyTracking)
@@ -96,7 +103,7 @@ impl RegisterTracking<u32> for RV32RegisterFile {
             Ok(())
         }
     }
-    fn end_tracking(&mut self) -> Result<Vec<RegisterAction<u32>>, RegisterFileError> {
+    fn end_tracking(&mut self) -> Result<Vec<RegisterAction<T>>, RegisterFileError> {
         if let Some(tracking) = self.tracking.take() {
             Ok(tracking)
         } else {
@@ -104,11 +111,14 @@ impl RegisterTracking<u32> for RV32RegisterFile {
         }
     }
 }
-impl Default for RV32RegisterFile {
+impl<T> Default for RvRegisterFile<T> where T: RegisterNumT {
     fn default() -> Self {
-        RV32RegisterFile {
-            regs: [0; 31],
+        RvRegisterFile {
+            regs: [T::zero(); 31],
             tracking: None,
         }
     }
 }
+
+pub type RvRegisterFile32 = RvRegisterFile<u32>;
+pub type RvRegisterFile64 = RvRegisterFile<u64>;

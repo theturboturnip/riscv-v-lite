@@ -1,5 +1,5 @@
 use std::ops::Range;
-use crate::processor::MemoryException;
+use crate::processor::exceptions::MemoryException;
 use std::collections::HashSet;
 use either::Either;
 use super::registers::*;

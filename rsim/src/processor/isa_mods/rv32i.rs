@@ -1,8 +1,8 @@
 use crate::processor::elements::memory::Memory32;
-use crate::processor::RegisterFile;
+use crate::processor::elements::registers::RegisterFile;
 use crate::processor::isa_mods::*;
 
-use crate::processor::IllegalInstructionException::UnsupportedParam;
+use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
 use bitutils::sign_extend32;
 
 pub struct Rv32iConn<'a> {

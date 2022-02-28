@@ -1,9 +1,7 @@
-use crate::processor::isa_mods::ProcessorResult;
-use crate::processor::isa_mods::IsaModConn;
-use crate::processor::isa_mods::IsaMod;
-use crate::processor::RegisterFile;
-use crate::processor::IllegalInstructionException::*;
-use crate::processor::CSRProvider;
+use crate::processor::isa_mods::*;
+use crate::processor::elements::registers::RegisterFile;
+use crate::processor::exceptions::IllegalInstructionException::*;
+use super::csrs::CSRProvider;
 use std::mem::size_of;
 use std::cmp::min;
 use anyhow::{Context, Result};
@@ -480,7 +478,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                                         // Any potentially faulted load should fault as normal if i == 0
                                         load_fault?;
                                     } else if load_fault.is_err() {
-                                        use crate::processor::MemoryException;
+                                        use crate::processor::exceptions::MemoryException;
                                         // There was *some* error from the load, check if it was a memory fault
                                         let load_err = load_fault.unwrap_err();
                                         // Only shrink the vlen if it's a MemError related to an invalid address
