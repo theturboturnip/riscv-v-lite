@@ -3,7 +3,7 @@
 # build directory
 BUILD = build
 # the programs we're going to build
-PROGRAMS := vector_memcpy
+PROGRAMS := vector_memcpy cheri_hello_world
 
 # The source files for all programs
 # If any of these are changed, CMake should be invoked for each toolchain
