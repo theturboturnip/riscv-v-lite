@@ -3,7 +3,7 @@
  * Unfortunately this means we must hardcode the size of memory.
  * Here we choose 64K. Change this value to change the working memory size.
  */
-__sp = 0x10000;
+__sp = 0x10000 - 32;
 
 SECTIONS
 {

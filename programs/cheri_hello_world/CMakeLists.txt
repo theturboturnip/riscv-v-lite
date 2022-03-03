@@ -1,4 +1,5 @@
 add_executable(cheri_hello_world init.s hello_world.c)
+set_target_properties(cheri_hello_world PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/link.ld)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_DIR}/link.ld -nostdlib")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -fno-inline-functions -ffreestanding -Werror=implicit-function-declaration")
 

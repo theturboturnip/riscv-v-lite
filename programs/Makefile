@@ -5,10 +5,9 @@ BUILD = build
 # the programs we're going to build
 PROGRAMS := vector_memcpy cheri_hello_world
 
-# The source files for all programs
+# The associated files for all programs
 # If any of these are changed, CMake should be invoked for each toolchain
-ALL_PROGRAMS_SOURCES := $(wildcard *.c)
-ALL_PROGRAMS_CMAKELISTS := $(wildcard */CMakeLists.txt)
+ALL_PROGRAMS_SOURCES := $(foreach P,$(PROGRAMS),$(wildcard $(P)/*))
 
 # The CMake toolchains we will use
 TOOLCHAIN_FILES := $(wildcard TC-*.cmake)
@@ -17,19 +16,23 @@ TOOLCHAINS := $(patsubst TC-%.cmake,%,$(TOOLCHAIN_FILES))
 # # Build folders for each toolchain/program combination
 # TOOLCHAIN_PROGRAM_BUILD_FOLDERS := $(foreach TC,$(TOOLCHAINS),$(foreach PROGRAM,$(PROGRAMS),$(BUILD)/$(TC)/$(PROGRAM)))
 # The "output" files generated for each toolchain
-TOOLCHAIN_OUTPUTS := $(foreach TC,$(TOOLCHAINS),$(BUILD)/$(TC)/CMakeCache.txt)
+TOOLCHAIN_OUTPUTS := $(foreach P,$(PROGRAMS),$(foreach TC,$(TOOLCHAINS),$(BUILD)/$(TC)/$(P)/mem.bin))
 # The build directories for each toolchain
 TOOLCHAIN_DIRS := $(foreach TC,$(TOOLCHAINS),$(BUILD)/$(TC))
 
 all: dirs $(TOOLCHAIN_OUTPUTS)
 
-# Each CMake invocation for a toolchain creates a CMakeCache.txt
-$(BUILD)/%/CMakeCache.txt: TC-%.cmake $(ALL_PROGRAMS_SOURCES) $(ALL_PROGRAMS_CMAKELISTS)
+$(BUILD)/%/vector_memcpy/mem.bin: TC-%.cmake $(ALL_PROGRAMS_SOURCES) $(ALL_PROGRAMS_CMAKELISTS)
 	# $* = pattern "stem", the bit matched with % in the rule
 	# Tell CMake to build the programs with a specific toolchain
 	# If it fails, don't worry - maybe the user doesn't have this specific toolchain installed, and should still try the others
 	- (cd $(BUILD)/$* && cmake -DCMAKE_TOOLCHAIN_FILE=../../TC-$*.cmake ../../ && cmake --build .)
 
+$(BUILD)/%/cheri_hello_world/mem.bin: TC-%.cmake $(ALL_PROGRAMS_SOURCES) $(ALL_PROGRAMS_CMAKELISTS)
+	# $* = pattern "stem", the bit matched with % in the rule
+	# Tell CMake to build the programs with a specific toolchain
+	# If it fails, don't worry - maybe the user doesn't have this specific toolchain installed, and should still try the others
+	- (cd $(BUILD)/$* && cmake -DCMAKE_TOOLCHAIN_FILE=../../TC-$*.cmake ../../ && cmake --build .)
 
 # $(BUILD)/mem.bin $(BUILD)/$(PROGRAM).dump $(BUILD)/$(PROGRAM).s
 
