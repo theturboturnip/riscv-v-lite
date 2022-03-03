@@ -13,6 +13,30 @@ pub struct CheriRV64RegisterFile {
     tracking: Option<Vec<RegisterAction<TaggedCap>>>
 }
 impl CheriRV64RegisterFile {
+    pub fn dump(&self) {
+        const REGISTER_NAMES: [&str; 32] = [
+            "zero", "ra", "sp", "gp",
+            "tp", "t0", "t1", "t2",
+            "fp", "s1", "a0", "a1",
+            "a2", "a3", "a4", "a5",
+            "a6", "a7", "s2", "s3",
+            "s4", "s5", "s6", "s7",
+            "s8", "s9", "s10", "s11",
+            "t3", "t4", "t5", "t6"
+        ];
+
+        println!("x{} = {} = 0x{:016x}", 0, REGISTER_NAMES[0], 0);
+        for i in 1..32 {
+            match self.regs[i - 1] {
+                Either::Left(val) => {
+                    println!("x{} = {} = 0x{:016x}", i, REGISTER_NAMES[i], val);
+                }
+                Either::Right(cap) => {
+                    println!("x{} = {} = {:?}", i, REGISTER_NAMES[i], cap);
+                }
+            };
+        }
+    }
     pub fn reset(&mut self) {
         self.regs = [Either::Left(0); 31];
         self.tracking = None;
@@ -118,7 +142,7 @@ impl Default for CheriRV64RegisterFile {
 /// 
 /// If base_cap is set, the memory is in Integer mode - all accesses will be checked against base_cap
 /// Otherwise, memory is in Capability mode - all accesses are assumed to have been checked before.
-struct CheriAggregateMemory {
+pub struct CheriAggregateMemory {
     base_mem: AggregateMemory64,
     base_cap: Option<Cc128Cap>,
     // Store tags in a hash-set

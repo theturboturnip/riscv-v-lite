@@ -5,27 +5,28 @@ use anyhow::{Context,Result};
 use crate::processor::exceptions::{IllegalInstructionException,MemoryException};
 use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
-use crate::processor::elements::memory::{AggregateMemory64,Memory32};
-use crate::processor::elements::registers::{RvRegisterFile64,RegisterTracking};
+use crate::processor::elements::memory::{Memory32};
+use crate::processor::elements::registers::{RegisterTracking};
+use crate::processor::elements::cheri::{CheriRV64RegisterFile,CheriAggregateMemory};
 use crate::processor::isa_mods::{IsaMod, Rv64i, Rv64iConn, Zicsr64, Zicsr64Conn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
-pub struct Rv64iProcessor {
+pub struct Rv64iXCheriProcessor {
     pub running: bool,
-    pub memory: AggregateMemory64,
+    pub memory: CheriAggregateMemory,
     pc: u64,
-    sreg: RvRegisterFile64,
-    csrs: Rv64iProcessorCSRs,
+    sreg: CheriRV64RegisterFile,
+    csrs: Rv64iXCheriProcessorCSRs,
 }
 
-pub struct Rv64iProcessorModules {
+pub struct Rv64iXCheriProcessorModules {
     rv64i: Rv64i,
     zicsr: Option<Zicsr64>
 }
 
-struct Rv64iProcessorCSRs {}
-impl CSRProvider<u64> for Rv64iProcessorCSRs {
+struct Rv64iXCheriProcessorCSRs {}
+impl CSRProvider<u64> for Rv64iXCheriProcessorCSRs {
     fn has_csr(&self, _csr: u32) -> bool {
         false
     }
@@ -34,21 +35,21 @@ impl CSRProvider<u64> for Rv64iProcessorCSRs {
     fn csr_atomic_read_clear(&mut self, _csr: u32, _clear_bits: Option<u64>) -> Result<u64> { todo!() }
 }
 
-impl Rv64iProcessor {
+impl Rv64iXCheriProcessor {
     /// Create a new processor and vector unit which operates on given memory.
     ///
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(mem: AggregateMemory64) -> (Rv64iProcessor, Rv64iProcessorModules) {
-        let mut p = Rv64iProcessor {
+    pub fn new(mem: CheriAggregateMemory) -> (Rv64iXCheriProcessor, Rv64iXCheriProcessorModules) {
+        let mut p = Rv64iXCheriProcessor {
             running: false,
             memory: mem,
             pc: 0,
-            sreg: RvRegisterFile64::default(),
-            csrs: Rv64iProcessorCSRs{}
+            sreg: CheriRV64RegisterFile::default(),
+            csrs: Rv64iXCheriProcessorCSRs{}
         };
-        let mut mods = Rv64iProcessorModules {
+        let mut mods = Rv64iXCheriProcessorModules {
             rv64i: Rv64i{},
             zicsr: Some(Zicsr64::default())
         };
@@ -82,7 +83,7 @@ impl Rv64iProcessor {
     /// * `inst_bits` - The raw instruction bits
     /// * `opcode` - The major opcode of the decoded instruction
     /// * `inst` - The fields of the decoded instruction
-    fn process_inst(&mut self, mods: &mut Rv64iProcessorModules, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u64> {
+    fn process_inst(&mut self, mods: &mut Rv64iXCheriProcessorModules, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u64> {
         let mut next_pc = self.pc + 4;
         
         if mods.rv64i.will_handle(opcode, inst) {
@@ -105,9 +106,9 @@ impl Rv64iProcessor {
         bail!(MiscDecodeException("Unexpected opcode/InstructionBits pair".to_string()))
     }
 }
-impl Processor<Rv64iProcessorModules> for Rv64iProcessor {
+impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
     /// Reset the processor and associated vector unit
-    fn reset(&mut self, _mods: &mut Rv64iProcessorModules) {
+    fn reset(&mut self, _mods: &mut Rv64iXCheriProcessorModules) {
         self.running = false;
         self.pc = 0;
         self.sreg.reset();
@@ -118,7 +119,7 @@ impl Processor<Rv64iProcessorModules> for Rv64iProcessor {
     /// # Arguments
     /// 
     /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
-    fn exec_step(&mut self, mods: &mut Rv64iProcessorModules) -> Result<()> {
+    fn exec_step(&mut self, mods: &mut Rv64iXCheriProcessorModules) -> Result<()> {
         self.running = true;
 
         self.sreg.start_tracking()?;
@@ -170,7 +171,7 @@ impl Processor<Rv64iProcessorModules> for Rv64iProcessor {
     }
 
     /// Dump processor and vector unit state to standard output.
-    fn dump(&self, _mods: &Rv64iProcessorModules) {
+    fn dump(&self, _mods: &Rv64iXCheriProcessorModules) {
         println!("running: {:?}\npc: 0x{:08x}", self.running, self.pc);
         self.sreg.dump();
     }

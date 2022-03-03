@@ -12,9 +12,6 @@ use crate::processor::elements::memory::Memory32;
 use crate::processor::decode::{Opcode,InstructionBits};
 
 
-/// Maximum element length in bits
-pub const ELEN: usize = 32;
-
 /// Unsigned type of length [ELEN]
 /// 
 /// ```
@@ -25,7 +22,6 @@ pub const ELEN: usize = 32;
 /// ```
 #[allow(non_camel_case_types)]
 pub type uELEN = u32;
-const_assert!(size_of::<uELEN>() * 8 == ELEN);
 
 
 

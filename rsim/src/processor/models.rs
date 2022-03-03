@@ -11,3 +11,5 @@ mod rv32iv;
 pub use rv32iv::{Processor32,ProcessorModules32};
 mod rv64i;
 pub use rv64i::{Rv64iProcessor,Rv64iProcessorModules};
+mod rv64ixcheri;
+pub use rv64ixcheri::{Rv64iXCheriProcessor,Rv64iXCheriProcessorModules};
