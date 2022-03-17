@@ -1,6 +1,6 @@
 	.text
 	.attribute	4, 16
-	.attribute	5, "rv64i2p0_v0p10_zvlsseg0p10"
+	.attribute	5, "rv64i2p0_m2p0_v0p10_zvlsseg0p10"
 	.file	"vector_memcpy.c"
 	.globl	memset
 	.p2align	2

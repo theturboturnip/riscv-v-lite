@@ -4,7 +4,7 @@
 # The Generic system name is used for embedded targets (targets without OS) in
 # CMake
 set( CMAKE_SYSTEM_NAME          Generic )
-set( CMAKE_SYSTEM_PROCESSOR     rv64ixcheri   ) #v0p10
+set( CMAKE_SYSTEM_PROCESSOR     rv64imv0p10xcheri   ) #v0p10
 set( CMAKE_EXECUTABLE_SUFFIX    ".elf" )
 set( CMAKE_EXECUTABLE_SUFFIX_C    ".elf" )
 
@@ -61,7 +61,7 @@ set( CMAKE_OBJDUMP      ${RISCV_TOOLCHAIN_BIN_PATH}/llvm-objdump${RISCV_TOOLCHAI
 
 # Set the CMAKE C flags (which should also be used by the assembler!
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --target=riscv64" )
-set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -cheri -mno-relax -mabi=l64pc128" )
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-relax -mabi=l64pc128" )
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${CMAKE_SYSTEM_PROCESSOR} -menable-experimental-extensions" )
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostartfiles" )
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdlib" )
@@ -72,7 +72,7 @@ set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS}" CACHE STRING "" )
 set( CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}" CACHE STRING "" )
 
 set( CMAKE_EXE_LINKER_FLAGS   "${CMAKE_EXE_LINKER_FLAGS}  --target=riscv64" )
-set( CMAKE_EXE_LINKER_FLAGS   "${CMAKE_EXE_LINKER_FLAGS}  -cheri -mno-relax -mabi=l64pc128" )
+set( CMAKE_EXE_LINKER_FLAGS   "${CMAKE_EXE_LINKER_FLAGS}  -mno-relax -mabi=l64pc128" )
 set( CMAKE_EXE_LINKER_FLAGS   "${CMAKE_EXE_LINKER_FLAGS}  -march=${CMAKE_SYSTEM_PROCESSOR} -menable-experimental-extensions" )
 set( CMAKE_EXE_LINKER_FLAGS   "${CMAKE_EXE_LINKER_FLAGS}  -nostartfiles" )
 set( CMAKE_EXE_LINKER_FLAGS   "${CMAKE_EXE_LINKER_FLAGS}  -nostdlib" )

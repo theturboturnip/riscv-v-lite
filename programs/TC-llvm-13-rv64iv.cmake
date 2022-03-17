@@ -4,7 +4,7 @@
 # The Generic system name is used for embedded targets (targets without OS) in
 # CMake
 set( CMAKE_SYSTEM_NAME          Generic )
-set( CMAKE_SYSTEM_PROCESSOR     rv64iv0p10   )
+set( CMAKE_SYSTEM_PROCESSOR     rv64imv0p10   )
 set( CMAKE_EXECUTABLE_SUFFIX    ".elf" )
 set( CMAKE_EXECUTABLE_SUFFIX_C    ".elf" )
 

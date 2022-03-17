@@ -16,3 +16,9 @@ add_custom_command(TARGET cheri_hello_world POST_BUILD
 # $(OBJCOPY) -O binary --only-section=.data* --only-section=.text* $< $@
 add_custom_command(TARGET cheri_hello_world POST_BUILD
                    COMMAND ${CMAKE_OBJCOPY} -O binary --only-section=.data* --only-section=.text* $<TARGET_FILE:cheri_hello_world> mem.bin)
+
+
+# Dump the executable
+# $(OBJDUMP) -S -s $< > $@
+add_custom_command(TARGET cheri_hello_world POST_BUILD
+                   COMMAND ${CMAKE_OBJDUMP} -S -s $<TARGET_FILE:cheri_hello_world> > $<TARGET_FILE:cheri_hello_world>.dump)

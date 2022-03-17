@@ -7,7 +7,7 @@ PROGRAMS := vector_memcpy cheri_hello_world
 
 # The associated files for all programs
 ALL_PROGRAMS_SOURCES := $(foreach P,$(PROGRAMS),$(wildcard $(P)/*))
-ALL_PROGRAMS_CMAKELISTS := $(wildcard */CMakeLists.txt)
+ALL_PROGRAMS_CMAKELISTS := $(wildcard */CMakeLists.txt) CMakeLists.txt
 
 # The CMake toolchains we will use
 TOOLCHAIN_FILES := $(wildcard TC-*.cmake)
@@ -39,7 +39,7 @@ $(BUILD)/%/.cmakestamp: TC-%.cmake $(ALL_PROGRAMS_CMAKELISTS)
 
 # Recompile executables if the buildsystem has changed (e.g. if any toolchains or CMakeLists change),
 # or if any program sources change
-$(BUILD)/%/.execstamp: $(BUILD)/%/.cmakestamp $(ALL_PROGRAMS_SOURCES)
+$(BUILD)/%/.execstamp: $(BUILD)/%/.cmakestamp $(ALL_PROGRAMS_SOURCES) TC-%.cmake $(ALL_PROGRAMS_CMAKELISTS)
 	@# Go to the build directory, check that .cmakestamp exists, then invoke the build system
 	@# (if the toolchain failed, .cmakestamp won't have been generated.)
 	@cd $(BUILD)/$* && [ -f .cmakestamp ] \
