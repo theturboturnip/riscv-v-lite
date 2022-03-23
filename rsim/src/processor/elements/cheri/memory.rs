@@ -25,14 +25,14 @@ impl CheriAggregateMemory {
     fn check_capability<TData>(&self, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
         let size = std::mem::size_of::<TData>() as u64;
         if !cap.tag() {
-            Err(MemoryException::CapabilityInvalid{ cap })
+            bail!(MemoryException::CapabilityInvalid{ cap })
         } else if cap.permissions() & expected_perms != expected_perms {
-            Err(MemoryException::CapabilityPermission { cap, perms: expected_perms })
+            bail!(MemoryException::CapabilityPermission { cap, perms: expected_perms })
         } else if !cap_bounds_range(cap).contains(&cap.address()) 
             || !cap_bounds_range(cap).contains(&(cap.address() + size - 1)) {
-            Err(MemoryException::AddressOobCapability { cap, size: size as usize, addr: cap.address() as usize })
+            bail!(MemoryException::AddressOobCapability { cap, size: size as usize, addr: cap.address() as usize })
         } else if cap.is_sealed() {
-            Err(MemoryException::CapabilitySealed{ cap })
+            bail!(MemoryException::CapabilitySealed{ cap })
         } else {
             Ok(())
         }

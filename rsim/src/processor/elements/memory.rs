@@ -1,7 +1,7 @@
 use crate::processor::exceptions::MemoryException;
 use std::ops::Range;
 
-pub type MemoryResult<T> = Result<T, MemoryException>;
+pub type MemoryResult<T> = anyhow::Result<T>;
 
 /// Checks for address alignment and whether the address is in-range, generic on the type of data being accessed.
 /// Enforces alignment to size_of<TData>.
@@ -11,9 +11,9 @@ pub(super) fn check_alignment_range<TData>(addr: u64, range: &Range<usize>) -> M
     // Assume each type has to be aligned to its length
     let align = size;
     if addr % align != 0 {
-        Err(MemoryException::AddressMisaligned{addr, expected: align})
+        bail!(MemoryException::AddressMisaligned{addr, expected: align})
     } else if !range.contains(&addr) || !range.contains(&(addr + size - 1)) {
-        Err(MemoryException::AddressUnmapped{addr})
+        bail!(MemoryException::AddressUnmapped{addr})
     } else {
         Ok(())
     }
@@ -87,7 +87,7 @@ impl IOMemory {
 impl MemoryOf<u8> for IOMemory {
     fn read(&mut self, _: u64) -> MemoryResult<u8> { Ok(0) }
     fn write(&mut self, _: u64, val: u8) -> MemoryResult<()> {
-        Err(MemoryException::ResultReturned{
+        bail!(MemoryException::ResultReturned{
             got: val as u32,
             expected: self.expected
         })
@@ -96,7 +96,7 @@ impl MemoryOf<u8> for IOMemory {
 impl MemoryOf<u16> for IOMemory {
     fn read(&mut self, _: u64) -> MemoryResult<u16> { Ok(0) }
     fn write(&mut self, _: u64, val: u16) -> MemoryResult<()> {
-        Err(MemoryException::ResultReturned{
+        bail!(MemoryException::ResultReturned{
             got: val as u32,
             expected: self.expected
         })
@@ -105,7 +105,7 @@ impl MemoryOf<u16> for IOMemory {
 impl MemoryOf<u32> for IOMemory {
     fn read(&mut self, _: u64) -> MemoryResult<u32> { Ok(0) }
     fn write(&mut self, _: u64, val: u32) -> MemoryResult<()> {
-        Err(MemoryException::ResultReturned{
+        bail!(MemoryException::ResultReturned{
             got: val as u32,
             expected: self.expected
         })
@@ -114,7 +114,7 @@ impl MemoryOf<u32> for IOMemory {
 impl MemoryOf<u64> for IOMemory {
     fn read(&mut self, _: u64) -> MemoryResult<u64> { Ok(0) }
     fn write(&mut self, _: u64, val: u64) -> MemoryResult<()> {
-        Err(MemoryException::ResultReturned{
+        bail!(MemoryException::ResultReturned{
             got: val as u32,
             expected: self.expected
         })
@@ -349,7 +349,7 @@ impl<T: Memory32 + ?Sized,TData> MemoryOf<TData> for AggregateMemory<T> where T:
             }
         }
         // If we're here, we didn't return => we don't have a mapping for this address
-        Err(MemoryException::AddressUnmapped{addr: addr as usize})
+        bail!(MemoryException::AddressUnmapped{addr: addr as usize})
     }
     fn write(&mut self, addr: u64, val: TData) -> MemoryResult<()> {
         // Find a mapping which handles this address
@@ -360,7 +360,7 @@ impl<T: Memory32 + ?Sized,TData> MemoryOf<TData> for AggregateMemory<T> where T:
             }
         }
         // If we're here, we didn't return => we don't have a mapping for this address
-        Err(MemoryException::AddressUnmapped{addr: addr as usize})
+        bail!(MemoryException::AddressUnmapped{addr: addr as usize})
     }
 }
 impl<T: Memory32 + ?Sized> Memory32 for AggregateMemory<T> {
