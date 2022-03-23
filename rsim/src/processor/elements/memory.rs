@@ -1,10 +1,30 @@
 use crate::processor::exceptions::MemoryException;
 use std::ops::Range;
 
-pub trait MemoryOf<TData> where TData: Sized {
+/// Checks for 
+pub(super) fn check_alignment_range<TData>(addr: u64, range: Range<usize>) -> Result<(), MemoryException> {
+    let addr = addr as usize;
+    let size = std::mem::size_of::<TData>();
+    // Assume each type has to be aligned to its length
+    let align = size;
+    if addr % align != 0 {
+        Err(MemoryException::AddressMisaligned{addr, expected: align})
+    } else if !range.contains(&addr) || !range.contains(&(addr + size - 1)) {
+        Err(MemoryException::AddressUnmapped{addr})
+    } else {
+        Ok(())
+    }
+}
+
+/// Internal trait defining functions for reading/writing values of type [TData] from a memory
+/// 
+/// Includes a helper function [MemoryOf<TData>::check_alignment_range] for checking for  
+/// AddressMisaligned or AddressUnmapped errors.
+pub(super) trait MemoryOf<TData> where TData: Sized {
     fn read(&mut self, addr: u64) -> Result<TData, MemoryException>;
     fn write(&mut self, addr: u64, val: TData) -> Result<(), MemoryException>;
 }
+/// Public trait which supplies {load,store}_u{8,16,32} functions.
 pub trait Memory32: MemoryOf<u8> + MemoryOf<u16> + MemoryOf<u32> {
     /// The mapped address range for this Memory.
     /// All addresses passed to read,write must be within this range.
@@ -29,6 +49,7 @@ pub trait Memory32: MemoryOf<u8> + MemoryOf<u16> + MemoryOf<u32> {
         <Self as MemoryOf<u32>>::write(self, addr, val)
     }
 }
+/// Public trait which supplies {load,store}_u{8,16,32,64} functions.
 pub trait Memory64: Memory32 + MemoryOf<u64> {
     fn load_u64(&mut self, addr: u64) -> Result<u64, MemoryException> {
         <Self as MemoryOf<u64>>::read(self, addr)
@@ -43,14 +64,15 @@ use std::mem::size_of;
 const_assert!(size_of::<usize>() >= size_of::<u64>());
 
 /// I/O Memory
-/// Defines an address range of a single u32
-/// Reads from this address return 0
-/// Writes to this address through MemoryException::ResultReturned
+/// Defines an address range of a single u32.
+/// Reads from this address return 0,
+/// Writes to this address throw MemoryException::ResultReturned.
 pub struct IOMemory {
     range: Range<usize>,
     expected: u32,
 }
 impl IOMemory {
+    /// Build an I/O memory with the specified address
     pub fn return_address(addr: usize, expected: u32) -> IOMemory {
         IOMemory{
             range: Range{ start: addr, end: addr+8 },
@@ -160,132 +182,96 @@ impl MemoryBacking {
 }
 impl MemoryOf<u64> for MemoryBacking {
     fn read(&mut self, addr: u64) -> Result<u64, MemoryException> {
-        let addr = addr as usize;
-        if addr % 8 != 0 {
-            Err(MemoryException::AddressMisaligned{addr, expected: 8})
-        } else if !self.range.contains(&addr) || !self.range.contains(&(addr + 7)) {
-            Err(MemoryException::AddressUnmapped{addr})
-        } else {
-            let addr = addr - self.range.start;
-            // Must be aligned and in-bounds
-            Ok(
-                ((self.data[addr+3] as u64) << 56) | 
-                ((self.data[addr+3] as u64) << 48) | 
-                ((self.data[addr+3] as u64) << 40) | 
-                ((self.data[addr+3] as u64) << 32) | 
-                ((self.data[addr+3] as u64) << 24) | 
-                ((self.data[addr+2] as u64) << 16) | 
-                ((self.data[addr+1] as u64) << 8) | 
-                ((self.data[addr+0] as u64))
-            )
-        }
+        check_alignment_range::<u64>(addr, self.range)?;
+
+        let addr = (addr as usize) - self.range.start;
+        // Must be aligned and in-bounds
+        Ok(
+            ((self.data[addr+3] as u64) << 56) | 
+            ((self.data[addr+3] as u64) << 48) | 
+            ((self.data[addr+3] as u64) << 40) | 
+            ((self.data[addr+3] as u64) << 32) | 
+            ((self.data[addr+3] as u64) << 24) | 
+            ((self.data[addr+2] as u64) << 16) | 
+            ((self.data[addr+1] as u64) << 8) | 
+            ((self.data[addr+0] as u64))
+        )
     }
-    fn write(&mut self, addr: u64, val: u64) -> Result<(), MemoryException> {
-        let addr = addr as usize;
-        if addr % 8 != 0 {
-            Err(MemoryException::AddressMisaligned{addr, expected: 8})
-        } else if !self.range.contains(&addr) || !self.range.contains(&(addr + 7)) {
-            Err(MemoryException::AddressUnmapped{addr})
-        } else {
-            let addr = addr - self.range.start;
-            self.data[addr + 7] = (val >> 56) as u8;
-            self.data[addr + 6] = (val >> 48) as u8;
-            self.data[addr + 5] = (val >> 40) as u8;
-            self.data[addr + 4] = (val >> 32) as u8;
-            self.data[addr + 3] = (val >> 24) as u8;
-            self.data[addr + 2] = (val >> 16) as u8;
-            self.data[addr + 1] = (val >> 8) as u8;
-            self.data[addr + 0] = (val) as u8;
-            Ok(())
-        }
+    fn write(&mut self, addr: u64, val: u64) -> Result<(), MemoryException> {       
+        check_alignment_range::<u64>(addr, self.range)?;
+        
+        let addr = (addr as usize) - self.range.start;
+        self.data[addr + 7] = (val >> 56) as u8;
+        self.data[addr + 6] = (val >> 48) as u8;
+        self.data[addr + 5] = (val >> 40) as u8;
+        self.data[addr + 4] = (val >> 32) as u8;
+        self.data[addr + 3] = (val >> 24) as u8;
+        self.data[addr + 2] = (val >> 16) as u8;
+        self.data[addr + 1] = (val >> 8) as u8;
+        self.data[addr + 0] = (val) as u8;
+        Ok(())
     }
 }
 impl MemoryOf<u32> for MemoryBacking {
     fn read(&mut self, addr: u64) -> Result<u32, MemoryException> {
-        let addr = addr as usize;
-        if addr % 4 != 0 {
-            Err(MemoryException::AddressMisaligned{addr, expected: 4})
-        } else if !self.range.contains(&addr) || !self.range.contains(&(addr + 3)) {
-            Err(MemoryException::AddressUnmapped{addr})
-        } else {
-            let addr = addr - self.range.start;
-            // Must be aligned and in-bounds
-            Ok(
-                ((self.data[addr+3] as u32) << 24) | 
-                ((self.data[addr+2] as u32) << 16) | 
-                ((self.data[addr+1] as u32) << 8) | 
-                ((self.data[addr+0] as u32))
-            )
-        }
+        check_alignment_range::<u32>(addr, self.range)?;
+
+        let addr = (addr as usize) - self.range.start;
+        // Must be aligned and in-bounds
+        Ok(
+            ((self.data[addr+3] as u32) << 24) | 
+            ((self.data[addr+2] as u32) << 16) | 
+            ((self.data[addr+1] as u32) << 8) | 
+            ((self.data[addr+0] as u32))
+        )
     }
     fn write(&mut self, addr: u64, val: u32) -> Result<(), MemoryException> {
-        let addr = addr as usize;
-        if addr % 4 != 0 {
-            Err(MemoryException::AddressMisaligned{addr, expected: 4})
-        } else if !self.range.contains(&addr) || !self.range.contains(&(addr + 3)) {
-            Err(MemoryException::AddressUnmapped{addr})
-        } else {
-            let addr = addr - self.range.start;
-            self.data[addr + 3] = (val >> 24) as u8;
-            self.data[addr + 2] = (val >> 16) as u8;
-            self.data[addr + 1] = (val >> 8) as u8;
-            self.data[addr + 0] = (val) as u8;
-            Ok(())
-        }
+        check_alignment_range::<u32>(addr, self.range)?;
+
+        let addr = (addr as usize) - self.range.start;
+        self.data[addr + 3] = (val >> 24) as u8;
+        self.data[addr + 2] = (val >> 16) as u8;
+        self.data[addr + 1] = (val >> 8) as u8;
+        self.data[addr + 0] = (val) as u8;
+        Ok(())
     }
 }
 impl MemoryOf<u16> for MemoryBacking {
     fn read(&mut self, addr: u64) -> Result<u16, MemoryException> {
-        let addr = addr as usize;
-        if addr % 2 != 0 {
-            Err(MemoryException::AddressMisaligned{addr, expected: 2})
-        } else if !self.range.contains(&addr) || !self.range.contains(&(addr + 1)) {
-            Err(MemoryException::AddressUnmapped{addr})
-        } else {
-            let addr = addr - self.range.start;
-            // Must be aligned and in-bounds
-            Ok(
-                ((self.data[addr+1] as u16) << 8) | 
-                ((self.data[addr+0] as u16))
-            )
-        }
+        check_alignment_range::<u16>(addr, self.range)?;
+
+        let addr = (addr as usize) - self.range.start;
+        // Must be aligned and in-bounds
+        Ok(
+            ((self.data[addr+1] as u16) << 8) | 
+            ((self.data[addr+0] as u16))
+        )
     }
     fn write(&mut self, addr: u64, val: u16) -> Result<(), MemoryException> {
-        let addr = addr as usize;
-        if addr % 2 != 0 {
-            Err(MemoryException::AddressMisaligned{addr, expected: 2})
-        } else if !self.range.contains(&addr) || !self.range.contains(&(addr + 1)) {
-            Err(MemoryException::AddressUnmapped{addr})
-        } else {
-            let addr = addr - self.range.start;
-            self.data[addr + 1] = (val >> 8) as u8;
-            self.data[addr + 0] = (val) as u8;
-            Ok(())
-        }
+        check_alignment_range::<u16>(addr, self.range)?;
+
+        let addr = (addr as usize) - self.range.start;
+        self.data[addr + 1] = (val >> 8) as u8;
+        self.data[addr + 0] = (val) as u8;
+        Ok(())
     }
 }
 impl MemoryOf<u8> for MemoryBacking {
     fn read(&mut self, addr: u64) -> Result<u8, MemoryException> {
-        let addr = addr as usize;
-        if !self.range.contains(&addr) {
-            Err(MemoryException::AddressUnmapped{addr})
-        } else {
-            let addr = addr - self.range.start;
-            // Must be aligned and in-bounds
-            Ok(
-                self.data[addr]
-            )
-        }
+        check_alignment_range::<u8>(addr, self.range)?;
+
+        let addr = (addr as usize) - self.range.start;
+        // Must be aligned and in-bounds
+        Ok(
+            self.data[addr]
+        )
     }
     fn write(&mut self, addr: u64, val: u8) -> Result<(), MemoryException> {
-        let addr = addr as usize;
-        if !self.range.contains(&addr) {
-            Err(MemoryException::AddressUnmapped{addr})
-        } else {
-            let addr = addr - self.range.start;
-            self.data[addr] = val;
-            Ok(())
-        }
+        check_alignment_range::<u8>(addr, self.range)?;
+
+        let addr = (addr as usize) - self.range.start;
+        self.data[addr] = val;
+        Ok(())
     }
 }
 impl Memory32 for MemoryBacking {
