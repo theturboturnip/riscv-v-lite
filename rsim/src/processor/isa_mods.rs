@@ -26,17 +26,5 @@ mod csrs;
 pub use csrs::{Zicsr32, Zicsr32Conn, Zicsr64, Zicsr64Conn, CSRProvider};
 mod vector32;
 pub use vector32::{Rv32v,Rv32vConn};
-// mod cheri;
-// pub use cheri::{CheriRv32i,CheriRv32iConn};
-
-// struct CheriRV32 {
-//     // TODO Special Capability Registers - How to handle PCC?
-
-// }
-// struct CheriRV32Connection {
-//     sreg: &mut CheriRV32RegisterFile,
-//     memory: &mut CheriMemory,
-// }
-// impl ProcessorExtention for CheriRV32Connection {
-
-// }
+mod cheri;
+pub use cheri::{XCheri64,XCheri64Conn};
