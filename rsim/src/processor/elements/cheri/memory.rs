@@ -2,7 +2,7 @@ use std::ops::Range;
 use std::convert::TryInto;
 use std::collections::HashSet;
 
-use crate::processor::exceptions::MemoryException;
+use crate::processor::exceptions::CapabilityException;
 use crate::processor::elements::memory::*;
 use super::capability::*;
 
@@ -25,14 +25,14 @@ impl CheriAggregateMemory {
     fn check_capability<TData>(&self, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
         let size = std::mem::size_of::<TData>() as u64;
         if !cap.tag() {
-            bail!(MemoryException::CapabilityInvalid{ cap })
+            bail!(CapabilityException::TagViolation{ cap })
         } else if cap.permissions() & expected_perms != expected_perms {
-            bail!(MemoryException::CapabilityPermission { cap, perms: expected_perms })
+            bail!(CapabilityException::PermissionViolation{ cap, perms: expected_perms })
         } else if !cap_bounds_range(cap).contains(&cap.address()) 
             || !cap_bounds_range(cap).contains(&(cap.address() + size - 1)) {
-            bail!(MemoryException::AddressOobCapability { cap, size: size as usize, addr: cap.address() as usize })
+            bail!(CapabilityException::BoundsViolation{ cap, size: size as usize })
         } else if cap.is_sealed() {
-            bail!(MemoryException::CapabilitySealed{ cap })
+            bail!(CapabilityException::SealViolation{ cap })
         } else {
             Ok(())
         }

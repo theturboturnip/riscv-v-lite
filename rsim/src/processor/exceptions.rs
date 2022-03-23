@@ -27,19 +27,36 @@ pub enum MemoryException {
     AddressMisaligned{ addr: usize, expected: usize },
     #[error("Jump target address {addr:08x} misaligned, expected alignment on {expected}")]
     JumpMisaligned{addr: usize, expected: usize},
-    // #[error("Address {addr:08x} out-of-bounds, bounds = {max:08x}")]
-    // AddressOOB{ addr: usize, max: usize },
     #[error("Address {addr:08x} not mapped")]
     AddressUnmapped{ addr: usize },
-    /// For when an address is dereferenced in integer mode, with respect to a default capability (DDC/PCC)
-    #[error("Address {addr:08x} dereferenced for {size}-byte data type, but out of bounds from capability {cap:?}")]
-    AddressOobCapability { addr: usize, size: usize, cap: Cc128Cap },
-    #[error("Capability permission violated: required permissions 0b{perms:b} not set in capability {cap:?}")]
-    CapabilityPermission { perms: u32, cap: Cc128Cap },
-    #[error("Tried to access memory through an invalid (tag=0) capability {cap:?}")]
-    CapabilityInvalid { cap: Cc128Cap },
-    #[error("Tried to access memory through a sealed capability {cap:?}")]
-    CapabilitySealed { cap: Cc128Cap },
     #[error("Program returned a value = 0x{got:08X} (expected 0x{expected:08X}) = 0b{got:016b}")]
     ResultReturned{got: u32, expected: u32},
+}
+
+/// Enum for capability-related exceptions.
+/// Modelled after [https://github.com/CTSRD-CHERI/sail-cheri-riscv/blob/master/src/cheri_types.sail].
+/// Contains commented-out variants that are currently unused.
+#[derive(Debug,Clone,PartialEq,Eq,Error)]
+pub enum CapabilityException {
+    #[error("Expected cap {cap:?} address to be in-bounds for a {size}-byte data type")]
+    BoundsViolation{ cap: Cc128Cap, size: usize },
+    #[error("Expected cap {cap:?} to be tagged")]
+    TagViolation{ cap: Cc128Cap },
+    #[error("Expected cap {cap:?} to be unsealed")]
+    SealViolation{ cap: Cc128Cap },
+    // TypeViolation{ cap: Cc128Cap },
+    // CallTrap{ cap: Cc128Cap },
+    // ReturnTrap{ cap: Cc128Cap },
+    // TSSUnderFlow{ cap: Cc128Cap },
+    // UserDefViolation{ cap: Cc128Cap },
+    // InexactBounds{ cap: Cc128Cap },
+    // UnalignedBase{ cap: Cc128Cap },
+    // GlobalViolation{ cap: Cc128Cap },
+    #[error("Expected cap {cap:?} to have permissions {perms:b}")]
+    PermissionViolation{ cap: Cc128Cap, perms: u32 }
+    // AccessSystemRegsViolation{ cap: Cc128Cap },
+    // PermitCInvokeViolation{ cap: Cc128Cap },
+    // AccessCInvokeIDCViolation{ cap: Cc128Cap },
+    // PermitUnsealViolation{ cap: Cc128Cap },
+    // PermitSetCIDViolation{ cap: Cc128Cap }
 }
