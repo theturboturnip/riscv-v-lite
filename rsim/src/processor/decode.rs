@@ -19,7 +19,9 @@ pub enum Opcode {
     JumpAndLinkRegister,
     Branch,
     Vector,
-    System
+    System,
+    MiscMem,
+    Custom2CHERI,
 }
 
 impl TryInto<Opcode> for u8 {
@@ -32,6 +34,8 @@ impl TryInto<Opcode> for u8 {
             0b00_001_11 => Opcode::LoadFP,
             0b01_001_11 => Opcode::StoreFP,
 
+            0b00_011_11 => Opcode::MiscMem,
+            
             0b00_100_11 => Opcode::OpImm,
             0b01_100_11 => Opcode::Op,
 
@@ -49,11 +53,16 @@ impl TryInto<Opcode> for u8 {
 
             0b11_100_11 => Opcode::System,
 
+            0b10_110_11 => Opcode::Custom2CHERI,
+
             _ => bail!(UnknownOpcode(self)),
         })
     }
 }
 
+/// TODO - Right now this does sign extension up to 32-bits.
+/// These should really all be 64-bit, now that we could be decoding 32 or 64-bit instructions.
+/// TODO - Make each of these a separate struct? Then we can combine variants in enums, e.g. type ROrIType = (RType, IType).
 #[derive(Debug,Clone,Copy)]
 pub enum InstructionBits {
     RType {
@@ -67,6 +76,18 @@ pub enum InstructionBits {
         rd: u8,
         funct3: u8,
         rs1: u8,
+        imm: u32
+    },
+    ROrIType {
+        rd: u8,
+        funct3: u8,
+        rs1: u8,
+
+        // R-Type only
+        rs2: u8,
+        funct7: u8,
+
+        // I-Type only
         imm: u32
     },
     SType {
@@ -145,6 +166,24 @@ impl InstructionBits {
             rd:     ((bits!(inst, 7:11) as u8)),
             funct3: ((bits!(inst, 12:14) as u8)),
             rs1:    ((bits!(inst, 15:19) as u8)),
+            imm:    imm,
+        }
+    }
+
+    pub fn from_r_or_i(inst: u32, sign_extend_imm: bool) -> InstructionBits {
+        let mut imm = bits!(inst, 20:31);
+        if sign_extend_imm {
+            imm = sign_extend32(imm, 12) as u32;
+        }
+
+        InstructionBits::ROrIType {
+            rd:     ((bits!(inst, 7:11) as u8)),
+            funct3: ((bits!(inst, 12:14) as u8)),
+            rs1:    ((bits!(inst, 15:19) as u8)),
+
+            rs2:    ((bits!(inst, 20:24) as u8)),
+            funct7: ((bits!(inst, 25:31) as u8)),
+
             imm:    imm,
         }
     }
@@ -242,6 +281,7 @@ pub fn decode(inst: u32) -> Result<(Opcode, InstructionBits)> {
         Store =>            InstructionBits::from_s(inst),
         LoadFP =>           InstructionBits::from_f_ld_st(inst),
         StoreFP =>          InstructionBits::from_f_ld_st(inst),
+        MiscMem =>          InstructionBits::from_i(inst, true),
         OpImm =>            InstructionBits::from_i(inst, true),
         Op =>               InstructionBits::from_r(inst),
         OpImm32 =>          InstructionBits::from_i(inst, true),
@@ -253,6 +293,7 @@ pub fn decode(inst: u32) -> Result<(Opcode, InstructionBits)> {
         Branch =>           InstructionBits::from_b(inst),
         Vector =>           InstructionBits::from_v(inst),
         System =>           InstructionBits::from_i(inst, false),
+        Custom2CHERI =>     InstructionBits::from_r_or_i(inst, true),
     };
 
     Ok((opcode, instr))

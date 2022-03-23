@@ -16,6 +16,7 @@ pub struct Rv64iXCheriProcessor {
     pub running: bool,
     pub memory: CheriAggregateMemory,
     pc: Cc128Cap,
+    ddc: Cc128Cap,
     max_cap: Cc128Cap,
     sreg: CheriRV64RegisterFile,
     csrs: Rv64iXCheriProcessorCSRs,
@@ -51,12 +52,16 @@ impl Rv64iXCheriProcessor {
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
     pub fn new(mem: CheriAggregateMemory) -> (Rv64iXCheriProcessor, Rv64iXCheriProcessorModules) {
         let full_range_cap = mem.get_full_range_cap();
-        let pcc = full_range_cap.clone();
+        let mut pcc = full_range_cap.clone();
+        // Set the flag on pcc to 1 so we're in Capability Mode
+        // TR-951$5.3
+        pcc.set_flags(1);
 
         let mut p = Rv64iXCheriProcessor {
             running: false,
             memory: mem,
             pc: pcc,
+            ddc: full_range_cap,
             max_cap: full_range_cap,
             sreg: CheriRV64RegisterFile::default(),
             csrs: Rv64iXCheriProcessorCSRs{}
@@ -78,17 +83,6 @@ impl Rv64iXCheriProcessor {
             sreg: &mut self.sreg,
             csr_providers
         }
-    }
-
-    fn rv64i_conn<'a,'b>(&'a mut self) -> (IntegerModeCheriAggregateMemory<'b>, Rv64iConn<'b>) where 'a: 'b {
-        let default_data_capability = todo!();
-        let mem_wrap = IntegerModeCheriAggregateMemory::wrap(&mut self.memory, default_data_capability);
-        let conn = Rv64iConn {
-            pc: self.pc.address(),
-            sreg: &mut self.sreg,
-            memory: &mut mem_wrap,
-        };
-        (mem_wrap, conn)
     }
 
     fn xcheri64_conn<'a,'b>(&'a mut self) -> XCheri64Conn<'b> where 'a: 'b {
@@ -130,8 +124,12 @@ impl Rv64iXCheriProcessor {
                 // Create the integer-mode memory wrapper, 
                 // only keep it alive for the duration of
                 // rv64i.execute()
-                let (_mem_wrap, conn) = self.rv64i_conn();
-                mods.rv64i.execute(opcode, inst, inst_bits, conn)?
+                let mut mem_wrap = IntegerModeCheriAggregateMemory::wrap(&mut self.memory, self.ddc);
+                mods.rv64i.execute(opcode, inst, inst_bits, Rv64iConn {
+                    pc: self.pc.address(),
+                    sreg: &mut self.sreg,
+                    memory: &mut mem_wrap,
+                })?
             };
             if let Some(requested_pc) = requested_pc {
                 next_pc.set_address_unchecked(requested_pc);
@@ -156,6 +154,7 @@ impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
     fn reset(&mut self, _mods: &mut Rv64iXCheriProcessorModules) {
         self.running = false;
         self.pc = self.max_cap;
+        self.pc.set_flags(1);
         self.sreg.reset();
     }
 

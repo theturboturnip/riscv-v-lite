@@ -19,6 +19,8 @@ pub enum IllegalInstructionException {
 /// Error which can be raised when accessing memory
 /// 
 /// Includes ResultReturned, which is raised when the program writes a u32 to 0xF000_0000
+/// 
+/// TODO move capability-related exceptions out into a CapabilityException?
 #[derive(Debug,Clone,PartialEq,Eq,Error)]
 pub enum MemoryException {
     #[error("Address {addr:08x} misaligned, expected alignment on {expected}")]
@@ -36,6 +38,8 @@ pub enum MemoryException {
     CapabilityPermission { perms: u32, cap: Cc128Cap },
     #[error("Tried to access memory through an invalid (tag=0) capability {cap:?}")]
     CapabilityInvalid { cap: Cc128Cap },
+    #[error("Tried to access memory through a sealed capability {cap:?}")]
+    CapabilitySealed { cap: Cc128Cap },
     #[error("Program returned a value = 0x{got:08X} (expected 0x{expected:08X}) = 0b{got:016b}")]
     ResultReturned{got: u32, expected: u32},
 }

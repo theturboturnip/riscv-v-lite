@@ -4,4 +4,4 @@ mod registers;
 
 pub use memory::*;
 pub use registers::*;
-pub use capability::{Cc128Cap,SafeTaggedCap};
+pub use capability::*;

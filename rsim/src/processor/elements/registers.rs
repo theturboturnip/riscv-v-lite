@@ -26,6 +26,9 @@ pub enum RegisterFileError {
     AlreadyTracking,
     #[error("Tried to access nonexistant register {0}")]
     InvalidIndex(u8),
+    /// TODO replace with CapabilityException (requires the register file to use anyhow?)
+    #[error("Register {0} was expected to be a capability, but was untagged")]
+    NotCapability(u8),
 }
 
 /// Internal trait, used to implement RvRegisterFile as a generic over u32 and u64

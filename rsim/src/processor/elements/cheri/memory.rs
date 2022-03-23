@@ -31,6 +31,8 @@ impl CheriAggregateMemory {
         } else if !cap_bounds_range(cap).contains(&cap.address()) 
             || !cap_bounds_range(cap).contains(&(cap.address() + size - 1)) {
             Err(MemoryException::AddressOobCapability { cap, size: size as usize, addr: cap.address() as usize })
+        } else if cap.is_sealed() {
+            Err(MemoryException::CapabilitySealed{ cap })
         } else {
             Ok(())
         }
@@ -40,6 +42,12 @@ impl CheriAggregateMemory {
         self.check_capability::<u32>(cap, Cc128::PERM_LOAD | Cc128::PERM_EXECUTE)?;
 
         self.base_mem.load_u32(cap.address())
+    }
+    pub fn load_maybe_cap(&mut self, addr: Cc128Cap) -> Result<SafeTaggedCap, MemoryException> {
+        <Self as MemoryOf<SafeTaggedCap, Cc128Cap>>::read(self, addr)
+    }
+    pub fn store_maybe_cap(&mut self, addr: Cc128Cap, val: SafeTaggedCap) -> Result<(), MemoryException> {
+        <Self as MemoryOf<SafeTaggedCap, Cc128Cap>>::write(self, addr, val)
     }
 
     pub fn get_full_range_cap(&self) -> Cc128Cap {
@@ -97,17 +105,20 @@ impl Memory64<Cc128Cap> for CheriAggregateMemory {}
 impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
     // read/write funcs that set correct tag bits on reads/writes
     fn read(&mut self, cap: Cc128Cap) -> Result<SafeTaggedCap, MemoryException> {
-        self.check_capability::<u128>(cap, Cc128::PERM_LOAD | Cc128::PERM_LOAD_CAP)?;
+        // We don't require PERM_LOAD_CAP, because if it isn't set we just clear the tag (see below).
+        // Spec = TR951$8.4, [C]LC
+        self.check_capability::<u128>(cap, Cc128::PERM_LOAD)?;
         let addr = cap.address();
 
         check_alignment_range::<u128>(addr, &self.base_mem.range())?;
 
         let base_mem = &mut self.base_mem as &mut dyn MemoryOf<u64>;
         // Must be aligned and in-bounds
-        let tag = self.tag_mem.contains(&(addr / 16));
+        // This is a valid capability if (it's tagged) AND (we have permission to load capabilities)
+        let tag = self.tag_mem.contains(&(addr / 16)) && (cap.permissions() & Cc128::PERM_LOAD_CAP != 0);
         let data_top = base_mem.read(addr + 8)?;
         let data_bot = base_mem.read(addr)?;
-        Ok(SafeTaggedCap::from_tagged_data(data_top, data_bot, tag))
+        Ok(SafeTaggedCap::from_tagged_mem(data_top, data_bot, tag))
     }
     fn write(&mut self, cap: Cc128Cap, val: SafeTaggedCap) -> Result<(), MemoryException> {
         self.check_capability::<u128>(cap, Cc128::PERM_STORE | Cc128::PERM_STORE_CAP)?;
