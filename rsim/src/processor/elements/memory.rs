@@ -1,9 +1,11 @@
 use crate::processor::exceptions::MemoryException;
 use std::ops::Range;
 
+pub type MemoryResult<T> = Result<T, MemoryException>;
+
 /// Checks for address alignment and whether the address is in-range, generic on the type of data being accessed.
 /// Enforces alignment to size_of<TData>.
-pub(super) fn check_alignment_range<TData>(addr: u64, range: &Range<usize>) -> Result<(), MemoryException> {
+pub(super) fn check_alignment_range<TData>(addr: u64, range: &Range<usize>) -> MemoryResult<()> {
     let addr = addr as usize;
     let size = std::mem::size_of::<TData>();
     // Assume each type has to be aligned to its length
@@ -23,8 +25,8 @@ pub(super) fn check_alignment_range<TData>(addr: u64, range: &Range<usize>) -> R
 /// Includes a helper function [MemoryOf<TData>::check_alignment_range] for checking for  
 /// AddressMisaligned or AddressUnmapped errors.
 pub trait MemoryOf<TData, TAddr=u64> where TData: Sized {
-    fn read(&mut self, addr: TAddr) -> Result<TData, MemoryException>;
-    fn write(&mut self, addr: TAddr, val: TData) -> Result<(), MemoryException>;
+    fn read(&mut self, addr: TAddr) -> MemoryResult<TData>;
+    fn write(&mut self, addr: TAddr, val: TData) -> MemoryResult<()>;
 }
 /// Public trait which supplies {load,store}_u{8,16,32} functions.
 pub trait Memory32<TAddr=u64>: MemoryOf<u8, TAddr> + MemoryOf<u16, TAddr> + MemoryOf<u32, TAddr> {
@@ -32,31 +34,31 @@ pub trait Memory32<TAddr=u64>: MemoryOf<u8, TAddr> + MemoryOf<u16, TAddr> + Memo
     /// All addresses passed to read,write must be within this range.
     /// Guaranteed to be at least 4 bytes in size, both ends will be 4-byte aligned.
     fn range(&self) -> Range<usize>;
-    fn load_u8(&mut self, addr: TAddr) -> Result<u8, MemoryException> {
+    fn load_u8(&mut self, addr: TAddr) -> MemoryResult<u8> {
         <Self as MemoryOf<u8, TAddr>>::read(self, addr)
     }
-    fn load_u16(&mut self, addr: TAddr) -> Result<u16, MemoryException> {
+    fn load_u16(&mut self, addr: TAddr) -> MemoryResult<u16> {
         <Self as MemoryOf<u16, TAddr>>::read(self, addr)
     }
-    fn load_u32(&mut self, addr: TAddr) -> Result<u32, MemoryException> {
+    fn load_u32(&mut self, addr: TAddr) -> MemoryResult<u32> {
         <Self as MemoryOf<u32, TAddr>>::read(self, addr)
     }
-    fn store_u8(&mut self, addr: TAddr, val: u8) -> Result<(), MemoryException> {
+    fn store_u8(&mut self, addr: TAddr, val: u8) -> MemoryResult<()> {
         <Self as MemoryOf<u8, TAddr>>::write(self, addr, val)
     }
-    fn store_u16(&mut self, addr: TAddr, val: u16) -> Result<(), MemoryException> {
+    fn store_u16(&mut self, addr: TAddr, val: u16) -> MemoryResult<()> {
         <Self as MemoryOf<u16, TAddr>>::write(self, addr, val)
     }
-    fn store_u32(&mut self, addr: TAddr, val: u32) -> Result<(), MemoryException> {
+    fn store_u32(&mut self, addr: TAddr, val: u32) -> MemoryResult<()> {
         <Self as MemoryOf<u32, TAddr>>::write(self, addr, val)
     }
 }
 /// Public trait which supplies {load,store}_u{8,16,32,64} functions.
 pub trait Memory64<TAddr=u64>: Memory32<TAddr> + MemoryOf<u64, TAddr> {
-    fn load_u64(&mut self, addr: TAddr) -> Result<u64, MemoryException> {
+    fn load_u64(&mut self, addr: TAddr) -> MemoryResult<u64> {
         <Self as MemoryOf<u64, TAddr>>::read(self, addr)
     }
-    fn store_u64(&mut self, addr: TAddr, val: u64) -> Result<(), MemoryException> {
+    fn store_u64(&mut self, addr: TAddr, val: u64) -> MemoryResult<()> {
         <Self as MemoryOf<u64, TAddr>>::write(self, addr, val)
     }
 }
@@ -83,8 +85,8 @@ impl IOMemory {
     }
 }
 impl MemoryOf<u8> for IOMemory {
-    fn read(&mut self, _: u64) -> Result<u8, MemoryException> { Ok(0) }
-    fn write(&mut self, _: u64, val: u8) -> Result<(), MemoryException> {
+    fn read(&mut self, _: u64) -> MemoryResult<u8> { Ok(0) }
+    fn write(&mut self, _: u64, val: u8) -> MemoryResult<()> {
         Err(MemoryException::ResultReturned{
             got: val as u32,
             expected: self.expected
@@ -92,8 +94,8 @@ impl MemoryOf<u8> for IOMemory {
     }
 }
 impl MemoryOf<u16> for IOMemory {
-    fn read(&mut self, _: u64) -> Result<u16, MemoryException> { Ok(0) }
-    fn write(&mut self, _: u64, val: u16) -> Result<(), MemoryException> {
+    fn read(&mut self, _: u64) -> MemoryResult<u16> { Ok(0) }
+    fn write(&mut self, _: u64, val: u16) -> MemoryResult<()> {
         Err(MemoryException::ResultReturned{
             got: val as u32,
             expected: self.expected
@@ -101,8 +103,8 @@ impl MemoryOf<u16> for IOMemory {
     }
 }
 impl MemoryOf<u32> for IOMemory {
-    fn read(&mut self, _: u64) -> Result<u32, MemoryException> { Ok(0) }
-    fn write(&mut self, _: u64, val: u32) -> Result<(), MemoryException> {
+    fn read(&mut self, _: u64) -> MemoryResult<u32> { Ok(0) }
+    fn write(&mut self, _: u64, val: u32) -> MemoryResult<()> {
         Err(MemoryException::ResultReturned{
             got: val as u32,
             expected: self.expected
@@ -110,8 +112,8 @@ impl MemoryOf<u32> for IOMemory {
     }
 }
 impl MemoryOf<u64> for IOMemory {
-    fn read(&mut self, _: u64) -> Result<u64, MemoryException> { Ok(0) }
-    fn write(&mut self, _: u64, val: u64) -> Result<(), MemoryException> {
+    fn read(&mut self, _: u64) -> MemoryResult<u64> { Ok(0) }
+    fn write(&mut self, _: u64, val: u64) -> MemoryResult<()> {
         Err(MemoryException::ResultReturned{
             got: val as u32,
             expected: self.expected
@@ -183,7 +185,7 @@ impl MemoryBacking {
 
 }
 impl MemoryOf<u64> for MemoryBacking {
-    fn read(&mut self, addr: u64) -> Result<u64, MemoryException> {
+    fn read(&mut self, addr: u64) -> MemoryResult<u64> {
         check_alignment_range::<u64>(addr, &self.range)?;
 
         let addr = (addr as usize) - self.range.start;
@@ -199,7 +201,7 @@ impl MemoryOf<u64> for MemoryBacking {
             ((self.data[addr+0] as u64))
         )
     }
-    fn write(&mut self, addr: u64, val: u64) -> Result<(), MemoryException> {       
+    fn write(&mut self, addr: u64, val: u64) -> MemoryResult<()> {       
         check_alignment_range::<u64>(addr, &self.range)?;
         
         let addr = (addr as usize) - self.range.start;
@@ -215,7 +217,7 @@ impl MemoryOf<u64> for MemoryBacking {
     }
 }
 impl MemoryOf<u32> for MemoryBacking {
-    fn read(&mut self, addr: u64) -> Result<u32, MemoryException> {
+    fn read(&mut self, addr: u64) -> MemoryResult<u32> {
         check_alignment_range::<u32>(addr, &self.range)?;
 
         let addr = (addr as usize) - self.range.start;
@@ -227,7 +229,7 @@ impl MemoryOf<u32> for MemoryBacking {
             ((self.data[addr+0] as u32))
         )
     }
-    fn write(&mut self, addr: u64, val: u32) -> Result<(), MemoryException> {
+    fn write(&mut self, addr: u64, val: u32) -> MemoryResult<()> {
         check_alignment_range::<u32>(addr, &self.range)?;
 
         let addr = (addr as usize) - self.range.start;
@@ -239,7 +241,7 @@ impl MemoryOf<u32> for MemoryBacking {
     }
 }
 impl MemoryOf<u16> for MemoryBacking {
-    fn read(&mut self, addr: u64) -> Result<u16, MemoryException> {
+    fn read(&mut self, addr: u64) -> MemoryResult<u16> {
         check_alignment_range::<u16>(addr, &self.range)?;
 
         let addr = (addr as usize) - self.range.start;
@@ -249,7 +251,7 @@ impl MemoryOf<u16> for MemoryBacking {
             ((self.data[addr+0] as u16))
         )
     }
-    fn write(&mut self, addr: u64, val: u16) -> Result<(), MemoryException> {
+    fn write(&mut self, addr: u64, val: u16) -> MemoryResult<()> {
         check_alignment_range::<u16>(addr, &self.range)?;
 
         let addr = (addr as usize) - self.range.start;
@@ -259,7 +261,7 @@ impl MemoryOf<u16> for MemoryBacking {
     }
 }
 impl MemoryOf<u8> for MemoryBacking {
-    fn read(&mut self, addr: u64) -> Result<u8, MemoryException> {
+    fn read(&mut self, addr: u64) -> MemoryResult<u8> {
         check_alignment_range::<u8>(addr, &self.range)?;
 
         let addr = (addr as usize) - self.range.start;
@@ -268,7 +270,7 @@ impl MemoryOf<u8> for MemoryBacking {
             self.data[addr]
         )
     }
-    fn write(&mut self, addr: u64, val: u8) -> Result<(), MemoryException> {
+    fn write(&mut self, addr: u64, val: u8) -> MemoryResult<()> {
         check_alignment_range::<u8>(addr, &self.range)?;
 
         let addr = (addr as usize) - self.range.start;
@@ -338,7 +340,7 @@ impl<T: Memory32 + ?Sized> AggregateMemory<T> {
 /// Foreach TData, where MemoryBacking implements MemoryOf<TData>, re-implement it for AggregateMemory
 /// TData = u8,u16,u32, potentially u64
 impl<T: Memory32 + ?Sized,TData> MemoryOf<TData> for AggregateMemory<T> where T: MemoryOf<TData> {
-    fn read(&mut self, addr: u64) -> Result<TData, MemoryException> {
+    fn read(&mut self, addr: u64) -> MemoryResult<TData> {
         // Find a mapping which handles this address
         for mapping in self.mappings.iter_mut() {
             if mapping.range().contains(&(addr as usize)) {
@@ -349,7 +351,7 @@ impl<T: Memory32 + ?Sized,TData> MemoryOf<TData> for AggregateMemory<T> where T:
         // If we're here, we didn't return => we don't have a mapping for this address
         Err(MemoryException::AddressUnmapped{addr: addr as usize})
     }
-    fn write(&mut self, addr: u64, val: TData) -> Result<(), MemoryException> {
+    fn write(&mut self, addr: u64, val: TData) -> MemoryResult<()> {
         // Find a mapping which handles this address
         for mapping in self.mappings.iter_mut() {
             if mapping.range().contains(&(addr as usize)) {

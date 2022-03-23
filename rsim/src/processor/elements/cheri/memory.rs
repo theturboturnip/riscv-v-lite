@@ -22,7 +22,7 @@ pub struct CheriAggregateMemory {
 }
 
 impl CheriAggregateMemory {
-    fn check_capability<TData>(&self, cap: Cc128Cap, expected_perms: u32) -> Result<(), MemoryException> {
+    fn check_capability<TData>(&self, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
         let size = std::mem::size_of::<TData>() as u64;
         if !cap.tag() {
             Err(MemoryException::CapabilityInvalid{ cap })
@@ -38,15 +38,15 @@ impl CheriAggregateMemory {
         }
     }
 
-    pub fn fetch_inst_u32(&mut self, cap: Cc128Cap) -> Result<u32, MemoryException> {
+    pub fn fetch_inst_u32(&mut self, cap: Cc128Cap) -> MemoryResult<u32> {
         self.check_capability::<u32>(cap, Cc128::PERM_LOAD | Cc128::PERM_EXECUTE)?;
 
         self.base_mem.load_u32(cap.address())
     }
-    pub fn load_maybe_cap(&mut self, addr: Cc128Cap) -> Result<SafeTaggedCap, MemoryException> {
+    pub fn load_maybe_cap(&mut self, addr: Cc128Cap) -> MemoryResult<SafeTaggedCap> {
         <Self as MemoryOf<SafeTaggedCap, Cc128Cap>>::read(self, addr)
     }
-    pub fn store_maybe_cap(&mut self, addr: Cc128Cap, val: SafeTaggedCap) -> Result<(), MemoryException> {
+    pub fn store_maybe_cap(&mut self, addr: Cc128Cap, val: SafeTaggedCap) -> MemoryResult<()> {
         <Self as MemoryOf<SafeTaggedCap, Cc128Cap>>::write(self, addr, val)
     }
 
@@ -72,12 +72,12 @@ impl CheriAggregateMemory {
 /// Implement MemoryOf<TData> addressed by Cc128Cap, which does all necessary validity checks,
 /// for every TData in {u8,u16,u32,u64}
 impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMemory64: MemoryOf<TData, u64> {
-    fn read(&mut self, cap: Cc128Cap) -> Result<TData, MemoryException> {
+    fn read(&mut self, cap: Cc128Cap) -> MemoryResult<TData> {
         self.check_capability::<TData>(cap, Cc128::PERM_LOAD)?;
 
         self.base_mem.read(cap.address())
     }
-    fn write(&mut self, cap: Cc128Cap, val: TData) -> Result<(), MemoryException> {
+    fn write(&mut self, cap: Cc128Cap, val: TData) -> MemoryResult<()> {
         self.check_capability::<TData>(cap, Cc128::PERM_STORE)?;
 
         // Do the write, which also does an alignment check
@@ -104,7 +104,7 @@ impl Memory64<Cc128Cap> for CheriAggregateMemory {}
 /// e.g. a CHERI Load instruction, which is allowed to load capabilities, would use this version.
 impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
     // read/write funcs that set correct tag bits on reads/writes
-    fn read(&mut self, cap: Cc128Cap) -> Result<SafeTaggedCap, MemoryException> {
+    fn read(&mut self, cap: Cc128Cap) -> MemoryResult<SafeTaggedCap> {
         // We don't require PERM_LOAD_CAP, because if it isn't set we just clear the tag (see below).
         // Spec = TR951$8.4, [C]LC
         self.check_capability::<u128>(cap, Cc128::PERM_LOAD)?;
@@ -120,7 +120,7 @@ impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
         let data_bot = base_mem.read(addr)?;
         Ok(SafeTaggedCap::from_tagged_mem(data_top, data_bot, tag))
     }
-    fn write(&mut self, cap: Cc128Cap, val: SafeTaggedCap) -> Result<(), MemoryException> {
+    fn write(&mut self, cap: Cc128Cap, val: SafeTaggedCap) -> MemoryResult<()> {
         self.check_capability::<u128>(cap, Cc128::PERM_STORE | Cc128::PERM_STORE_CAP)?;
         let addr = cap.address();
 
@@ -171,11 +171,11 @@ impl<'a> IntegerModeCheriAggregateMemory<'a> {
 /// Integer addresses are passed to the underlying [CheriAggregateMemory] inside the base capability,
 /// and all checking/security is done inside the [CheriAggregateMemory].
 impl<'a, TData> MemoryOf<TData> for IntegerModeCheriAggregateMemory<'a> where CheriAggregateMemory: MemoryOf<TData, Cc128Cap> {
-    fn read(&mut self, addr: u64) -> Result<TData, MemoryException> {
+    fn read(&mut self, addr: u64) -> MemoryResult<TData> {
         self.base_cap.set_address_unchecked(addr);
         self.base_mem.read(self.base_cap)
     }
-    fn write(&mut self, addr: u64, val: TData) -> Result<(), MemoryException> {
+    fn write(&mut self, addr: u64, val: TData) -> MemoryResult<()> {
         self.base_cap.set_address_unchecked(addr);
         self.base_mem.write(self.base_cap, val)
     }
