@@ -1,10 +1,15 @@
 use std::ops::Range;
+use std::convert::TryInto;
 use std::collections::HashSet;
 
 use crate::processor::exceptions::MemoryException;
 use crate::processor::elements::memory::*;
 use super::capability::*;
 
+fn cap_bounds_range(cap: Cc128Cap) -> Range<u64> {
+    let b = cap.bounds();
+    Range { start: b.0, end: b.1.try_into().unwrap() }
+}
 
 /// Wrapper for AggregateMemory64 that keeps tags, supports MemoryOf<SafeTaggedCap> for reading/writing capabilities.
 /// All other Memory variants clear associated tag bits on write.
@@ -17,12 +22,22 @@ pub struct CheriAggregateMemory {
 }
 
 impl CheriAggregateMemory {
-    fn check_capability(&self, cap: Cc128Cap, expected_perms: u32) -> Result<(), MemoryException> {
-        todo!()
+    fn check_capability<TData>(&self, cap: Cc128Cap, expected_perms: u32) -> Result<(), MemoryException> {
+        let size = std::mem::size_of::<TData>() as u64;
+        if !cap.tag() {
+            Err(MemoryException::CapabilityInvalid{ cap })
+        } else if cap.permissions() & expected_perms != expected_perms {
+            Err(MemoryException::CapabilityPermission { cap, perms: expected_perms })
+        } else if !cap_bounds_range(cap).contains(&cap.address()) 
+            || !cap_bounds_range(cap).contains(&(cap.address() + size - 1)) {
+            Err(MemoryException::AddressOobCapability { cap, size: size as usize, addr: cap.address() as usize })
+        } else {
+            Ok(())
+        }
     }
 
     pub fn fetch_inst_u32(&mut self, cap: Cc128Cap) -> Result<u32, MemoryException> {
-        self.check_capability(cap, Cc128::PERM_LOAD | Cc128::PERM_EXECUTE)?;
+        self.check_capability::<u32>(cap, Cc128::PERM_LOAD | Cc128::PERM_EXECUTE)?;
 
         self.base_mem.load_u32(cap.address())
     }
@@ -50,12 +65,12 @@ impl CheriAggregateMemory {
 /// for every TData in {u8,u16,u32,u64}
 impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMemory64: MemoryOf<TData, u64> {
     fn read(&mut self, cap: Cc128Cap) -> Result<TData, MemoryException> {
-        self.check_capability(cap, Cc128::PERM_LOAD)?;
+        self.check_capability::<TData>(cap, Cc128::PERM_LOAD)?;
 
         self.base_mem.read(cap.address())
     }
     fn write(&mut self, cap: Cc128Cap, val: TData) -> Result<(), MemoryException> {
-        self.check_capability(cap, Cc128::PERM_STORE)?;
+        self.check_capability::<TData>(cap, Cc128::PERM_STORE)?;
 
         // Do the write, which also does an alignment check
         self.base_mem.write(cap.address(), val)?;
@@ -82,7 +97,7 @@ impl Memory64<Cc128Cap> for CheriAggregateMemory {}
 impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
     // read/write funcs that set correct tag bits on reads/writes
     fn read(&mut self, cap: Cc128Cap) -> Result<SafeTaggedCap, MemoryException> {
-        self.check_capability(cap, Cc128::PERM_LOAD | Cc128::PERM_LOAD_CAP)?;
+        self.check_capability::<u128>(cap, Cc128::PERM_LOAD | Cc128::PERM_LOAD_CAP)?;
         let addr = cap.address();
 
         check_alignment_range::<u128>(addr, &self.base_mem.range())?;
@@ -95,7 +110,7 @@ impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
         Ok(SafeTaggedCap::from_tagged_data(data_top, data_bot, tag))
     }
     fn write(&mut self, cap: Cc128Cap, val: SafeTaggedCap) -> Result<(), MemoryException> {
-        self.check_capability(cap, Cc128::PERM_STORE | Cc128::PERM_STORE_CAP)?;
+        self.check_capability::<u128>(cap, Cc128::PERM_STORE | Cc128::PERM_STORE_CAP)?;
         let addr = cap.address();
 
         check_alignment_range::<u128>(addr, &self.base_mem.range())?;

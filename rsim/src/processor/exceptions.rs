@@ -30,10 +30,12 @@ pub enum MemoryException {
     #[error("Address {addr:08x} not mapped")]
     AddressUnmapped{ addr: usize },
     /// For when an address is dereferenced in integer mode, with respect to a default capability (DDC/PCC)
-    #[error("Address {addr:08x} dereferenced, but out of bounds from default capability {cap:?}")]
-    AddressOobDefaultCapability { addr: usize, cap: Cc128Cap },
-    #[error("Capability permission violated: required permission 0b{perm:b} not set in capability {cap:?}")]
-    CapabilityPermission { perm: u32, cap: Cc128Cap },
+    #[error("Address {addr:08x} dereferenced for {size}-byte data type, but out of bounds from capability {cap:?}")]
+    AddressOobCapability { addr: usize, size: usize, cap: Cc128Cap },
+    #[error("Capability permission violated: required permissions 0b{perms:b} not set in capability {cap:?}")]
+    CapabilityPermission { perms: u32, cap: Cc128Cap },
+    #[error("Tried to access memory through an invalid (tag=0) capability {cap:?}")]
+    CapabilityInvalid { cap: Cc128Cap },
     #[error("Program returned a value = 0x{got:08X} (expected 0x{expected:08X}) = 0b{got:016b}")]
     ResultReturned{got: u32, expected: u32},
 }
