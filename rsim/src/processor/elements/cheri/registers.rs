@@ -94,7 +94,7 @@ impl RegisterFile<u64> for CheriRV64RegisterFile {
             0    => Ok(0),
             1..=31 => match self.regs[(idx - 1) as usize] {
                 // Return just the bottom part of raw data - the top is capability metadata
-                SafeTaggedCap::RawData{top, bot} => Ok(bot),
+                SafeTaggedCap::RawData{top: _, bot} => Ok(bot),
                 SafeTaggedCap::ValidCap(cap) => Ok(cap.address())
             },
             _ => Err(RegisterFileError::InvalidIndex(idx))
@@ -109,11 +109,12 @@ impl RegisterFile<u64> for CheriRV64RegisterFile {
         Ok(val as u64)
     }
     fn write(&mut self, idx: u8, val: u64) -> Result<(), RegisterFileError> {
+        // In integer mode, assume writes zero out the top bit and remove tag
+        // TR-951$5.3.6 states "the upper XLEN bits and tag bit [...] will be ignored"
         let val = SafeTaggedCap::RawData{top: 0, bot: val};
         match idx {
             0    => Ok(()),
             1..=31 => {
-                todo!("Right now we're setting the tag bit to false, and clearing the top 32 bits. Is that right?");
                 self.regs[(idx - 1) as usize] = val;
                 Ok(())
             },
