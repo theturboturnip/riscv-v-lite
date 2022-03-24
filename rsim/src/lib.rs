@@ -14,3 +14,4 @@ pub mod memory {
     pub use crate::processor::elements::memory::{AggregateMemory32,AggregateMemory64,MemoryBacking,IOMemory};
     pub use crate::processor::elements::cheri::{CheriAggregateMemory};
 }
+pub use crate::processor::elements::cheri::{Cc128,Cc128Cap,CheriRVFuncs,CompressedCapability};

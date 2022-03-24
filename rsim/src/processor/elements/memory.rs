@@ -152,6 +152,27 @@ impl MemoryBacking {
             range
         }
     }
+    /// Map a set of bytes to an address range.
+    /// Any empty space between the end of the file data and the end of the range will be zero-padded. 
+    pub fn from_vec(mut vec: Vec<u8>, range: Range<usize>) -> MemoryBacking {
+        assert!(!range.is_empty());
+        if range.start % 4 != 0 || range.end % 4 != 0 {
+            panic!("Input range {:?} for MemoryBacking not aligned", range);
+        }
+
+        let pad_memory_to = range.end - range.start;
+
+        assert_eq!(vec.len() % 4, 0);
+        assert_eq!(vec.len() as usize <= pad_memory_to, true);
+
+        // Append 0s
+        vec.append(&mut vec![0; pad_memory_to - vec.len()]);
+
+        MemoryBacking {
+            data: vec,
+            range
+        }
+    }
     /// Read bytes from a file and map them to an address range.
     /// The file data will be read into the start of the range,
     /// any empty space between the end of the file data and the end of the range will be zero-padded. 

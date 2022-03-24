@@ -54,10 +54,10 @@ pub struct CheriAggregateMemory {
     tag_mem: TagMemory
 }
 impl CheriAggregateMemory {
-    pub fn from_base(base_mem: AggregateMemory64, tag_mem: TagMemory) -> CheriAggregateMemory {
+    pub fn from_base(base_mem: AggregateMemory64) -> CheriAggregateMemory {
         CheriAggregateMemory {
             base_mem,
-            tag_mem
+            tag_mem: TagMemory::new()
         }
     }
 
@@ -87,6 +87,9 @@ impl CheriAggregateMemory {
     }
     pub fn store_maybe_cap(&mut self, addr: Cc128Cap, val: SafeTaggedCap) -> MemoryResult<()> {
         <Self as MemoryOf<SafeTaggedCap, Cc128Cap>>::write(self, addr, val)
+    }
+    pub fn store_cap(&mut self, addr: Cc128Cap, val: Cc128Cap) -> MemoryResult<()> {
+        <Self as MemoryOf<SafeTaggedCap, Cc128Cap>>::write(self, addr, SafeTaggedCap::from_cap(val))
     }
 
     pub fn get_full_range_cap(&self) -> Cc128Cap {

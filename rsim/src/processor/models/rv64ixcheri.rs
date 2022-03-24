@@ -15,6 +15,7 @@ use crate::processor::isa_mods::{IsaMod, Rv64i, Rv64iConn, XCheri64, XCheri64Con
 pub struct Rv64iXCheriProcessor {
     pub running: bool,
     pub memory: CheriAggregateMemory,
+    start_pc: u64,
     pcc: Cc128Cap,
     ddc: Cc128Cap,
     max_cap: Cc128Cap,
@@ -50,9 +51,10 @@ impl Rv64iXCheriProcessor {
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(mem: CheriAggregateMemory) -> (Rv64iXCheriProcessor, Rv64iXCheriProcessorModules) {
+    pub fn new(start_pc: u64, mem: CheriAggregateMemory) -> (Rv64iXCheriProcessor, Rv64iXCheriProcessorModules) {
         let full_range_cap = mem.get_full_range_cap();
         let mut pcc = full_range_cap.clone();
+        pcc.set_address_unchecked(start_pc);
         // Set the flag on pcc to 1 so we're in Capability Mode
         // TR-951$5.3
         pcc.set_flags(1);
@@ -60,6 +62,7 @@ impl Rv64iXCheriProcessor {
         let mut p = Rv64iXCheriProcessor {
             running: false,
             memory: mem,
+            start_pc,
             pcc: pcc,
             ddc: full_range_cap,
             max_cap: full_range_cap,
@@ -154,6 +157,7 @@ impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
     fn reset(&mut self, _mods: &mut Rv64iXCheriProcessorModules) {
         self.running = false;
         self.pcc = self.max_cap;
+        self.pcc.set_address_unchecked(self.start_pc);
         self.pcc.set_flags(1);
         self.sreg.reset();
     }
