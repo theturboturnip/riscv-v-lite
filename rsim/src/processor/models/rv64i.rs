@@ -133,7 +133,7 @@ impl Processor<Rv64iProcessorModules> for Rv64iProcessor {
 
             // Execute
             let next_pc = self.process_inst(mods, inst_bits, opcode, inst)
-                .with_context(|| format!("Failed to execute decoded instruction {:?} {:?}", opcode, inst))?;
+                .with_context(|| format!("Failed to execute decoded instruction {:?} {:x?}", opcode, inst))?;
 
             if next_pc % 4 != 0 {
                 Err(MemoryException::JumpMisaligned{addr: next_pc as usize, expected: 4})?

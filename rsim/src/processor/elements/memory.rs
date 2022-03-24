@@ -145,7 +145,7 @@ impl MemoryBacking {
     pub fn zeros(range: Range<usize>) -> MemoryBacking {
         assert!(!range.is_empty());
         if range.start % 4 != 0 || range.end % 4 != 0 {
-            panic!("Input range {:?} for MemoryBacking not aligned", range);
+            panic!("Input range {:x?} for MemoryBacking not aligned", range);
         }
         MemoryBacking {
             data: vec![0; range.end - range.start],
@@ -157,7 +157,7 @@ impl MemoryBacking {
     pub fn from_vec(mut vec: Vec<u8>, range: Range<usize>) -> MemoryBacking {
         assert!(!range.is_empty());
         if range.start % 4 != 0 || range.end % 4 != 0 {
-            panic!("Input range {:?} for MemoryBacking not aligned", range);
+            panic!("Input range {:x?} for MemoryBacking not aligned", range);
         }
 
         let pad_memory_to = range.end - range.start;
@@ -179,7 +179,7 @@ impl MemoryBacking {
     pub fn from_file(path_s: &str, range: Range<usize>) -> MemoryBacking {
         assert!(!range.is_empty());
         if range.start % 4 != 0 || range.end % 4 != 0 {
-            panic!("Input range {:?} for MemoryBacking not aligned", range);
+            panic!("Input range {:x?} for MemoryBacking not aligned", range);
         }
 
         use std::io::Read;
@@ -346,7 +346,7 @@ impl<T: Memory32 + ?Sized> AggregateMemory<T> {
                         range_a.contains(&(range_b.end - 1))
                     )
                 {
-                    panic!("Mappings have overlapping ranges {:?} and {:?}", range_a, range_b)
+                    panic!("Mappings have overlapping ranges {:x?} and {:x?}", range_a, range_b)
                 }
             }
         }

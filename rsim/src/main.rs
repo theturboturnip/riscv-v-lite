@@ -47,7 +47,7 @@ fn load_cheri_elf(elf_path: &str) -> Result<(u64, CheriAggregateMemory)> {
             SegmentFlags::Elf{p_flags} => (p_flags & 0x4 != 0, p_flags & 0x2 != 0, p_flags & 0x1 != 0),
             _ => bail!("non-elf section") 
         };
-        println!("Segment: file offset/size {:?}, vaddr: 0x{:x}, flags: r {} w {} x {}", segment.file_range(), segment.address(), r,w,x);
+        println!("Segment: file offset/size {:x?}, vaddr: 0x{:x}, flags: r {} w {} x {}", segment.file_range(), segment.address(), r,w,x);
         code_data.extend_from_slice(segment.data()?);
     }
 

@@ -185,7 +185,7 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         _ => bail!("Invalid rs2 value {:x} for CHERI funct3=0x0,funct7=0x7f", rs2)
                     }
                 }
-                bail!("instruction not been handled: {:?}", inst)
+                bail!("instruction not handled: {:x?}", inst)
             }
 
             _ => bail!("Invalid opcode/instruction pair passed to XCheri64")   
