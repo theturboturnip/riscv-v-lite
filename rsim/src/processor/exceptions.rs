@@ -44,11 +44,11 @@ pub enum CapOrRegister {
 /// Contains commented-out variants that are currently unused.
 #[derive(Debug,Clone,PartialEq,Eq,Error)]
 pub enum CapabilityException {
-    #[error("Expected cap {cap:?} address to be in-bounds for a {size}-byte data type")]
+    #[error("Expected cap {cap:x?} address to be in-bounds for a {size}-byte data type")]
     BoundsViolation{ cap: CapOrRegister, size: usize },
-    #[error("Expected cap {cap:?} to be tagged")]
+    #[error("Expected cap {cap:x?} to be tagged")]
     TagViolation{ cap: CapOrRegister },
-    #[error("Expected cap {cap:?} to be unsealed")]
+    #[error("Expected cap {cap:x?} to have unsealed")]
     SealViolation{ cap: CapOrRegister },
     // TypeViolation{ cap: CapOrRegister },
     // CallTrap{ cap: CapOrRegister },
@@ -58,7 +58,7 @@ pub enum CapabilityException {
     // InexactBounds{ cap: CapOrRegister },
     // UnalignedBase{ cap: CapOrRegister },
     // GlobalViolation{ cap: CapOrRegister },
-    #[error("Expected cap {cap:?} to have permissions {perms:b}")]
+    #[error("Expected cap {cap:x?} to have permissions {perms:b}")]
     PermissionViolation{ cap: CapOrRegister, perms: u32 }
     // AccessSystemRegsViolation{ cap: CapOrRegister },
     // PermitCInvokeViolation{ cap: CapOrRegister },

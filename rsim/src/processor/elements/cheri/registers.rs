@@ -42,7 +42,7 @@ impl CheriRV64RegisterFile {
                     println!("x{} = {} = 0x{:08x}{:08x}", i, REGISTER_NAMES[i], top, bot);
                 }
                 SafeTaggedCap::ValidCap(cap) => {
-                    println!("x{} = {} = {:?}", i, REGISTER_NAMES[i], cap);
+                    println!("x{} = {} = {:x?}", i, REGISTER_NAMES[i], cap);
                 }
             };
         }

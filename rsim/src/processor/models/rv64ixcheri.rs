@@ -216,7 +216,7 @@ impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
 
     /// Dump processor and vector unit state to standard output.
     fn dump(&self, _mods: &Rv64iXCheriProcessorModules) {
-        println!("running: {:?}\npc: {:?}", self.running, self.pcc);
+        println!("running: {:?}\npc: {:x?}", self.running, self.pcc);
         self.sreg.dump();
     }
 
