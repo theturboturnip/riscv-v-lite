@@ -11,17 +11,56 @@ fn cap_bounds_range(cap: Cc128Cap) -> Range<u64> {
     Range { start: b.0, end: b.1.try_into().unwrap() }
 }
 
+/// Memory holding tags for capabilities.
+/// Implements MemoryOf<bool>, which checks if the supplied address is a multiple of 16-bytes i.e. the size of a capability.
+pub struct TagMemory {
+    internal_mem: HashSet<u64>
+}
+impl TagMemory {
+    pub fn new() -> Self {
+        TagMemory {
+            internal_mem: HashSet::default()
+        }
+    }
+    pub fn range(&self) -> Range<usize> {
+        Range{ start: 0, end: usize::MAX }
+    }
+}
+impl MemoryOf<bool> for TagMemory {
+    fn read(&mut self, addr: u64) -> MemoryResult<bool> {
+        // Should only ask for tags on aligned values
+        check_alignment_range::<u128>(addr, &self.range())?;
+
+        let tag_line = addr / (std::mem::size_of::<u128>() as u64);
+        Ok(self.internal_mem.contains(&tag_line))
+    }
+    fn write(&mut self, addr: u64, val: bool) -> MemoryResult<()> {
+        check_alignment_range::<u128>(addr, &self.range())?;
+
+        let tag_line = addr / (std::mem::size_of::<u128>() as u64);
+        if val {
+            self.internal_mem.insert(tag_line);
+        } else {
+            self.internal_mem.remove(&tag_line);
+        }
+        Ok(())
+    }
+}
+
 /// Wrapper for AggregateMemory64 that keeps tags, supports MemoryOf<SafeTaggedCap> for reading/writing capabilities.
 /// All other Memory variants clear associated tag bits on write.
 pub struct CheriAggregateMemory {
     base_mem: AggregateMemory64,
-    // Store tags in a hash-set
-    // Less complicated, likely less memory intensive than storing
-    // a bool for each 64-bits in the valid address range
-    tag_mem: HashSet<u64>
+    tag_mem: TagMemory
 }
-
 impl CheriAggregateMemory {
+    pub fn from_base(base_mem: AggregateMemory64, tag_mem: TagMemory) -> CheriAggregateMemory {
+        CheriAggregateMemory {
+            base_mem,
+            tag_mem
+        }
+    }
+
     fn check_capability<TData>(&self, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
         let size = std::mem::size_of::<TData>() as u64;
         if !cap.tag() {
@@ -84,7 +123,7 @@ impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMe
         self.base_mem.write(cap.address(), val)?;
 
         // Set the tag on the 128-bit range containing (addr) to false
-        self.tag_mem.remove(&(cap.address() / 16));
+        self.tag_mem.write(cap.address(), false)?;
         // Assert the numerical type cannot extend over multiple tagged regions.
         // We know the address was aligned to size_of<TData>, so as long as that size
         // is smaller than 128-bits we're fine.
@@ -115,7 +154,7 @@ impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
         let base_mem = &mut self.base_mem as &mut dyn MemoryOf<u64>;
         // Must be aligned and in-bounds
         // This is a valid capability if (it's tagged) AND (we have permission to load capabilities)
-        let tag = self.tag_mem.contains(&(addr / 16)) && (cap.permissions() & Cc128::PERM_LOAD_CAP != 0);
+        let tag = self.tag_mem.read(addr)? && (cap.permissions() & Cc128::PERM_LOAD_CAP != 0);
         let data_top = base_mem.read(addr + 8)?;
         let data_bot = base_mem.read(addr)?;
         Ok(SafeTaggedCap::from_tagged_mem(data_top, data_bot, tag))
@@ -132,24 +171,16 @@ impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
             SafeTaggedCap::RawData{ top, bot } => {
                 base_mem.write(addr + 8, top)?;
                 base_mem.write(addr, bot)?;
-                self.tag_mem.remove(&(addr / 16));
+                self.tag_mem.write(addr, false)?;
             }
             SafeTaggedCap::ValidCap(cap) => {
                 let cap_pebst = Cc128::compress_mem(&cap);
                 base_mem.write(addr + 8,    cap_pebst)?;
                 base_mem.write(addr,        cap.address())?;
-                self.tag_mem.insert(addr / 16);
+                self.tag_mem.write(addr, true)?;
             }
         }
         Ok(())
-    }
-}
-impl From<AggregateMemory64> for CheriAggregateMemory {
-    fn from(base_mem: AggregateMemory64) -> Self {
-        CheriAggregateMemory {
-            base_mem,
-            tag_mem: HashSet::default()
-        }
     }
 }
 
