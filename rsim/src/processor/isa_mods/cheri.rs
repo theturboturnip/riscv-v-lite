@@ -1,11 +1,12 @@
 use crate::processor::isa_mods::rv64i::sign_extend64;
 use crate::processor::isa_mods::*;
-use crate::processor::elements::cheri::{Cc128,Cc128Cap,CheriAggregateMemory,CheriRVFuncs,SafeTaggedCap};
+use crate::processor::exceptions::{CapabilityException,CapOrRegister};
+use crate::processor::elements::cheri::{Cc128,CompressedCapability,Cc128Cap,CheriAggregateMemory,CheriRVFuncs,SafeTaggedCap};
 use crate::processor::elements::cheri::CheriRV64RegisterFile;
 use crate::processor::elements::registers::RegisterFile;
 
 pub struct XCheri64Conn<'a> {
-    pub pc: Cc128Cap,
+    pub pcc: Cc128Cap,
     pub sreg: &'a mut CheriRV64RegisterFile,
     pub memory: &'a mut CheriAggregateMemory,
 }
@@ -14,7 +15,36 @@ impl<'a> IsaModConn for XCheri64Conn<'a> {}
 pub struct XCheri64 {}
 impl XCheri64 {
     fn handle_cjalr(&mut self, cd: u8, cs1: u8, conn: XCheri64Conn) -> ProcessorResult<Cc128Cap> {
-        todo!("cjalr")
+        let cs1_reg = CapOrRegister::Reg(cs1);
+        let cs1_val = conn.sreg.read_maybe_cap(cs1)?;
+        match cs1_val {
+            SafeTaggedCap::RawData{..} => bail!(CapabilityException::TagViolation{ cap: cs1_reg }),
+            SafeTaggedCap::ValidCap(cs1_val) => {
+                // We're jumping to CS1, so it should be a SENTRY
+                if cs1_val.is_sealed() && cs1_val.otype() != Cc128::OTYPE_SENTRY {
+                    bail!(CapabilityException::SealViolation{ cap: cs1_reg });
+                }
+                // The Sail code does other checks: permission to execute, bounds checks, alignment.
+                // I'm leaving these to be handled by the memory module after the jump completes.
+                // TODO put a public function on the memory module so we can check those issues here?
+
+                // Set the link-capability to the next instruction
+                let next_pc = conn.pcc.address() + 4; // TODO account for compressed instructions?
+                let (success, link_cap) = Cc128::setCapAddr(&conn.pcc, next_pc);
+                assert!(success, "Link cap should always be representable.");
+                assert!(!link_cap.is_sealed(), "Link cap should always be unsealed.");
+                let link_cap = Cc128::sealCap(&link_cap, Cc128::OTYPE_SENTRY);
+                assert!(link_cap.tag());
+                conn.sreg.write_maybe_cap(cd, SafeTaggedCap::from_cap(link_cap))?;
+
+                // Zero out bottom bit of the address we're jumping to
+                let new_pc = cs1_val.address() & (u64::MAX << 1);
+                // TODO the sail seems to handle the PC and the PCC separately - I thought these were the same thing?
+                let mut new_pcc = Cc128::unsealCap(&cs1_val);
+                new_pcc.set_address_unchecked(new_pc);
+                Ok(new_pcc)
+            }
+        }
     }
 }
 impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
@@ -38,8 +68,8 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
             (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
-                let addr = (sign_extend64(imm as u64, 32) as u64) + conn.pc.address();
-                let (representable, mut new_cap) = Cc128::setCapAddr(&conn.pc, addr);
+                let addr = (sign_extend64(imm as u64, 32) as u64) + conn.pcc.address();
+                let (representable, mut new_cap) = Cc128::setCapAddr(&conn.pcc, addr);
                 if !representable {
                     new_cap = Cc128::invalidateCap(&new_cap);
                 }

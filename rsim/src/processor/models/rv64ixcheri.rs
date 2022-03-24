@@ -15,7 +15,7 @@ use crate::processor::isa_mods::{IsaMod, Rv64i, Rv64iConn, XCheri64, XCheri64Con
 pub struct Rv64iXCheriProcessor {
     pub running: bool,
     pub memory: CheriAggregateMemory,
-    pc: Cc128Cap,
+    pcc: Cc128Cap,
     ddc: Cc128Cap,
     max_cap: Cc128Cap,
     sreg: CheriRV64RegisterFile,
@@ -60,7 +60,7 @@ impl Rv64iXCheriProcessor {
         let mut p = Rv64iXCheriProcessor {
             running: false,
             memory: mem,
-            pc: pcc,
+            pcc: pcc,
             ddc: full_range_cap,
             max_cap: full_range_cap,
             sreg: CheriRV64RegisterFile::default(),
@@ -87,7 +87,7 @@ impl Rv64iXCheriProcessor {
 
     fn xcheri64_conn<'a,'b>(&'a mut self) -> XCheri64Conn<'b> where 'a: 'b {
         XCheri64Conn {
-            pc: self.pc,
+            pcc: self.pcc,
             sreg: &mut self.sreg,
             memory: &mut self.memory,
         }
@@ -102,22 +102,22 @@ impl Rv64iXCheriProcessor {
     /// * `opcode` - The major opcode of the decoded instruction
     /// * `inst` - The fields of the decoded instruction
     fn process_inst(&mut self, mods: &mut Rv64iXCheriProcessorModules, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<Cc128Cap> {
-        let mode = match self.pc.flags() {
+        let mode = match self.pcc.flags() {
             0 => CheriExecMode::Integer,
             1 => CheriExecMode::Capability,
             _ => bail!("invalid flag in PC")
         };
         
-        // Copy self.pc, set address to address + 4
-        let mut next_pc = self.pc;
-        next_pc.set_address_unchecked(next_pc.address() + 4);
+        // Copy self.pcc, set address to address + 4
+        let mut next_pcc = self.pcc;
+        next_pcc.set_address_unchecked(next_pcc.address() + 4);
         
         if mode == CheriExecMode::Capability && mods.xcheri.will_handle(opcode, inst) {
-            let requested_pc = mods.xcheri.execute(opcode, inst, inst_bits, self.xcheri64_conn())?;
-            if let Some(requested_pc) = requested_pc {
-                next_pc = requested_pc;
+            let requested_pcc = mods.xcheri.execute(opcode, inst, inst_bits, self.xcheri64_conn())?;
+            if let Some(requested_pcc) = requested_pcc {
+                next_pcc = requested_pcc;
             }
-            return Ok(next_pc);
+            return Ok(next_pcc);
         }
         if mods.rv64i.will_handle(opcode, inst) {
             let requested_pc = {
@@ -126,23 +126,23 @@ impl Rv64iXCheriProcessor {
                 // rv64i.execute()
                 let mut mem_wrap = IntegerModeCheriAggregateMemory::wrap(&mut self.memory, self.ddc);
                 mods.rv64i.execute(opcode, inst, inst_bits, Rv64iConn {
-                    pc: self.pc.address(),
+                    pc: self.pcc.address(),
                     sreg: &mut self.sreg,
                     memory: &mut mem_wrap,
                 })?
             };
             if let Some(requested_pc) = requested_pc {
-                next_pc.set_address_unchecked(requested_pc);
+                next_pcc.set_address_unchecked(requested_pc);
             }
-            return Ok(next_pc);
+            return Ok(next_pcc);
         }
         if let Some(zicsr) = mods.zicsr.as_mut() {
             if zicsr.will_handle(opcode, inst) {
                 let requested_pc = zicsr.execute(opcode, inst, inst_bits, self.zicsr_conn())?;
                 if let Some(requested_pc) = requested_pc {
-                    next_pc.set_address_unchecked(requested_pc);
+                    next_pcc.set_address_unchecked(requested_pc);
                 }
-                return Ok(next_pc);
+                return Ok(next_pcc);
             }
         }
 
@@ -153,8 +153,8 @@ impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
     /// Reset the processor and associated vector unit
     fn reset(&mut self, _mods: &mut Rv64iXCheriProcessorModules) {
         self.running = false;
-        self.pc = self.max_cap;
-        self.pc.set_flags(1);
+        self.pcc = self.max_cap;
+        self.pcc.set_flags(1);
         self.sreg.reset();
     }
 
@@ -168,29 +168,29 @@ impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
 
         self.sreg.start_tracking()?;
 
-        let next_pc_res: Result<Cc128Cap> = {
+        let next_pcc_res: Result<Cc128Cap> = {
             // Fetch
-            let inst_bits = self.memory.fetch_inst_u32(self.pc).context("Couldn't load next instruction")?;
+            let inst_bits = self.memory.fetch_inst_u32(self.pcc).context("Couldn't load next instruction")?;
 
             // Decode
             let (opcode, inst) = decode(inst_bits)
                 .with_context(|| format!("Failed to decode instruction {:08x}", inst_bits))?;
 
             // Execute
-            let next_pc = self.process_inst(mods, inst_bits, opcode, inst)
+            let next_pcc = self.process_inst(mods, inst_bits, opcode, inst)
                 .with_context(|| format!("Failed to execute decoded instruction {:?} {:?}", opcode, inst))?;
 
-            if next_pc.address() % 4 != 0 {
-                Err(MemoryException::JumpMisaligned{addr: next_pc.address() as usize, expected: 4})?
+            if next_pcc.address() % 4 != 0 {
+                Err(MemoryException::JumpMisaligned{addr: next_pcc.address() as usize, expected: 4})?
             } else {
-                Ok(next_pc)
+                Ok(next_pcc)
             }
         };
 
         // TODO use this for something
         let _register_file_actions = self.sreg.end_tracking()?;
 
-        let next_pc = match next_pc_res {
+        let next_pcc = match next_pcc_res {
             Ok(val) => val,
             Err(err) => {
                 if let Some(_iie) = err.downcast_ref::<IllegalInstructionException>() {
@@ -209,14 +209,14 @@ impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
         };
 
         // Increment PC
-        self.pc = next_pc;
+        self.pcc = next_pcc;
 
         Ok(())
     }
 
     /// Dump processor and vector unit state to standard output.
     fn dump(&self, _mods: &Rv64iXCheriProcessorModules) {
-        println!("running: {:?}\npc: {:?}", self.running, self.pc);
+        println!("running: {:?}\npc: {:?}", self.running, self.pcc);
         self.sreg.dump();
     }
 

@@ -33,30 +33,36 @@ pub enum MemoryException {
     ResultReturned{got: u32, expected: u32},
 }
 
+#[derive(Debug,Clone,Copy,PartialEq,Eq)]
+pub enum CapOrRegister {
+    Cap(Cc128Cap),
+    Reg(u8)
+}
+
 /// Enum for capability-related exceptions.
 /// Modelled after [https://github.com/CTSRD-CHERI/sail-cheri-riscv/blob/master/src/cheri_types.sail].
 /// Contains commented-out variants that are currently unused.
 #[derive(Debug,Clone,PartialEq,Eq,Error)]
 pub enum CapabilityException {
     #[error("Expected cap {cap:?} address to be in-bounds for a {size}-byte data type")]
-    BoundsViolation{ cap: Cc128Cap, size: usize },
+    BoundsViolation{ cap: CapOrRegister, size: usize },
     #[error("Expected cap {cap:?} to be tagged")]
-    TagViolation{ cap: Cc128Cap },
+    TagViolation{ cap: CapOrRegister },
     #[error("Expected cap {cap:?} to be unsealed")]
-    SealViolation{ cap: Cc128Cap },
-    // TypeViolation{ cap: Cc128Cap },
-    // CallTrap{ cap: Cc128Cap },
-    // ReturnTrap{ cap: Cc128Cap },
-    // TSSUnderFlow{ cap: Cc128Cap },
-    // UserDefViolation{ cap: Cc128Cap },
-    // InexactBounds{ cap: Cc128Cap },
-    // UnalignedBase{ cap: Cc128Cap },
-    // GlobalViolation{ cap: Cc128Cap },
+    SealViolation{ cap: CapOrRegister },
+    // TypeViolation{ cap: CapOrRegister },
+    // CallTrap{ cap: CapOrRegister },
+    // ReturnTrap{ cap: CapOrRegister },
+    // TSSUnderFlow{ cap: CapOrRegister },
+    // UserDefViolation{ cap: CapOrRegister },
+    // InexactBounds{ cap: CapOrRegister },
+    // UnalignedBase{ cap: CapOrRegister },
+    // GlobalViolation{ cap: CapOrRegister },
     #[error("Expected cap {cap:?} to have permissions {perms:b}")]
-    PermissionViolation{ cap: Cc128Cap, perms: u32 }
-    // AccessSystemRegsViolation{ cap: Cc128Cap },
-    // PermitCInvokeViolation{ cap: Cc128Cap },
-    // AccessCInvokeIDCViolation{ cap: Cc128Cap },
-    // PermitUnsealViolation{ cap: Cc128Cap },
-    // PermitSetCIDViolation{ cap: Cc128Cap }
+    PermissionViolation{ cap: CapOrRegister, perms: u32 }
+    // AccessSystemRegsViolation{ cap: CapOrRegister },
+    // PermitCInvokeViolation{ cap: CapOrRegister },
+    // AccessCInvokeIDCViolation{ cap: CapOrRegister },
+    // PermitUnsealViolation{ cap: CapOrRegister },
+    // PermitSetCIDViolation{ cap: CapOrRegister }
 }
