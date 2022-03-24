@@ -112,8 +112,99 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                 }
             }
             (Custom2CHERI, InstructionBits::ROrIType{rd, funct3, rs1, rs2, funct7, imm}) => {
-                if funct3 == 0x0 && funct7 == 0x7f {
-                    match rs2 {
+                match (funct7, funct3) {
+                    (0x1, 0x0) => {
+                        // CSpecialRW
+                        todo!()
+                    }
+                    (0x8, 0x0) => {
+                        // CSetBounds
+                        todo!()
+                    }
+                    (0x9, 0x0) => {
+                        // CSetBoundsExact
+                        todo!()
+                    }
+                    (_, 0x2) => {
+                        // CSetBoundsImm
+                        todo!()
+                    }
+                    (0xb, 0x0) => {
+                        // CSeal
+                        todo!()
+                    }
+                    (0xc, 0x0) => {
+                        // CUnseal
+                        todo!()
+                    }
+                    (0xd, 0x0) => {
+                        // CAndPerm
+                        todo!()
+                    }
+                    (0xe, 0x0) => {
+                        // CSetFlags
+                        todo!()
+                    }
+                    (0xf, 0x0) => {
+                        // CSetOffset
+                        todo!()
+                    }
+                    (0x10, 0x0) => {
+                        // CSetAddr
+                        todo!()
+                    }
+                    (0x11, 0x0) => {
+                        // CIncOffset
+                        todo!()
+                    }
+                    (_, 0x1) => {
+                        // CIncOffsetImm
+                        todo!()
+                    }
+                    (0x12, 0x0) => {
+                        // CToPtr
+                        todo!()
+                    }
+                    (0x13, 0x0) => {
+                        // CFromPtr
+                        todo!()
+                    }
+                    (0x14, 0x0) => {
+                        // CSub
+                        todo!()
+                    }
+                    (0x1d, 0x0) => {
+                        // CBuildCap
+                        todo!()
+                    }
+                    (0x1e, 0x0) => {
+                        // CCopyType
+                        todo!()
+                    }
+                    (0x1f, 0x0) => {
+                        // CCSeal
+                        todo!()
+                    }
+                    (0x20, 0x0) => {
+                        // CestSubset
+                        todo!()
+                    }
+                    (0x21, 0x0) => {
+                        // CSetEqualExact
+                        todo!()
+                    }
+                    (0x7e, 0x0) => match rd {
+                        0x1 => {
+                            // CInvoke
+                            todo!()
+                        }
+                        0x1f => {
+                            // CClearTags
+                            todo!()
+                        }
+                        _ => bail!("Invalid funct3/funct7/rd combination {:x}/{:x}/{:x}", funct3, funct7, rd)
+                    }
+                    (0x7f, 0x0) => match rs2 {
                         0x0 => {
                             // CGetPerm
                             todo!()
@@ -144,6 +235,14 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         }
                         0x7 => {
                             // CGetFlags
+                            todo!()
+                        }
+                        0x8 => {
+                            // CRoundRepresentableLength
+                            todo!()
+                        }
+                        0x9 => {
+                            // CRepresentableAlignmentMask
                             todo!()
                         }
                         0xa => {
@@ -184,8 +283,8 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         }
                         _ => bail!("Invalid rs2 value {:x} for CHERI funct3=0x0,funct7=0x7f", rs2)
                     }
+                    _ => bail!("Invalid funct3/funct7 combination {:x} {:x}", funct3, funct7)
                 }
-                bail!("instruction not handled: {:x?}", inst)
             }
 
             _ => bail!("Invalid opcode/instruction pair passed to XCheri64")   
