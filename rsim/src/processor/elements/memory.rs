@@ -191,10 +191,10 @@ impl MemoryOf<u64> for MemoryBacking {
         let addr = (addr as usize) - self.range.start;
         // Must be aligned and in-bounds
         Ok(
-            ((self.data[addr+3] as u64) << 56) | 
-            ((self.data[addr+3] as u64) << 48) | 
-            ((self.data[addr+3] as u64) << 40) | 
-            ((self.data[addr+3] as u64) << 32) | 
+            ((self.data[addr+7] as u64) << 56) | 
+            ((self.data[addr+6] as u64) << 48) | 
+            ((self.data[addr+5] as u64) << 40) | 
+            ((self.data[addr+4] as u64) << 32) | 
             ((self.data[addr+3] as u64) << 24) | 
             ((self.data[addr+2] as u64) << 16) | 
             ((self.data[addr+1] as u64) << 8) | 
