@@ -115,143 +115,143 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                 match (funct7, funct3) {
                     (0x1, 0x0) => {
                         // CSpecialRW
-                        todo!()
+                        bail!("Haven't implemented CSpecialRW")
                     }
                     (0x8, 0x0) => {
                         // CSetBounds
-                        todo!()
+                        bail!("Haven't implemented CSetBounds")
                     }
                     (0x9, 0x0) => {
                         // CSetBoundsExact
-                        todo!()
+                        bail!("Haven't implemented CSetBoundsExact")
                     }
                     (_, 0x2) => {
                         // CSetBoundsImm
-                        todo!()
+                        bail!("Haven't implemented CSetBoundsImm")
                     }
                     (0xb, 0x0) => {
                         // CSeal
-                        todo!()
+                        bail!("Haven't implemented CSeal")
                     }
                     (0xc, 0x0) => {
                         // CUnseal
-                        todo!()
+                        bail!("Haven't implemented CUnseal")
                     }
                     (0xd, 0x0) => {
                         // CAndPerm
-                        todo!()
+                        bail!("Haven't implemented CAndPerm")
                     }
                     (0xe, 0x0) => {
                         // CSetFlags
-                        todo!()
+                        bail!("Haven't implemented CSetFlags")
                     }
                     (0xf, 0x0) => {
                         // CSetOffset
-                        todo!()
+                        bail!("Haven't implemented CSetOffset")
                     }
                     (0x10, 0x0) => {
                         // CSetAddr
-                        todo!()
+                        bail!("Haven't implemented CSetAddr")
                     }
                     (0x11, 0x0) => {
                         // CIncOffset
-                        todo!()
+                        bail!("Haven't implemented CIncOffset")
                     }
                     (_, 0x1) => {
                         // CIncOffsetImm
-                        todo!()
+                        bail!("Haven't implemented CIncOffsetImm")
                     }
                     (0x12, 0x0) => {
                         // CToPtr
-                        todo!()
+                        bail!("Haven't implemented CToPtr")
                     }
                     (0x13, 0x0) => {
                         // CFromPtr
-                        todo!()
+                        bail!("Haven't implemented CFromPtr")
                     }
                     (0x14, 0x0) => {
                         // CSub
-                        todo!()
+                        bail!("Haven't implemented CSub")
                     }
                     (0x1d, 0x0) => {
                         // CBuildCap
-                        todo!()
+                        bail!("Haven't implemented CBuildCap")
                     }
                     (0x1e, 0x0) => {
                         // CCopyType
-                        todo!()
+                        bail!("Haven't implemented CCopyType")
                     }
                     (0x1f, 0x0) => {
                         // CCSeal
-                        todo!()
+                        bail!("Haven't implemented CCSeal")
                     }
                     (0x20, 0x0) => {
                         // CestSubset
-                        todo!()
+                        bail!("Haven't implemented CestSubset")
                     }
                     (0x21, 0x0) => {
                         // CSetEqualExact
-                        todo!()
+                        bail!("Haven't implemented CSetEqualExact")
                     }
                     (0x7e, 0x0) => match rd {
                         0x1 => {
                             // CInvoke
-                            todo!()
+                            bail!("Haven't implemented CInvoke")
                         }
                         0x1f => {
                             // CClearTags
-                            todo!()
+                            bail!("Haven't implemented CClearTags")
                         }
                         _ => bail!("Invalid funct3/funct7/rd combination {:x}/{:x}/{:x}", funct3, funct7, rd)
                     }
                     (0x7f, 0x0) => match rs2 {
                         0x0 => {
                             // CGetPerm
-                            todo!()
+                            bail!("Haven't implemented CGetPerm")
                         }
                         0x1 => {
                             // CGetType
-                            todo!()
+                            bail!("Haven't implemented CGetType")
                         }
                         0x2 => {
                             // CGetBase
-                            todo!()
+                            bail!("Haven't implemented CGetBase")
                         }
                         0x3 => {
                             // CGetLen
-                            todo!()
+                            bail!("Haven't implemented CGetLen")
                         }
                         0x4 => {
                             // CGetTag
-                            todo!()
+                            bail!("Haven't implemented CGetTag")
                         }
                         0x5 => {
                             // CGetSealed
-                            todo!()
+                            bail!("Haven't implemented CGetSealed")
                         }
                         0x6 => {
                             // CGetOffset
-                            todo!()
+                            bail!("Haven't implemented CGetOffset")
                         }
                         0x7 => {
                             // CGetFlags
-                            todo!()
+                            bail!("Haven't implemented CGetFlags")
                         }
                         0x8 => {
                             // CRoundRepresentableLength
-                            todo!()
+                            bail!("Haven't implemented CRoundRepresentableLength")
                         }
                         0x9 => {
                             // CRepresentableAlignmentMask
-                            todo!()
+                            bail!("Haven't implemented CRepresentableAlignmentMask")
                         }
                         0xa => {
                             // CMove
-                            todo!()
+                            bail!("Haven't implemented CMove")
                         }
                         0xb => {
                             // CClearTag
-                            todo!()
+                            bail!("Haven't implemented CClearTag")
                         }
                         0xc => {
                             // CJALR
@@ -259,15 +259,15 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         }
                         0xd => {
                             // Clear
-                            todo!()
+                            bail!("Haven't implemented Clear")
                         }
                         0xe => {
                             // CClear
-                            todo!()
+                            bail!("Haven't implemented CClear")
                         }
                         0xf => {
                             // CGetAddr
-                            todo!()
+                            bail!("Haven't implemented CGetAddr")
                         }
                         0x10 => {
                             // FPClear
@@ -275,11 +275,11 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         }
                         0x11 => {
                             // CSealEntry
-                            todo!()
+                            bail!("Haven't implemented CSealEntry")
                         }
                         0x12 => {
                             // CLoadTags
-                            todo!()
+                            bail!("Haven't implemented CLoadTags")
                         }
                         _ => bail!("Invalid rs2 value {:x} for CHERI funct3=0x0,funct7=0x7f", rs2)
                     }
