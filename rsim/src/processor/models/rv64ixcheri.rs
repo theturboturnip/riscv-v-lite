@@ -110,12 +110,15 @@ impl Rv64iXCheriProcessor {
             1 => CheriExecMode::Capability,
             _ => bail!("invalid flag in PC")
         };
+        // Just for now, assume all-capability-mode-all-the-time
+        assert!(mode == CheriExecMode::Capability);
         
         // Copy self.pcc, set address to address + 4
         let mut next_pcc = self.pcc;
         next_pcc.set_address_unchecked(next_pcc.address() + 4);
         
-        if mode == CheriExecMode::Capability && mods.xcheri.will_handle(opcode, inst) {
+        // TODO - should this check if we're in capability mode
+        if mods.xcheri.will_handle(opcode, inst) {
             let requested_pcc = mods.xcheri.execute(opcode, inst, inst_bits, self.xcheri64_conn())?;
             if let Some(requested_pcc) = requested_pcc {
                 next_pcc = requested_pcc;

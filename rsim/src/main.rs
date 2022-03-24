@@ -113,7 +113,9 @@ fn load_cheri_elf(elf_path: &str) -> Result<(u64, CheriAggregateMemory)> {
             if is_function {
                 // TODO - why doesn't crt_init_globals.c do this?
                 relocated_cap.set_otype(Cc128::OTYPE_SENTRY);
-                dbg!(relocated_cap.permissions());
+                // Set the function to execute in pure-capability mode
+                // TODO - why doesn't crt_init_globals.c do this?
+                relocated_cap.set_flags(1);
             } else if reloc.size != 0 {
                 // setCapBounds returns (exact, cap), we don't care if it's not exact so just take the second element
                 relocated_cap = Cc128::setCapBounds(
