@@ -4,19 +4,6 @@ use crate::processor::isa_mods::*;
 
 use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
 
-/// Copied from sign_extend32 in binutils
-/// Sign extend a `size`-bit number (stored in a u64) to an i64.
-/// ```
-/// let i5bit = 0b11110;
-/// let i32bit = sign_extend64(i5bit, 5);
-/// assert_eq!(i32bit, -2);
-/// ```
-#[inline]
-pub fn sign_extend64(data: u64, size: u64) -> i64 {
-    assert!(size > 0 && size <= 64);
-    ((data << (64 - size)) as i64) >> (64 - size)
-}
-
 pub struct Rv64iConn<'a> {
     pub pc: u64,
     pub sreg: &'a mut dyn RegisterFile<u64>,
@@ -44,12 +31,12 @@ impl IsaMod<Rv64iConn<'_>> for Rv64i {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
             (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
-                let addr = conn.sreg.read(rs1)?.wrapping_add(sign_extend64(imm as u64, 32) as u64);
+                let addr = conn.sreg.read(rs1)?.wrapping_add(imm.sign_extend_u64());
                 let new_val = match funct3 {
                     // LB, LH, LW sign-extend if necessary
-                    0b000 => sign_extend64(conn.memory.load_u8(addr)? as u64, 8) as u64, // LB
-                    0b001 => sign_extend64(conn.memory.load_u16(addr)? as u64, 16) as u64, // LH
-                    0b010 => sign_extend64(conn.memory.load_u32(addr)? as u64, 32) as u64, // LW
+                    0b000 => (conn.memory.load_u8(addr)? as i8) as i64 as u64, // LB
+                    0b001 => (conn.memory.load_u16(addr)? as i16) as i64 as u64, // LH
+                    0b010 => (conn.memory.load_u32(addr)? as i32) as i64 as u64, // LW
                     0b011 => conn.memory.load_u64(addr)? as u64, // LD
                     // LBU, LHU, LWU don't sign-extend
                     0b100 => conn.memory.load_u8(addr)? as u64, // LBU
@@ -61,7 +48,7 @@ impl IsaMod<Rv64iConn<'_>> for Rv64i {
                 conn.sreg.write(rd, new_val)?;
             }
             (Store, InstructionBits::SType{funct3, rs1, rs2, imm}) => {
-                let addr = conn.sreg.read(rs1)?.wrapping_add(sign_extend64(imm as u64, 32) as u64);
+                let addr = conn.sreg.read(rs1)?.wrapping_add(imm.sign_extend_u64());
                 match funct3 {
                     0b000 => conn.memory.store_u8(addr, (conn.sreg.read(rs2)? & 0xFF) as u8)?,
                     0b001 => conn.memory.store_u16(addr, (conn.sreg.read(rs2)? & 0xFFFF) as u16)?,
@@ -73,7 +60,7 @@ impl IsaMod<Rv64iConn<'_>> for Rv64i {
             }
 
             (OpImm, InstructionBits::IType{rd, funct3, rs1, imm}) => {
-                let imm = sign_extend64(imm as u64, 32) as u64;
+                let imm = imm.sign_extend_u64();
                 let input = conn.sreg.read(rs1)?;
                 let new_val = match (imm, funct3) {
                     (imm, 0b000) => input.wrapping_add(imm), // ADDI
@@ -106,8 +93,9 @@ impl IsaMod<Rv64iConn<'_>> for Rv64i {
             (OpImm32, InstructionBits::IType{rd, funct3, rs1, imm}) => {
                 // Op32 = do all operations with 32-bit values, then sign-extend the 32-bit version up to 64-bit
                 let input = conn.sreg.read(rs1)? as u32;
+                let imm = imm.sign_extend_u32();
                 let new_val = match (imm, funct3) {
-                    (imm, 0b000) => input.wrapping_add(imm as u32), // ADDIW
+                    (imm, 0b000) => input.wrapping_add(imm), // ADDIW
 
                     (imm, 0b001) => {
                         // SLLIW
@@ -138,7 +126,8 @@ impl IsaMod<Rv64iConn<'_>> for Rv64i {
 
                     _ => unreachable!("OpImm funct3 {:03b}", funct3)
                 };
-                conn.sreg.write(rd, sign_extend64(new_val as u64, 32) as u64)?;
+                // Sign-extend 32-bit value to 64-bit
+                conn.sreg.write(rd, new_val as i32 as i64 as u64)?;
             }
 
             (Op, InstructionBits::RType{rd, funct3, rs1, rs2, funct7}) => {
@@ -181,25 +170,25 @@ impl IsaMod<Rv64iConn<'_>> for Rv64i {
 
                     _ => bail!(UnsupportedParam(format!("Op funct7/3: {:07b}, {:03b}", funct7, funct3)))
                 };
-                conn.sreg.write(rd, sign_extend64(new_val as u64, 32) as u64)?;
+                conn.sreg.write(rd, (new_val as i32) as i64 as u64)?;
             }
 
             (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
-                let addr = (sign_extend64(imm as u64, 32) as u64) + conn.pc;
+                let addr = (imm.sign_extend_u64()) + conn.pc;
                 conn.sreg.write(rd, addr)?;
             }
 
             (LoadUpperImm, InstructionBits::UType{rd, imm}) => {
-                conn.sreg.write(rd, sign_extend64(imm as u64, 32) as u64)?;
+                conn.sreg.write(rd, imm.sign_extend_u64())?;
             }
 
             (JumpAndLink, InstructionBits::JType{rd, imm}) => {
                 conn.sreg.write(rd, conn.pc + 4)?;
-                next_pc = Some(conn.pc.wrapping_add(sign_extend64(imm as u64, 32) as u64));
+                next_pc = Some(conn.pc.wrapping_add(imm.sign_extend_u64()));
             }
             (JumpAndLinkRegister, InstructionBits::IType{rd, funct3: 0b000, rs1, imm}) => {
                 // Read rs1, add immediate, unset bottom bit
-                next_pc = Some(conn.sreg.read(rs1)?.wrapping_add(sign_extend64(imm as u64, 32) as u64) & (!1));
+                next_pc = Some(conn.sreg.read(rs1)?.wrapping_add(imm.sign_extend_u64()) & (!1));
 
                 conn.sreg.write(rd, conn.pc + 4)?;
             }
@@ -220,7 +209,7 @@ impl IsaMod<Rv64iConn<'_>> for Rv64i {
                 };
 
                 if take_branch {
-                    next_pc = Some(conn.pc.wrapping_add(sign_extend64(imm as u64, 32) as u64));
+                    next_pc = Some(conn.pc.wrapping_add(imm.sign_extend_u64()));
                 }
             }
             _ => bail!("Invalid opcode/instruction pair passed to RV32I")

@@ -1,4 +1,3 @@
-use crate::processor::isa_mods::rv64i::sign_extend64;
 use crate::processor::isa_mods::*;
 use crate::processor::exceptions::{CapabilityException,CapOrRegister};
 use crate::processor::elements::cheri::{Cc128,CompressedCapability,Cc128Cap,CheriAggregateMemory,CheriRVFuncs,SafeTaggedCap};
@@ -68,7 +67,7 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
             (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
-                let addr = (sign_extend64(imm as u64, 32) as u64) + conn.pcc.address();
+                let addr = conn.pcc.address().wrapping_add(imm.sign_extend_u64());
                 let (representable, mut new_cap) = Cc128::setCapAddr(&conn.pcc, addr);
                 if !representable {
                     new_cap = Cc128::invalidateCap(&new_cap);
@@ -82,9 +81,9 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                 let (auth_val, vaddr, auth_idx) = get_cheri_mode_cap_addr(rs1_cs1, offset);
                 handle_load_cap_via_cap(cd, auth_idx, auth_val, vaddr)
                 */
-                let offset = sign_extend64(imm as u64, 32) as u64;
+                let offset = imm.sign_extend_u64();
                 let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
-                cap.set_address_unchecked(cap.address() + offset);
+                cap.set_address_unchecked(cap.address().wrapping_add(offset));
 
                 // Load a capability from cap_with_addr
                 let loaded_cap = conn.memory.load_maybe_cap(cap)?;
@@ -94,18 +93,18 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
             (Store, InstructionBits::SType{funct3: 0x4, rs1, rs2, imm}) => {
                 // SC = Store Capability
 
-                let offset = sign_extend64(imm as u64, 32) as u64;
+                let offset = imm.sign_extend_u64();
                 let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
-                cap.set_address_unchecked(cap.address() + offset);
+                cap.set_address_unchecked(cap.address().wrapping_add(offset));
 
                 let cap_to_store = conn.sreg.read_maybe_cap(rs2)?;
                 conn.memory.store_maybe_cap(cap, cap_to_store)?;
             },
-            (JumpAndLinkRegister, _) => {
+            (JumpAndLinkRegister, InstructionBits::IType{funct3, imm, rd, rs1}) => {
                 // Vanilla JALR jumps with an immediate offset, unlike CJALR.
                 // It appears CHERI-Clang emits vanilla JALRs rather than CJALRs, even in capability mode.
                 // To account for this, we handle vanilla JALRs as CJALRs, except we need to make sure the immediate offset = 0.
-                if let InstructionBits::IType{funct3: 0, imm: 0, rd, rs1} = inst {
+                if funct3 == 0 && imm.no_extend_u32() == 0 {
                     return Ok(Some(self.handle_cjalr(rd, rs1, conn)?))
                 } else {
                     bail!("Vanilla nonzero-offset JumpAndLinkRegister in Capability Mode")

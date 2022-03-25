@@ -3,7 +3,6 @@ use crate::processor::elements::registers::RegisterFile;
 use crate::processor::isa_mods::*;
 
 use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
-use bitutils::sign_extend32;
 
 pub struct Rv32iConn<'a> {
     pub pc: u32,
@@ -32,11 +31,11 @@ impl IsaMod<Rv32iConn<'_>> for Rv32i {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
             (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
-                let addr = conn.sreg.read(rs1)?.wrapping_add(imm);
+                let addr = conn.sreg.read(rs1)?.wrapping_add(imm.sign_extend_u32());
                 let new_val = match funct3 {
                     // LB, LH, LW sign-extend if necessary
-                    0b000 => sign_extend32(conn.memory.load_u8(addr as u64)? as u32, 8) as u32, // LB
-                    0b001 => sign_extend32(conn.memory.load_u16(addr as u64)? as u32, 16) as u32, // LH
+                    0b000 => (conn.memory.load_u8(addr as u64)? as i8) as i32 as u32, // LB
+                    0b001 => (conn.memory.load_u16(addr as u64)? as i16) as i32 as u32, // LH
                     0b010 => conn.memory.load_u32(addr as u64)?, // LW
                     // LBU, LHU don't sign-extend
                     0b100 => conn.memory.load_u8(addr as u64)? as u32, // LBU
@@ -47,7 +46,7 @@ impl IsaMod<Rv32iConn<'_>> for Rv32i {
                 conn.sreg.write(rd, new_val)?;
             }
             (Store, InstructionBits::SType{funct3, rs1, rs2, imm}) => {
-                let addr = conn.sreg.read(rs1)?.wrapping_add(imm);
+                let addr = conn.sreg.read(rs1)?.wrapping_add(imm.sign_extend_u32());
                 match funct3 {
                     0b000 => conn.memory.store_u8(addr as u64, (conn.sreg.read(rs2)? & 0xFF) as u8)?,
                     0b001 => conn.memory.store_u16(addr as u64, (conn.sreg.read(rs2)? & 0xFFFF) as u16)?,
@@ -59,6 +58,7 @@ impl IsaMod<Rv32iConn<'_>> for Rv32i {
 
             (OpImm, InstructionBits::IType{rd, funct3, rs1, imm}) => {
                 let input = conn.sreg.read(rs1)?;
+                let imm = imm.sign_extend_u32();
                 let new_val = match (imm, funct3) {
                     (imm, 0b000) => input.wrapping_add(imm), // ADDI
                     (imm, 0b010) => if (input as i32) < (imm as i32) { 1 } else { 0 }, // SLTI
@@ -113,21 +113,21 @@ impl IsaMod<Rv32iConn<'_>> for Rv32i {
             }
 
             (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
-                let addr = imm + conn.pc;
+                let addr = imm.sign_extend_u32() + conn.pc;
                 conn.sreg.write(rd, addr)?;
             }
 
             (LoadUpperImm, InstructionBits::UType{rd, imm}) => {
-                conn.sreg.write(rd, imm)?;
+                conn.sreg.write(rd, imm.sign_extend_u32())?;
             }
 
             (JumpAndLink, InstructionBits::JType{rd, imm}) => {
                 conn.sreg.write(rd, conn.pc + 4)?;
-                next_pc = Some(conn.pc.wrapping_add(imm));
+                next_pc = Some(conn.pc.wrapping_add(imm.sign_extend_u32()));
             }
             (JumpAndLinkRegister, InstructionBits::IType{rd, funct3: 0b000, rs1, imm}) => {
                 // Read rs1, add immediate, unset bottom bit
-                next_pc = Some(conn.sreg.read(rs1)?.wrapping_add(imm) & (!1));
+                next_pc = Some(conn.sreg.read(rs1)?.wrapping_add(imm.sign_extend_u32()) & (!1));
 
                 conn.sreg.write(rd, conn.pc + 4)?;
             }
@@ -148,7 +148,7 @@ impl IsaMod<Rv32iConn<'_>> for Rv32i {
                 };
 
                 if take_branch {
-                    next_pc = Some(conn.pc.wrapping_add(imm));
+                    next_pc = Some(conn.pc.wrapping_add(imm.sign_extend_u32()));
                 }
             }
             _ => bail!("Invalid opcode/instruction pair passed to RV32I")

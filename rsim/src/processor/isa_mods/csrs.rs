@@ -76,7 +76,7 @@ impl<T> IsaMod<ZicsrConn<'_,T>> for Zicsr<T> where T: From<u8> {
             if funct3 == 0b000 {
                 bail!("Non-CSR System instructions not supported")
             } else {
-                let csr = imm;
+                let csr = imm.no_extend_u32();
 
                 let is_imm_instruction = (funct3 & 0b100) != 0;
                 // rs1 can be an immediate value if the top bit of funct3 is set
