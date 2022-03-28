@@ -8,11 +8,11 @@ use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::registers::{RegisterTracking};
 use crate::processor::elements::cheri::{Cc128Cap,CheriRV64RegisterFile,CheriAggregateMemory};
-use crate::processor::isa_mods::{IsaMod, Rv64i, Rv64iConn, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
-pub struct Rv64iXCheriProcessor {
+pub struct Rv64imXCheriProcessor {
     pub running: bool,
     pub memory: CheriAggregateMemory,
     start_pc: u64,
@@ -20,11 +20,11 @@ pub struct Rv64iXCheriProcessor {
     ddc: Cc128Cap,
     max_cap: Cc128Cap,
     sreg: CheriRV64RegisterFile,
-    csrs: Rv64iXCheriProcessorCSRs,
+    csrs: Rv64imXCheriProcessorCSRs,
 }
 
-pub struct Rv64iXCheriProcessorModules {
-    rv64i: Rv64i,
+pub struct Rv64imXCheriProcessorModules {
+    rv64im: Rv64im,
     xcheri: XCheri64,
     zicsr: Option<Zicsr64>
 }
@@ -35,8 +35,8 @@ enum CheriExecMode {
     Capability,
 }
 
-struct Rv64iXCheriProcessorCSRs {}
-impl CSRProvider<u64> for Rv64iXCheriProcessorCSRs {
+struct Rv64imXCheriProcessorCSRs {}
+impl CSRProvider<u64> for Rv64imXCheriProcessorCSRs {
     fn has_csr(&self, _csr: u32) -> bool {
         false
     }
@@ -45,13 +45,13 @@ impl CSRProvider<u64> for Rv64iXCheriProcessorCSRs {
     fn csr_atomic_read_clear(&mut self, _csr: u32, _clear_bits: Option<u64>) -> Result<u64> { todo!() }
 }
 
-impl Rv64iXCheriProcessor {
+impl Rv64imXCheriProcessor {
     /// Create a new processor and vector unit which operates on given memory.
     ///
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(start_pc: u64, mem: CheriAggregateMemory) -> (Rv64iXCheriProcessor, Rv64iXCheriProcessorModules) {
+    pub fn new(start_pc: u64, mem: CheriAggregateMemory) -> (Rv64imXCheriProcessor, Rv64imXCheriProcessorModules) {
         let full_range_cap = mem.get_full_range_cap();
         let mut pcc = full_range_cap.clone();
         pcc.set_address_unchecked(start_pc);
@@ -59,7 +59,7 @@ impl Rv64iXCheriProcessor {
         // TR-951$5.3
         pcc.set_flags(1);
 
-        let mut p = Rv64iXCheriProcessor {
+        let mut p = Rv64imXCheriProcessor {
             running: false,
             memory: mem,
             start_pc,
@@ -67,10 +67,10 @@ impl Rv64iXCheriProcessor {
             ddc: full_range_cap,
             max_cap: full_range_cap,
             sreg: CheriRV64RegisterFile::default(),
-            csrs: Rv64iXCheriProcessorCSRs{}
+            csrs: Rv64imXCheriProcessorCSRs{}
         };
-        let mut mods = Rv64iXCheriProcessorModules {
-            rv64i: Rv64i{},
+        let mut mods = Rv64imXCheriProcessorModules {
+            rv64im: Rv64im{},
             xcheri: XCheri64{},
             zicsr: Some(Zicsr64::default())
         };
@@ -104,7 +104,7 @@ impl Rv64iXCheriProcessor {
     /// * `inst_bits` - The raw instruction bits
     /// * `opcode` - The major opcode of the decoded instruction
     /// * `inst` - The fields of the decoded instruction
-    fn process_inst(&mut self, mods: &mut Rv64iXCheriProcessorModules, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<Cc128Cap> {
+    fn process_inst(&mut self, mods: &mut Rv64imXCheriProcessorModules, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<Cc128Cap> {
         let mode = match self.pcc.flags() {
             0 => CheriExecMode::Integer,
             1 => CheriExecMode::Capability,
@@ -125,13 +125,13 @@ impl Rv64iXCheriProcessor {
             }
             return Ok(next_pcc);
         }
-        if mods.rv64i.will_handle(opcode, inst) {
+        if mods.rv64im.will_handle(opcode, inst) {
             let requested_pc = {
                 // Create the integer-mode memory wrapper, 
                 // only keep it alive for the duration of
-                // rv64i.execute()
+                // rv64im.execute()
                 let mut mem_wrap = IntegerModeCheriAggregateMemory::wrap(&mut self.memory, self.ddc);
-                mods.rv64i.execute(opcode, inst, inst_bits, Rv64iConn {
+                mods.rv64im.execute(opcode, inst, inst_bits, Rv64imConn {
                     pc: self.pcc.address(),
                     sreg: &mut self.sreg,
                     memory: &mut mem_wrap,
@@ -155,9 +155,9 @@ impl Rv64iXCheriProcessor {
         bail!(MiscDecodeException("Unexpected opcode/InstructionBits pair".to_string()))
     }
 }
-impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
+impl Processor<Rv64imXCheriProcessorModules> for Rv64imXCheriProcessor {
     /// Reset the processor and associated vector unit
-    fn reset(&mut self, _mods: &mut Rv64iXCheriProcessorModules) {
+    fn reset(&mut self, _mods: &mut Rv64imXCheriProcessorModules) {
         self.running = false;
         self.pcc = self.max_cap;
         self.pcc.set_address_unchecked(self.start_pc);
@@ -170,7 +170,7 @@ impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
     /// # Arguments
     /// 
     /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
-    fn exec_step(&mut self, mods: &mut Rv64iXCheriProcessorModules) -> Result<()> {
+    fn exec_step(&mut self, mods: &mut Rv64imXCheriProcessorModules) -> Result<()> {
         self.running = true;
 
         self.sreg.start_tracking()?;
@@ -222,7 +222,7 @@ impl Processor<Rv64iXCheriProcessorModules> for Rv64iXCheriProcessor {
     }
 
     /// Dump processor and vector unit state to standard output.
-    fn dump(&self, _mods: &Rv64iXCheriProcessorModules) {
+    fn dump(&self, _mods: &Rv64imXCheriProcessorModules) {
         println!("running: {:?}\npc: {:x?}", self.running, self.pcc);
         self.sreg.dump();
     }

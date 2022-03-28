@@ -7,7 +7,7 @@ use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::memory::{AggregateMemory32,Memory32};
 use crate::processor::elements::registers::{RvRegisterFile32,RegisterTracking};
-use crate::processor::isa_mods::{IsaMod, Rv32i, Rv32iConn, Rv32v, Rv32vConn, Zicsr32, Zicsr32Conn, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv32im, Rv32imConn, Rv32v, Rv32vConn, Zicsr32, Zicsr32Conn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
@@ -20,7 +20,7 @@ pub struct Processor32 {
 }
 
 pub struct ProcessorModules32 {
-    rv32i: Rv32i,
+    rv32im: Rv32im,
     rvv: Option<Rv32v>,
     zicsr: Option<Zicsr32>
 }
@@ -50,7 +50,7 @@ impl Processor32 {
             csrs: ProcessorCSRs32{}
         };
         let mut mods = ProcessorModules32 {
-            rv32i: Rv32i{},
+            rv32im: Rv32im{},
             rvv: Some(Rv32v::new()),
             zicsr: Some(Zicsr32::default())
         };
@@ -94,8 +94,8 @@ impl Processor32 {
         }
     }
 
-    fn rv32i_conn<'a,'b>(&'a mut self) -> Rv32iConn<'b> where 'a: 'b {
-        Rv32iConn {
+    fn rv32im_conn<'a,'b>(&'a mut self) -> Rv32imConn<'b> where 'a: 'b {
+        Rv32imConn {
             pc: self.pc,
             sreg: &mut self.sreg,
             memory: &mut self.memory,
@@ -113,8 +113,8 @@ impl Processor32 {
     fn process_inst(&mut self, mods: &mut ProcessorModules32, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u32> {
         let mut next_pc = self.pc + 4;
         
-        if mods.rv32i.will_handle(opcode, inst) {
-            let requested_pc = mods.rv32i.execute(opcode, inst, inst_bits, self.rv32i_conn())?;
+        if mods.rv32im.will_handle(opcode, inst) {
+            let requested_pc = mods.rv32im.execute(opcode, inst, inst_bits, self.rv32im_conn())?;
             if let Some(requested_pc) = requested_pc {
                 next_pc = requested_pc;
             }

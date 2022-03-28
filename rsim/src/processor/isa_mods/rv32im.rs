@@ -4,15 +4,15 @@ use crate::processor::isa_mods::*;
 
 use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
 
-pub struct Rv32iConn<'a> {
+pub struct Rv32imConn<'a> {
     pub pc: u32,
     pub sreg: &'a mut dyn RegisterFile<u32>,
     pub memory: &'a mut dyn Memory32,
 }
-impl<'a> IsaModConn for Rv32iConn<'a> {}
+impl<'a> IsaModConn for Rv32imConn<'a> {}
 
-pub struct Rv32i {}
-impl IsaMod<Rv32iConn<'_>> for Rv32i {
+pub struct Rv32im {}
+impl IsaMod<Rv32imConn<'_>> for Rv32im {
     type Pc = u32;
 
     fn will_handle(&self, opcode: Opcode, _inst: InstructionBits) -> bool {
@@ -25,7 +25,7 @@ impl IsaMod<Rv32iConn<'_>> for Rv32i {
         }
     }
 
-    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, conn: Rv32iConn) -> ProcessorResult<Option<Self::Pc>> {
+    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, conn: Rv32imConn) -> ProcessorResult<Option<Self::Pc>> {
         let mut next_pc = None;
 
         use crate::processor::decode::Opcode::*;

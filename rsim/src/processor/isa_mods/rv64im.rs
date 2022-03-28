@@ -4,15 +4,15 @@ use crate::processor::isa_mods::*;
 
 use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
 
-pub struct Rv64iConn<'a> {
+pub struct Rv64imConn<'a> {
     pub pc: u64,
     pub sreg: &'a mut dyn RegisterFile<u64>,
     pub memory: &'a mut dyn Memory64,
 }
-impl<'a> IsaModConn for Rv64iConn<'a> {}
+impl<'a> IsaModConn for Rv64imConn<'a> {}
 
-pub struct Rv64i {}
-impl IsaMod<Rv64iConn<'_>> for Rv64i {
+pub struct Rv64im {}
+impl IsaMod<Rv64imConn<'_>> for Rv64im {
     type Pc = u64;
 
     fn will_handle(&self, opcode: Opcode, _inst: InstructionBits) -> bool {
@@ -25,7 +25,7 @@ impl IsaMod<Rv64iConn<'_>> for Rv64i {
         }
     }
 
-    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, conn: Rv64iConn) -> ProcessorResult<Option<Self::Pc>> {
+    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, conn: Rv64imConn) -> ProcessorResult<Option<Self::Pc>> {
         let mut next_pc = None;
 
         use crate::processor::decode::Opcode::*;
@@ -168,7 +168,7 @@ impl IsaMod<Rv64iConn<'_>> for Rv64i {
                     (ALT, 0b000) => x.wrapping_sub(y), // SUBW
                     (ALT, 0b101) => ((x as i32) >> y) as u32, // SRAW
 
-                    _ => bail!(UnsupportedParam(format!("Op funct7/3: {:07b}, {:03b}", funct7, funct3)))
+                    _ => bail!(UnsupportedParam(format!("Op32 funct7/3: {:07b}, {:03b}", funct7, funct3)))
                 };
                 conn.sreg.write(rd, (new_val as i32) as i64 as u64)?;
             }

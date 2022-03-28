@@ -7,9 +7,9 @@ pub trait Processor<TModules> {
     fn running(&self) -> bool;
 }
 
-mod rv32iv;
-pub use rv32iv::{Processor32,ProcessorModules32};
-mod rv64i;
-pub use rv64i::{Rv64iProcessor,Rv64iProcessorModules};
-mod rv64ixcheri;
-pub use rv64ixcheri::{Rv64iXCheriProcessor,Rv64iXCheriProcessorModules};
+mod rv32imv;
+pub use rv32imv::{Processor32,ProcessorModules32};
+mod rv64im;
+pub use rv64im::{Rv64imProcessor,Rv64imProcessorModules};
+mod rv64imxcheri;
+pub use rv64imxcheri::{Rv64imXCheriProcessor,Rv64imXCheriProcessorModules};

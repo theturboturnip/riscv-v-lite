@@ -3,7 +3,7 @@ use clap::{Arg, App};
 
 use anyhow::{Result,bail};
 
-use rsim::models::{Processor,Processor32,Rv64iProcessor,Rv64iXCheriProcessor};
+use rsim::models::{Processor,Processor32,Rv64imProcessor,Rv64imXCheriProcessor};
 use rsim::memory::{CheriAggregateMemory,AggregateMemory64,AggregateMemory32,MemoryBacking,IOMemory};
 use rsim::{Cc128,CompressedCapability,CheriRVFuncs};
 
@@ -170,7 +170,7 @@ fn main() -> Result<()> {
             .arg(Arg::with_name("riscv_profile")
                 .required(true)
                 .index(1)
-                .possible_values(&["rv32iv", "rv64i", "rv64ixcheri"])
+                .possible_values(&["rv32imv", "rv64im", "rv64imxcheri"])
             )
             .arg(
                 Arg::with_name("memory_bin")
@@ -186,7 +186,7 @@ fn main() -> Result<()> {
             let memory_bin = sub_matches.value_of("memory_bin").unwrap();
 
             match sub_matches.value_of("riscv_profile") {
-                Some("rv32iv") => {
+                Some("rv32imv") => {
                     // Create the memory map
                     let mem = AggregateMemory32::from_mappings(vec![
                         // Allocate 4KB for the program
@@ -200,7 +200,7 @@ fn main() -> Result<()> {
                     let (processor, mods) = Processor32::new(mem);
                     run_binary_in_processor(Box::new(processor), mods)
                 },
-                Some("rv64i") => {
+                Some("rv64im") => {
                     // Create the memory map
                     let mem = AggregateMemory64::from_mappings(vec![
                         // Allocate 4KB for the program
@@ -211,14 +211,14 @@ fn main() -> Result<()> {
                         Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
                     ]);
 
-                    let (processor, mods) = Rv64iProcessor::new(mem);
+                    let (processor, mods) = Rv64imProcessor::new(mem);
                     run_binary_in_processor(Box::new(processor), mods)
                 },
-                Some("rv64ixcheri") => {
+                Some("rv64imxcheri") => {
                     // Create the memory map
                     let (start_pc, cheri_mem) = load_cheri_elf(memory_bin)?;
 
-                    let (processor, mods) = Rv64iXCheriProcessor::new(start_pc, cheri_mem);
+                    let (processor, mods) = Rv64imXCheriProcessor::new(start_pc, cheri_mem);
                     run_binary_in_processor(Box::new(processor), mods)
                 },
                 _ => unreachable!("invalid riscv profile")
