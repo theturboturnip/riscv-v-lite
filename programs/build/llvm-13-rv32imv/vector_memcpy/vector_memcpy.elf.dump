@@ -1,5 +1,5 @@
 
-/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-13-rv32iv/vector_memcpy/vector_memcpy.elf:	file format elf32-littleriscv
+/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-13-rv32imv/vector_memcpy/vector_memcpy.elf:	file format elf32-littleriscv
 Contents of section .text.init:
  0000 17010100 13010102 97100000 e7808091  ................
  0010 6f000000                             o...
