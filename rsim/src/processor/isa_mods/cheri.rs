@@ -13,7 +13,7 @@ impl<'a> IsaModConn for XCheri64Conn<'a> {}
 
 pub struct XCheri64 {}
 impl XCheri64 {
-    fn handle_cjalr(&mut self, cd: u8, cs1: u8, conn: XCheri64Conn) -> ProcessorResult<Cc128Cap> {
+    fn handle_cjalr(&mut self, cd: u8, cs1: u8, offset: u64, conn: XCheri64Conn) -> ProcessorResult<Cc128Cap> {
         let cs1_reg = CapOrRegister::Reg(cs1);
         let cs1_val = conn.sreg.read_maybe_cap(cs1)?;
         match cs1_val {
@@ -37,7 +37,9 @@ impl XCheri64 {
                 conn.sreg.write_maybe_cap(cd, SafeTaggedCap::from_cap(link_cap))?;
 
                 // Zero out bottom bit of the address we're jumping to
-                let new_pc = cs1_val.address() & (u64::MAX << 1);
+                let mut new_pc = cs1_val.address() & (u64::MAX << 1);
+                // NOTE this isn't in the CJALR spec, but this instruction needs to support JALR functionality i.e. immediate offset
+                new_pc = new_pc.wrapping_add(offset);
                 // TODO the sail seems to handle the PC and the PCC separately - I thought these were the same thing?
                 let mut new_pcc = Cc128::unsealCap(&cs1_val);
                 new_pcc.set_address_unchecked(new_pc);
@@ -103,9 +105,10 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
             (JumpAndLinkRegister, InstructionBits::IType{funct3, imm, rd, rs1}) => {
                 // Vanilla JALR jumps with an immediate offset, unlike CJALR.
                 // It appears CHERI-Clang emits vanilla JALRs rather than CJALRs, even in capability mode.
-                // To account for this, we handle vanilla JALRs as CJALRs, except we need to make sure the immediate offset = 0.
-                if funct3 == 0 && imm.no_extend_u32() == 0 {
-                    return Ok(Some(self.handle_cjalr(rd, rs1, conn)?))
+                // To account for this, we handle vanilla JALRs as CJALRs.
+                // JALR supports an immediate offset (although technically CJALR doesn't?)
+                if funct3 == 0 {
+                    return Ok(Some(self.handle_cjalr(rd, rs1, imm.sign_extend_u64(), conn)?))
                 } else {
                     bail!("Vanilla nonzero-offset JumpAndLinkRegister in Capability Mode")
                 }
@@ -158,7 +161,16 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                     }
                     (_, 0x1) => {
                         // CIncOffsetImm
-                        bail!("Haven't implemented CIncOffsetImm")
+                        let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                        if cs1_val.tag() && cs1_val.is_sealed() {
+                            bail!(CapabilityException::SealViolation{ cap: CapOrRegister::Reg(rs1) })
+                        } else {
+                            let (success, mut new_cap) = Cc128::incCapOffset(&cs1_val, imm.sign_extend_u64());
+                            if !success {
+                                new_cap = Cc128::invalidateCap(&new_cap);
+                            }
+                            conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
+                        }
                     }
                     (0x12, 0x0) => {
                         // CToPtr
@@ -254,7 +266,8 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         }
                         0xc => {
                             // CJALR
-                            return Ok(Some(self.handle_cjalr(rd, rs1, conn)?))
+                            // CJALR doesn't support immediate-offset, so say offset=0
+                            return Ok(Some(self.handle_cjalr(rd, rs1, 0, conn)?))
                         }
                         0xd => {
                             // Clear
