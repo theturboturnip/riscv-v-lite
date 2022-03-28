@@ -150,6 +150,53 @@ impl IsaMod<Rv64imConn<'_>> for Rv64im {
                     (0, 0b110) => x | y, // OR
                     (0, 0b111) => x & y, // AND
 
+                    (1, funct3) => match funct3 {
+                        0b000 => x * y, // MUL
+                        // MULH
+                        // Widen x,y to i128, multiply, shift down so we take top 32 bits of result
+                        0b001 => ((x as i64 as i128) * (y as i64 as i128) >> 32) as i64 as u64,
+                        // MULHSU
+                        // Widen x to i128, y to u128 *then* i128 (doesn't sign-extend), multiply + shift
+                        0b010 => ((x as i64 as i128) * (y as u128 as i128) >> 32) as i64 as u64, 
+                        // MULHU
+                        // Widen x,y to u128, multiply+shift
+                        0b011 => ((x as u128) * (y as u128) >> 32) as u64, 
+                        // TODO overflow semantics are not done correctly here
+                        // DIV (signed divide)
+                        0b100 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (_, 0) => (-1 as i64) as u64,
+                            // Overflow = most-negative divided by -1
+                            (0x8000_0000, 0xFFFF_FFFF) => 0x8000_0000,
+                            // Normal signed divide - cast bits to i64, div, then cast to u64
+                            (x, y) => ((x as i64) / (y as i64)) as u64
+                        },
+                        // DIVU (unsigned divide)
+                        0b101 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (_, 0) => (-1 as i64) as u64,
+                            // Normal unsigned divide
+                            (x, y) => x / y
+                        }
+                        // REM (signed remainder)
+                        0b110 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (x, 0) => x,
+                            // Overflow = most-negative divided by -1
+                            (0x8000_0000, 0xFFFF_FFFF) => 0,
+                            // Normal signed remainder - cast bits to i64, div, then cast to u64
+                            (x, y) => ((x as i64) % (y as i64)) as u64
+                        },
+                        // REMU (unsigned remainder)
+                        0b111 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (x, 0) => x,
+                            // Normal unsigned remainder
+                            (x, y) => x % y
+                        },
+                        _ => unreachable!("Impossible funct3")
+                    }
+
                     _ => bail!(UnsupportedParam(format!("Op funct7/3: {:07b}, {:03b}", funct7, funct3)))
                 };
                 conn.sreg.write(rd, new_val)?;
@@ -160,13 +207,55 @@ impl IsaMod<Rv64imConn<'_>> for Rv64im {
                 let x = conn.sreg.read(rs1)? as u32;
                 let y = conn.sreg.read(rs2)? as u32;
                 let new_val = match (funct7, funct3) {
-                    (0, 0b000) => x.wrapping_add(y), // ADDW
+                    (0, 0b000) => x.wrapping_add(y) as u64, // ADDW
 
-                    (0, 0b001) => x << y, // SLLW
-                    (0, 0b101) => x >> y, // SRLW
+                    (0, 0b001) => (x << y) as u64, // SLLW
+                    (0, 0b101) => (x >> y) as u64, // SRLW
 
-                    (ALT, 0b000) => x.wrapping_sub(y), // SUBW
-                    (ALT, 0b101) => ((x as i32) >> y) as u32, // SRAW
+                    (ALT, 0b000) => x.wrapping_sub(y) as u64, // SUBW
+                    (ALT, 0b101) => ((x as i32) >> y) as u32 as u64, // SRAW
+
+                    (1, funct3) => match funct3 {
+                        // MULW
+                        // Multiply bottom 32-bits (obtained by casting) and sign-extend to 64
+                        0b000 => ((x as i32) * (y as i32)) as i64 as u64,
+                        // DIVW
+                        0b100 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (_, 0) => (-1 as i32) as u32 as u64,
+                            // Overflow = most-negative divided by -1
+                            // TODO - should this be sign-extended as I'm currently doing?
+                            (0x8000_0000, 0xFFFF_FFFF) => 0x8000_0000 as u32 as i32 as i64 as u64,
+                            // Normal signed divide - cast bits to i32, div, then sign extend
+                            (x, y) => ((x as i32) / (y as i32)) as i64 as u64
+                        },
+                        // DIVUW
+                        0b101 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (_, 0) => (-1 as i32) as u32 as u64,
+                            // Normal signed divide - cast bits to i32, div, then cast to u32, then sign-extend
+                            (x, y) => (x / y) as i32 as i64 as u64
+                        },
+                        // REMW
+                        0b110 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            // sign-extend
+                            (x, 0) => x as i32 as i64 as u64,
+                            // Overflow = most-negative divided by -1
+                            (0x8000_0000, 0xFFFF_FFFF) => 0,
+                            // Normal signed divide - cast bits to i32, div, then sign extend
+                            (x, y) => ((x as i32) % (y as i32)) as i64 as u64
+                        },
+                        // REMUW
+                        0b111 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            // sign-extend, always
+                            (x, 0) => x as i32 as i64 as u64,
+                            // Normal signed divide - div, then sign extend from u32 -> i32 -> i64
+                            (x, y) => (x % y) as i32 as i64 as u64
+                        },
+                        _ => bail!(UnsupportedParam(format!("Op32 MULDIV funct3: {:03b}", funct3)))
+                    }
 
                     _ => bail!(UnsupportedParam(format!("Op32 funct7/3: {:07b}, {:03b}", funct7, funct3)))
                 };

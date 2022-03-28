@@ -107,6 +107,53 @@ impl IsaMod<Rv32imConn<'_>> for Rv32im {
                     (0, 0b110) => x | y, // OR
                     (0, 0b111) => x & y, // AND
 
+                    (1, funct3) => match funct3 {
+                        0b000 => x * y, // MUL
+                        // MULH
+                        // Widen x,y to i64, multiply, shift down so we take top 32 bits of result
+                        0b001 => ((x as i32 as i64) * (y as i32 as i64) >> 32) as i32 as u32,
+                        // MULHSU
+                        // Widen x to i64, y to u64 *then* i64 (doesn't sign-extend), multiply + shift
+                        0b010 => ((x as i32 as i64) * (y as u64 as i64) >> 32) as i32 as u32, 
+                        // MULHU
+                        // Widen x,y to u64, multiply+shift
+                        0b011 => ((x as u64) * (y as u64) >> 32) as u32, 
+                        // TODO overflow semantics are not done correctly here
+                        // DIV (signed divide)
+                        0b100 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (_, 0) => (-1 as i32) as u32,
+                            // Overflow = most-negative divided by -1
+                            (0x8000_0000, 0xFFFF_FFFF) => 0x8000_0000,
+                            // Normal signed divide - cast bits to i32, div, then cast to u32
+                            (x, y) => ((x as i32) / (y as i32)) as u32
+                        },
+                        // DIVU (unsigned divide)
+                        0b101 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (_, 0) => (-1 as i32) as u32,
+                            // Normal unsigned divide
+                            (x, y) => x / y
+                        }
+                        // REM (signed remainder)
+                        0b110 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (x, 0) => x,
+                            // Overflow = most-negative divided by -1
+                            (0x8000_0000, 0xFFFF_FFFF) => 0,
+                            // Normal signed remainder - cast bits to i32, div, then cast to u32
+                            (x, y) => ((x as i32) % (y as i32)) as u32
+                        },
+                        // REMU (unsigned remainder)
+                        0b111 => match (x, y) {
+                            // Divide-by-zero (doesn't raise exception)
+                            (x, 0) => x,
+                            // Normal unsigned remainder
+                            (x, y) => x % y
+                        },
+                        _ => unreachable!("Impossible funct3")
+                    }
+
                     _ => bail!(UnsupportedParam(format!("Op funct7/3: {:07b}, {:03b}", funct7, funct3)))
                 };
                 conn.sreg.write(rd, new_val)?;
