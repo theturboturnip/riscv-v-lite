@@ -1,22 +1,29 @@
 # riscv-v-lite
-Simplistic RISC-V 32-bit emulator including Vector extension instructions.
+Simplistic RISC-V emulator including Vector extension instructions.
 
-Supports `rv32iv` architecture.
+Supports `rv32imv`, `rv64im`, and `rv64imxcheri` architectures.
 
 ## The Emulator
 
 The emulator is implemented in Rust using the Cargo package manager.
-It is split across multiple files:
-- [src/memory.rs](/rsim/src/memory.rs) defines a Memory struct.
-- [src/processor/](/rsim/src/processor/) holds actual processor files:
-    - [decode.rs](rsim/src/processor/decode.rs) decodes raw instruction bits into pairs of (major opcode, instruction fields).
-    - [vector.rs](rsim/src/processor/vector.rs) implements a separate vector unit, which holds and manipulates all vector state.
-    - [mod.rs](rsim/src/processor/mod.rs) implements the scalar processor, which calls out to a vector unit on-demand.
+It is split across multiple modules:
+- [crate::processor](/rsim/src/processor/) holds actual processor files:
+  - [::elements](/rsim/src/processor/elements.rs) holds processor "elements": register files and memory
+    - [::cheri](/rsim/src/processor/elements/cheri.rs) holds CHERI-ready processor "elements", and is the source for capability types used throughout the emulator.
+  - [::isa_mods](/rsim/src/processor/isa_mods.rs) holds different ISA modules that can be combined to build a processor
+  - [::models](/rsim/src/processor/models.rs) holds different processor models that combine various ISA modules:
+    - [::rv32imv](rsim/src/processor/models/rv32imv.rs) defines a 32-bit processor supporting Integer,Multiply,Vector,CSR exts
+    - [::rv64im](rsim/src/processor/models/rv64im.rs) defines a 64-bit processor supporting Integer,Multiply,CSR exts
+    - [::rv64imxcheri](rsim/src/processor/models/rv64imxcheri.rs) defines a 64-bit CHERI processor supporting Integer,Multiply,CSR exts
+  - [::decode](/rsim/src/processor/decode.rs) exposes logic for decoding 32-bit instructions (Compressed instructions aren't supported yet)
+  - [::exceptions](/rsim/src/processor/exceptions.rs) defines all Memory, Instruction, and Capability errors that the processor can throw and trap.
 
 To run the emulator on the example program:
 1. Install Rust as directed by [rust-lang.org](https://www.rust-lang.org/tools/install)
 2. Enter the [rsim/](/rsim/) directory
-3. ```$ cargo run direct ../programs/build/llvm-13-rv32iv/vector_memcpy/mem.bin```
+3. ```$ cargo run direct rv32imv ../programs/build/llvm-13-rv32imv/vector_memcpy/mem.bin```
+4. Running CHERI requires the actual .elf of the program:
+5. ```$ cargo run direct rv64imxcheri ../programs/build/llvm-13-rv64imxcheri/cheri_hello_world/cheri_hello_world.elf```
 
 Further documentation can be also be generated:
 
@@ -69,6 +76,8 @@ It does NOT test (and thus the emulator doesn't necessarily support)
 **You should not need to compile this program yourself - [programs/build/](/programs/build/) has all the artifacts you need**. 
 
 ### Compiling the program
+
+`$ cd ./programs/ && make`
 
 The top-level Makefile in [programs/](/programs/) will invoke CMake to build the program with each toolchain file.
 Toolchains are specified in CMake files e.g. `programs/TC-gcc-rv32iv.cmake`.
