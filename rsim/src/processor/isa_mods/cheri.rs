@@ -157,7 +157,17 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                     }
                     (0x11, 0x0) => {
                         // CIncOffset
-                        bail!("Haven't implemented CIncOffset")
+                        let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                        let rs2_val = conn.sreg.read_u64(rs2)?;
+                        if cs1_val.tag() && cs1_val.is_sealed() {
+                            bail!(CapabilityException::SealViolation{ cap: CapOrRegister::Reg(rs1) })
+                        } else {
+                            let (success, mut new_cap) = Cc128::incCapOffset(&cs1_val, rs2_val);
+                            if !success {
+                                new_cap = Cc128::invalidateCap(&new_cap);
+                            }
+                            conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
+                        }
                     }
                     (_, 0x1) => {
                         // CIncOffsetImm
