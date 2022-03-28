@@ -36,7 +36,8 @@ int fibbonacci(int n) {
 }
 
 int fib_test() {
-  if (fibbonacci(33) == 3524578){
+  // if (fibbonacci(33) == 3524578){
+  if (fibbonacci(10) == 55){
     return 1;
   }
   return 0;

@@ -79,11 +79,9 @@ fibbonacci:
 fib_test:
 	cincoffset	csp, csp, -16
 	csc	cra, 0(csp)
-	addi	a0, zero, 33
+	addi	a0, zero, 10
 	ccall	fibbonacci
-	lui	a1, 860
-	addiw	a1, a1, 2018
-	xor	a0, a0, a1
+	addi	a0, a0, -55
 	seqz	a0, a0
 	clc	cra, 0(csp)
 	cincoffset	csp, csp, 16
