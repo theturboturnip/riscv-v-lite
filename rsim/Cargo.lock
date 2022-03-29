@@ -224,7 +224,7 @@ dependencies = [
 [[package]]
 name = "rust-cheri-compressed-cap"
 version = "0.1.0"
-source = "git+https://github.com/theturboturnip/cheri-compressed-cap#059fbec406fc2621b985519df967b75782e98042"
+source = "git+https://github.com/theturboturnip/cheri-compressed-cap#41056f6416419ddc0c49b7ec38d77b571cb8b273"
 dependencies = [
  "cc",
  "num-traits",
@@ -255,9 +255,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.89"
+version = "1.0.90"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea297be220d52398dcc07ce15a209fce436d361735ac1db700cab3b6cdfb9f54"
+checksum = "704df27628939572cd88d33f171cd6f896f4eaca85252c6e0a72d8d8287ee86f"
 dependencies = [
  "proc-macro2 1.0.36",
  "quote 1.0.17",
@@ -290,7 +290,7 @@ checksum = "aa32fd3f627f367fe16f893e2597ae3c05020f8bba2666a4e6ea73d377e5714b"
 dependencies = [
  "proc-macro2 1.0.36",
  "quote 1.0.17",
- "syn 1.0.89",
+ "syn 1.0.90",
 ]
 
 [[package]]
