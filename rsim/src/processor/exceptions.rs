@@ -50,12 +50,15 @@ pub enum CapabilityException {
     TagViolation{ cap: CapOrRegister },
     #[error("Expected cap {cap:x?} to have unsealed")]
     SealViolation{ cap: CapOrRegister },
+    #[error("Expected cap {cap:x?} to contain range 0x{base:x}-0x{top:x}")]
+    LengthViolation{ cap: CapOrRegister, base: u64, top: u128 },
     // TypeViolation{ cap: CapOrRegister },
     // CallTrap{ cap: CapOrRegister },
     // ReturnTrap{ cap: CapOrRegister },
     // TSSUnderFlow{ cap: CapOrRegister },
     // UserDefViolation{ cap: CapOrRegister },
-    // InexactBounds{ cap: CapOrRegister },
+    #[error("Capability created from cap {cap:x?} does not have exact bounds")]
+    InexactBounds{ cap: CapOrRegister },
     // UnalignedBase{ cap: CapOrRegister },
     // GlobalViolation{ cap: CapOrRegister },
     #[error("Expected cap {cap:x?} to have permissions {perms:b}")]

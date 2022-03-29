@@ -121,15 +121,69 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                     }
                     (0x8, 0x0) => {
                         // CSetBounds
-                        bail!("Haven't implemented CSetBounds")
+                        let cs1_reg = CapOrRegister::Reg(rs1);
+                        let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                        let rs2_val = conn.sreg.read_u64(rs2)?;
+
+                        let new_base = cs1_val.address();
+                        let new_top = new_base as u128 + rs2_val as u128;
+                       
+                        if !cs1_val.tag() {
+                            bail!(CapabilityException::TagViolation{ cap: cs1_reg });
+                        } else if cs1_val.is_sealed() {
+                            bail!(CapabilityException::SealViolation{ cap: cs1_reg });
+                        } else if !Cc128::inCapBounds(&cs1_val, new_base, rs2_val as u128) {
+                            bail!(CapabilityException::LengthViolation{ cap: cs1_reg, base: new_base, top: new_top });
+                        }
+
+                        let (_, new_cap) = Cc128::setCapBounds(&cs1_val, new_base, new_top);
+                        conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                     }
                     (0x9, 0x0) => {
                         // CSetBoundsExact
-                        bail!("Haven't implemented CSetBoundsExact")
+                        let cs1_reg = CapOrRegister::Reg(rs1);
+                        let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                        let rs2_val = conn.sreg.read_u64(rs2)?;
+
+                        let new_base = cs1_val.address();
+                        let new_top = new_base as u128 + rs2_val as u128;
+                       
+                        if !cs1_val.tag() {
+                            bail!(CapabilityException::TagViolation{ cap: cs1_reg });
+                        } else if cs1_val.is_sealed() {
+                            bail!(CapabilityException::SealViolation{ cap: cs1_reg });
+                        } else if !Cc128::inCapBounds(&cs1_val, new_base, rs2_val as u128) {
+                            bail!(CapabilityException::LengthViolation{ cap: cs1_reg, base: new_base, top: new_top });
+                        }
+
+                        let (exact, new_cap) = Cc128::setCapBounds(&cs1_val, new_base, new_top);
+                        if !exact {
+                            bail!(CapabilityException::InexactBounds{ cap: cs1_reg });
+                        }
+                        conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                     }
                     (_, 0x2) => {
                         // CSetBoundsImm
-                        bail!("Haven't implemented CSetBoundsImm")
+                        let cs1_reg = CapOrRegister::Reg(rs1);
+                        let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                        let imm_val = imm.no_extend_u64();
+
+                        let new_base = cs1_val.address();
+                        let new_top = new_base as u128 + imm_val as u128;
+                       
+                        if !cs1_val.tag() {
+                            bail!(CapabilityException::TagViolation{ cap: cs1_reg });
+                        } else if cs1_val.is_sealed() {
+                            bail!(CapabilityException::SealViolation{ cap: cs1_reg });
+                        } else if !Cc128::inCapBounds(&cs1_val, new_base, imm_val as u128) {
+                            bail!(CapabilityException::LengthViolation{ cap: cs1_reg, base: new_base, top: new_top });
+                        }
+
+                        dbg!(cs1_val, new_base, new_top);
+
+                        let (_, new_cap) = Cc128::setCapBounds(&cs1_val, new_base, new_top);
+                        dbg!(new_cap);
+                        conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                     }
                     (0xb, 0x0) => {
                         // CSeal
