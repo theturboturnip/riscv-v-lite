@@ -156,6 +156,28 @@ fib_memo_test:
 .Lfunc_end5:
 	.size	fib_memo_test, .Lfunc_end5-fib_memo_test
 
+	.globl	vload
+	.p2align	2
+	.type	vload,@function
+vload:
+	#APP
+	vle32.v	v1, (ca0)
+	#NO_APP
+	cret
+.Lfunc_end6:
+	.size	vload, .Lfunc_end6-vload
+
+	.globl	vstore
+	.p2align	2
+	.type	vstore,@function
+vstore:
+	#APP
+	vse32.v	v8, (ca0)
+	#NO_APP
+	cret
+.Lfunc_end7:
+	.size	vstore, .Lfunc_end7-vstore
+
 	.globl	main
 	.p2align	2
 	.type	main,@function
@@ -170,18 +192,23 @@ main:
 	or	s0, a0, s0
 	ccall	fib_memo_test
 	slli	a0, a0, 2
-	or	a1, s0, a0
+	or	s0, s0, a0
 	addi	a0, zero, 15
 	slli	a0, a0, 28
-	cincoffset	ca2, cnull, a0
-	sext.w	a0, a1
-	csw	a1, 0(ca2)
+	cincoffset	ca0, cnull, a0
+	csw	s0, 0(ca0)
+	#APP
+	vsetivli	a0, 4, e32, m1, ta, ma
+	#NO_APP
+	ccall	vload
+	ccall	vstore
+	sext.w	a0, s0
 	clc	cs0, 0(csp)
 	clc	cra, 16(csp)
 	cincoffset	csp, csp, 32
 	cret
-.Lfunc_end6:
-	.size	main, .Lfunc_end6-main
+.Lfunc_end8:
+	.size	main, .Lfunc_end8-main
 
 	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 62cac4e2d70fb43bf3bef79e2f3821a5c1805588)"
 	.section	".note.GNU-stack","",@progbits
