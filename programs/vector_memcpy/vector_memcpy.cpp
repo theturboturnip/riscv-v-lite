@@ -38,6 +38,9 @@
 #define ENABLE_ASM_WHOLEREG 1
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void* memset(void* dest, int ch, size_t count) {
     unsigned char ch_uc = (unsigned char)ch;
     unsigned char* dest_uc = (unsigned char*)dest;
@@ -47,6 +50,9 @@ void* memset(void* dest, int ch, size_t count) {
 
     return dest_uc;
 }
+#ifdef __cplusplus
+}
+#endif
 
 void vector_memcpy_indexed(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     // Generate indices
@@ -544,7 +550,7 @@ int vector_unit_faultonlyfirst_test_under_fault(void) {
     // It does individual fault-only-first loads on the boundary of
     // a known unmapped memory region (set in the emulator)
 
-    int32_t* UNMAPPED_REGION_START = 0x25000;
+    int32_t* UNMAPPED_REGION_START = (int32_t*)0x25000;
 
     // Find the number of 32-bit elements in a single vector register
     size_t vlmax = vsetvlmax_e32m1();
@@ -569,6 +575,9 @@ int vector_unit_faultonlyfirst_test_under_fault(void) {
     return 1;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 int main(void)
 {
   int *outputDevice = (int*) 0xf0000000; // magic output device
@@ -615,3 +624,6 @@ int main(void)
   outputDevice[0] = result;
   return result;
 }
+#ifdef __cplusplus
+}
+#endif
