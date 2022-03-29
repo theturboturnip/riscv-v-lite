@@ -78,7 +78,7 @@ int fib_memo_test() {
 vint32m1_t vload(const int* ptr) {
   vint32m1_t data;
   asm volatile(
-      "vle32.v v1, (ca0)" 
+      "vle32.v %0, (ca0)" 
       : "=vr"(data) // vector output
       : // no input
   );
@@ -101,7 +101,7 @@ int main(void)
   result |= fac_test() << 0;
   result |= fib_test() << 1;
   result |= fib_memo_test() << 2;
-  
+
   outputDevice[0] = result;
 
 

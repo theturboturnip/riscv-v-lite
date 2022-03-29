@@ -161,7 +161,7 @@ fib_memo_test:
 	.type	vload,@function
 vload:
 	#APP
-	vle32.v	v1, (ca0)
+	vle32.v	v8, (ca0)
 	#NO_APP
 	cret
 .Lfunc_end6:
