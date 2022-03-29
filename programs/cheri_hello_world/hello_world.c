@@ -43,6 +43,29 @@ int fib_test() {
   return 0;
 }
 
+#define FIB_MEMO_ARRAY_LEN 50
+int fib_memo(int n) {
+  int fib_memo_array[FIB_MEMO_ARRAY_LEN];
+  for (int i = 0; i < FIB_MEMO_ARRAY_LEN; i++) {
+    if (i == 0) {
+      fib_memo_array[i] = 0;
+    } else if (i == 1) {
+      fib_memo_array[i] = 1;
+    } else {
+      fib_memo_array[i] = fib_memo_array[i - 1] + fib_memo_array[i - 2];
+    }
+  }
+
+  return fib_memo_array[n];
+}
+
+int fib_memo_test() {
+  if (fib_memo(33) == 3524578){
+    return 1;
+  }
+  return 0;
+}
+
 int main(void)
 {
   int *outputDevice = (int*) 0xf0000000; // magic output device
@@ -50,6 +73,7 @@ int main(void)
 
   result |= fac_test() << 0;
   result |= fib_test() << 1;
+  result |= fib_memo_test() << 2;
 
 
 #define VECTOR_TEST 0

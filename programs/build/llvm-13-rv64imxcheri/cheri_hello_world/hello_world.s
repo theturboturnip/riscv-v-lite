@@ -89,6 +89,73 @@ fib_test:
 .Lfunc_end3:
 	.size	fib_test, .Lfunc_end3-fib_test
 
+	.globl	fib_memo
+	.p2align	2
+	.type	fib_memo,@function
+fib_memo:
+	cincoffset	csp, csp, -208
+	mv	a1, zero
+	mv	a2, zero
+	lui	a3, 524288
+	addiw	t0, a3, -1
+	addi	a7, zero, 1
+	addi	a6, zero, 50
+	cincoffset	ca4, csp, 8
+	csetbounds	ct1, ca4, 200
+	j	.LBB4_3
+.LBB4_1:
+	slli	a4, a1, 2
+	addi	a3, a4, -4
+	cincoffset	ca3, ct1, a3
+	clw	a3, 0(ca3)
+	addi	a5, a4, -8
+	cincoffset	ca5, ct1, a5
+	clw	a5, 0(ca5)
+	add	a3, a5, a3
+	cincoffset	ca4, ct1, a4
+	csw	a3, 0(ca4)
+.LBB4_2:
+	addi	a1, a1, 1
+	addi	a2, a2, 1
+	beq	a1, a6, .LBB4_7
+.LBB4_3:
+	and	a4, a2, t0
+	beq	a4, a7, .LBB4_6
+	bnez	a4, .LBB4_1
+	csw	zero, 8(csp)
+	j	.LBB4_2
+.LBB4_6:
+	csw	a7, 12(csp)
+	j	.LBB4_2
+.LBB4_7:
+	cincoffset	ca1, csp, 8
+	csetbounds	ca1, ca1, 200
+	slli	a0, a0, 2
+	cincoffset	ca0, ca1, a0
+	clw	a0, 0(ca0)
+	cincoffset	csp, csp, 208
+	cret
+.Lfunc_end4:
+	.size	fib_memo, .Lfunc_end4-fib_memo
+
+	.globl	fib_memo_test
+	.p2align	2
+	.type	fib_memo_test,@function
+fib_memo_test:
+	cincoffset	csp, csp, -16
+	csc	cra, 0(csp)
+	addi	a0, zero, 33
+	ccall	fib_memo
+	lui	a1, 860
+	addiw	a1, a1, 2018
+	xor	a0, a0, a1
+	seqz	a0, a0
+	clc	cra, 0(csp)
+	cincoffset	csp, csp, 16
+	cret
+.Lfunc_end5:
+	.size	fib_memo_test, .Lfunc_end5-fib_memo_test
+
 	.globl	main
 	.p2align	2
 	.type	main,@function
@@ -100,7 +167,10 @@ main:
 	mv	s0, a0
 	ccall	fib_test
 	slli	a0, a0, 1
-	or	a1, a0, s0
+	or	s0, a0, s0
+	ccall	fib_memo_test
+	slli	a0, a0, 2
+	or	a1, s0, a0
 	addi	a0, zero, 15
 	slli	a0, a0, 28
 	cincoffset	ca2, cnull, a0
@@ -110,8 +180,8 @@ main:
 	clc	cra, 16(csp)
 	cincoffset	csp, csp, 32
 	cret
-.Lfunc_end4:
-	.size	main, .Lfunc_end4-main
+.Lfunc_end6:
+	.size	main, .Lfunc_end6-main
 
 	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 62cac4e2d70fb43bf3bef79e2f3821a5c1805588)"
 	.section	".note.GNU-stack","",@progbits
