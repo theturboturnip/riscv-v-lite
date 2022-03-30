@@ -2,7 +2,7 @@
 build/*/*
 # except the project directories
 !build/*/vector_memcpy/
-!build/*/cheri_hello_world/
+!build/*/hello_world/
 
 # Ignore all files *within* vector_memcpy
 build/*/vector_memcpy/*
@@ -13,9 +13,9 @@ build/*/vector_memcpy/*
 !build/*/vector_memcpy/mem.bin
 
 # Ignore all files *within* vector_memcpy
-build/*/cheri_hello_world/*
+build/*/hello_world/*
 # but allow the outputs we like
-!build/*/cheri_hello_world/cheri_hello_world.elf
-!build/*/cheri_hello_world/cheri_hello_world.elf.dump
-!build/*/cheri_hello_world/hello_world.s
-!build/*/cheri_hello_world/mem.bin
+!build/*/hello_world/hello_world.elf
+!build/*/hello_world/hello_world.elf.dump
+!build/*/hello_world/hello_world.s
+!build/*/hello_world/mem.bin

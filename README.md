@@ -23,7 +23,7 @@ To run the emulator on the example program:
 2. Enter the [rsim/](/rsim/) directory
 3. ```$ cargo run direct rv32imv ../programs/build/llvm-13-rv32imv/vector_memcpy/mem.bin```
 4. Running CHERI requires the actual .elf of the program:
-5. ```$ cargo run direct rv64imxcheri ../programs/build/llvm-13-rv64imxcheri/cheri_hello_world/cheri_hello_world.elf```
+5. ```$ cargo run direct rv64imxcheri ../programs/build/llvm-13-rv64imxcheri/hello_world/hello_world.elf```
 
 Further documentation can be also be generated:
 
@@ -85,6 +85,8 @@ Toolchains are specified in CMake files e.g. `programs/TC-gcc-rv32iv.cmake`.
 Currently, three toolchains are supported:
 - `gcc`, which use a custom GNU toolchain for 'rv32iv' that includes vector intrinsics
   - This uses the riscv gcc toolchain from the path, may change later to use a specific version/environment variable
+- `llvm-13-...xcheri` uses the Cheri toolchain installed in `~/cheri/`.
+  - Compiling vector code currently requires my fork, [theturboturnip/llvm-project](https://github.com/theturboturnip/llvm-project)
 - `llvm-13`, which uses LLVM v13
   - Make sure LLVM v13 tools (e.g. `clang-13`) are on your PATH
 - `llvm-trunk`, which uses a custom LLVM build
