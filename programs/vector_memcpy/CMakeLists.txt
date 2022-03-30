@@ -1,6 +1,6 @@
-add_executable(vector_memcpy init.s vector_memcpy.cpp)
-set_target_properties(vector_memcpy PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/link.ld)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_CURRENT_SOURCE_DIR}/link.ld -nostdlib")
+add_executable(vector_memcpy ${INIT_S} vector_memcpy.cpp)
+set_target_properties(vector_memcpy PROPERTIES LINK_DEPENDS ${LINK_LD})
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${LINK_LD} -nostdlib")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -fno-inline-functions -ffreestanding -Werror=implicit-function-declaration")
 
 # generate an assembly version of the vector_memcpy.c file
