@@ -70,6 +70,58 @@ pub struct Rv32vConn<'a> {
 }
 impl<'a> IsaModConn for Rv32vConn<'a> {}
 
+#[derive(Debug,Copy,Clone)]
+struct Provenance {
+    reg: u8
+}
+
+trait VecMemInterface {
+    type IntAddr;
+    fn get_addr_provenance(&mut self, reg: u8) -> Result<(Self::IntAddr, Provenance)>;
+    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (Self::IntAddr, Provenance)) -> Result<uELEN>;
+    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (Self::IntAddr, Provenance)) -> Result<()>;
+}
+impl<'a> VecMemInterface for Rv32vConn<'a> {
+    type IntAddr = u64;
+
+    fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)> {
+        Ok((self.sreg.read(reg)? as u64, Provenance{ reg }))
+    }
+    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (Self::IntAddr, Provenance)) -> Result<uELEN> {
+        let (addr, _) = addr_provenance;
+        let val = match eew {
+            Sew::e8 => {
+                self.memory.load_u8(addr)? as uELEN
+            }
+            Sew::e16 => {
+                self.memory.load_u16(addr)? as uELEN
+            }
+            Sew::e32 => {
+                self.memory.load_u32(addr)? as uELEN
+            }
+            Sew::e64 => { bail!("load_from_memory {:?} unsupported", eew) }
+        };
+        Ok(val)
+    }
+    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (Self::IntAddr, Provenance)) -> Result<()> {
+        let (addr, _) = addr_provenance;
+        match eew {
+            Sew::e8 => {
+                self.memory.store_u8(addr, val.try_into()?)?
+            }
+            Sew::e16 => {
+                self.memory.store_u16(addr, val.try_into()?)?
+            }
+            Sew::e32 => {
+                self.memory.store_u32(addr, val.try_into()?)?
+            }
+            Sew::e64 => { bail!("store_to_memory {:?} unsupported", eew) }
+        }
+        Ok(())
+    }
+}
+
+
 impl Rv32v {
     /// Returns an initialized vector unit.
     pub fn new() -> Rv32v {
@@ -356,7 +408,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                     return Ok(None)
                 }
 
-                let base_addr = conn.sreg.read(rs1)? as u64;
+                let (base_addr, provenance) = conn.get_addr_provenance(rs1)?;
 
                 let addr_base_step = match op.eew {
                     Sew::e8 => 1,
@@ -383,7 +435,8 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                                 // If we aren't masked out...
                                 if !self.idx_masked_out(vm, i as usize) {
                                     // ... load from memory into register
-                                    self.load_to_vreg(&mut conn, op.eew, addr, rd, i + (i_field as u32 * elems_per_group))?;
+                                    let addr_p = (addr, provenance);
+                                    self.load_to_vreg(&mut conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
                                 }
                                 // Either way increment the address
                                 addr += addr_base_step * stride;
@@ -404,7 +457,8 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                                 // If we aren't masked out...
                                 if !self.idx_masked_out(vm, i as usize) {
                                     // ... store from register into memory
-                                    self.store_to_mem(&mut conn, op.eew, addr, rd, i + (i_field as u32 * elems_per_group))?;
+                                    let addr_p = (addr, provenance);
+                                    self.store_to_mem(&mut conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
                                 }
                                 // Either way increment the address
                                 addr += addr_base_step * stride;
@@ -428,7 +482,8 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... load from memory(idx) into register(i)
-                                self.load_to_vreg(&mut conn, op.eew, addr, rd, i)?;
+                                let addr_p = (addr, provenance);
+                                self.load_to_vreg(&mut conn, op.eew, addr_p, rd, i)?;
                             }
                         }
                     }
@@ -449,7 +504,8 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                             // If we aren't masked out...
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... store from register(i) to memory(idx)
-                                self.store_to_mem(&mut conn, op.eew, addr, rd, i)?;
+                                let addr_p = (addr, provenance);
+                                self.store_to_mem(&mut conn, op.eew, addr_p, rd, i)?;
                             }
                         }
                     }
@@ -467,8 +523,9 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                                 // If we aren't masked out...
                                 if !self.idx_masked_out(vm, i as usize) {
                                     // ... load from memory into register
+                                    let addr_p = (addr, provenance);
                                     let load_fault: Result<()> = 
-                                        self.load_to_vreg(&mut conn, op.eew, addr, rd, i + (i_field as u32 * elems_per_group));
+                                        self.load_to_vreg(&mut conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group));
                                     
                                     if i == 0 {
                                         // Any potentially faulted load should fault as normal if i == 0
@@ -512,7 +569,8 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                             // We can't be masked out.
                             // Load from memory into register
                             // dbg!("ld", i, addr);
-                            self.load_to_vreg(&mut conn, eew, addr, rd, i)?;
+                            let addr_p = (addr, provenance);
+                            self.load_to_vreg(&mut conn, eew, addr_p, rd, i)?;
 
                             addr += addr_base_step;
                         }
@@ -530,7 +588,8 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                             // We can't be masked out.
                             // Store from register into memory
                             // dbg!("st", i, addr);
-                            self.store_to_mem(&mut conn, eew, addr, rd, i)?;
+                            let addr_p = (addr, provenance);
+                            self.store_to_mem(&mut conn, eew, addr_p, rd, i)?;
 
                             addr += addr_base_step;
                         }
@@ -552,7 +611,8 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
 
                         let mut addr = base_addr;
                         for i in self.vstart..op.evl {
-                            self.load_to_vreg(&mut conn, op.eew, addr, rd, i)?;
+                            let addr_p = (addr, provenance);
+                            self.load_to_vreg(&mut conn, op.eew, addr_p, rd, i)?;
 
                             // Increment the address
                             addr += addr_base_step;
@@ -575,7 +635,8 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
 
                         let mut addr = base_addr;
                         for i in self.vstart..op.evl {
-                            self.store_to_mem(&mut conn, op.eew, addr, rd, i)?;
+                            let addr_p = (addr, provenance);
+                            self.store_to_mem(&mut conn, op.eew, addr_p, rd, i)?;
 
                             // Increment the address
                             addr += addr_base_step;
@@ -600,42 +661,16 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
 impl Rv32v {
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
-    fn load_to_vreg(&mut self, conn: &mut Rv32vConn, eew: Sew, addr: u64, vd_base: u8, idx_from_base: u32) -> Result<()> {
-        match eew {
-            Sew::e8 => {
-                let val = conn.memory.load_u8(addr)?;
-                self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
-            }
-            Sew::e16 => {
-                let val = conn.memory.load_u16(addr)?;
-                self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
-            }
-            Sew::e32 => {
-                let val = conn.memory.load_u32(addr)?;
-                self.store_vreg_elem(eew, vd_base, idx_from_base, val)?;
-            }
-            Sew::e64 => { bail!("load_to_vreg {:?} unsupported", eew) }
-        }
+    fn load_to_vreg(&mut self, conn: &mut Rv32vConn, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+        let val = conn.load_from_memory(eew, addr_provenance)?;
+        self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
         Ok(())
     }
     /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
     /// vector register group starting at `vd_base` into a given address `addr` 
-    fn store_to_mem(&mut self, conn: &mut Rv32vConn, eew: Sew, addr: u64, vd_base: u8, idx_from_base: u32) -> Result<()> {
-        match eew {
-            Sew::e8 => {
-                let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
-                conn.memory.store_u8(addr, val.try_into()?)?;
-            }
-            Sew::e16 => {
-                let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
-                conn.memory.store_u16(addr, val.try_into()?)?;
-            }
-            Sew::e32 => {
-                let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
-                conn.memory.store_u32(addr, val)?;
-            }
-            Sew::e64 => { bail!("store_to_mem {:?} unsupported", eew) }
-        }
+    fn store_to_mem(&mut self, conn: &mut Rv32vConn, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+        let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
+        conn.store_to_memory(eew, val, addr_provenance)?;
         Ok(())
     }
 
