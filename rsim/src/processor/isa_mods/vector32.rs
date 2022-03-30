@@ -45,7 +45,7 @@ const_assert!(size_of::<uVLEN>() * 8 == VLEN);
 /// The Vector Unit for the processor.
 /// Stores all vector state, including registers.
 /// Call [Rv32v::exec_inst()] on it when you encounter a vector instruction.
-/// This requires a [Rv32vConn] to access other resources.
+/// This requires a [VecMemInterface<uXLEN>] to access other resources.
 pub struct Rv32v {
     // TODO use a RegisterFile for this?
     vreg: [uVLEN; 32],
@@ -68,42 +68,46 @@ pub struct Rv32vConn<'a> {
     pub sreg: &'a mut dyn RegisterFile<u32>,
     pub memory: &'a mut dyn Memory32,
 }
-impl<'a> IsaModConn for Rv32vConn<'a> {}
 
 #[derive(Debug,Copy,Clone)]
-struct Provenance {
+pub struct Provenance {
     reg: u8
 }
 
-trait VecMemInterface {
-    type IntAddr;
-    fn get_addr_provenance(&mut self, reg: u8) -> Result<(Self::IntAddr, Provenance)>;
-    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (Self::IntAddr, Provenance)) -> Result<uELEN>;
-    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (Self::IntAddr, Provenance)) -> Result<()>;
+pub trait VecMemInterface<uXLEN> where uXLEN: Into<u64> + From<u32> {
+    fn sreg_read_xlen(&mut self, reg: u8) -> Result<uXLEN>;
+    fn sreg_write_xlen(&mut self, reg: u8, val: uXLEN) -> Result<()>;
+    fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)>;
+    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<uELEN>;
+    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()>;
 }
-impl<'a> VecMemInterface for Rv32vConn<'a> {
-    type IntAddr = u64;
-
+impl<'a> VecMemInterface<u32> for Rv32vConn<'a> {
+    fn sreg_read_xlen(&mut self, reg: u8) -> Result<u32> {
+        Ok(self.sreg.read(reg)?)
+    }
+    fn sreg_write_xlen(&mut self, reg: u8, val: u32) -> Result<()> {
+        Ok(self.sreg.write(reg, val)?)
+    }
     fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)> {
         Ok((self.sreg.read(reg)? as u64, Provenance{ reg }))
     }
-    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (Self::IntAddr, Provenance)) -> Result<uELEN> {
+    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<uELEN> {
         let (addr, _) = addr_provenance;
         let val = match eew {
             Sew::e8 => {
-                self.memory.load_u8(addr)? as uELEN
+                self.memory.load_u8(addr)? as u32
             }
             Sew::e16 => {
-                self.memory.load_u16(addr)? as uELEN
+                self.memory.load_u16(addr)? as u32
             }
             Sew::e32 => {
-                self.memory.load_u32(addr)? as uELEN
+                self.memory.load_u32(addr)? as u32
             }
             Sew::e64 => { bail!("load_from_memory {:?} unsupported", eew) }
         };
         Ok(val)
     }
-    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (Self::IntAddr, Provenance)) -> Result<()> {
+    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()> {
         let (addr, _) = addr_provenance;
         match eew {
             Sew::e8 => {
@@ -124,7 +128,7 @@ impl<'a> VecMemInterface for Rv32vConn<'a> {
 
 impl Rv32v {
     /// Returns an initialized vector unit.
-    pub fn new() -> Rv32v {
+    pub fn new() -> Self {
         Rv32v {
             vreg: [0; 32],
 
@@ -150,7 +154,7 @@ impl Rv32v {
     /// * `inst_kind` - Which kind of configuration instruction to execute
     /// * `inst` - Decoded instruction bits
     /// * `conn` - Connection to external resources
-    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: Rv32vConn) -> Result<()> {
+    fn exec_config<uXLEN>(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> where uXLEN: Into<u64> + From<u32> {
         if let InstructionBits::VType{rd, funct3, rs1, rs2, zimm11, zimm10, ..} = inst {
             assert_eq!(funct3, 0b111);
 
@@ -163,24 +167,24 @@ impl Rv32v {
                     // Read AVL from a register
                     if rs1 != 0 {
                         // default case, just read it out
-                        conn.sreg.read(rs1)?
+                        conn.sreg_read_xlen(rs1)?.into()
                     } else {
                         if rd != 0 {
                             // rs1 == 0, rd != 0
                             // => set the AVL to the maximum possible value,
                             // use that to calculate the maximum number of elements in this configuration,
                             // which will get written out to rd.
-                            u32::MAX
+                            u64::MAX
                         } else {
                             // Request the same vector length, even if the vtype is changing.
-                            self.vl
+                            self.vl as u64
                         }
                     }
                 } ,
                 ConfigKind::vsetivli => { // vsetivli
                     // Read AVL from an immediate
                     // Use rs1 as a 5-bit immediate
-                    rs1 as u32
+                    rs1 as u64
                 }
             };
 
@@ -188,17 +192,17 @@ impl Rv32v {
             // See RISC-V V spec, section 6
             let vtype_bits = match inst_kind {
                 ConfigKind::vsetvli => {
-                    zimm11 as u32
+                    zimm11 as u64
                 },
                 ConfigKind::vsetivli => {
-                    zimm10 as u32
+                    zimm10 as u64
                 },
                 ConfigKind::vsetvl => {
-                    conn.sreg.read(rs2)? 
+                    conn.sreg_read_xlen(rs2)?.into()
                 },
             };
             // Try to parse vtype bits
-            let req_vtype = VType::decode(vtype_bits)?;
+            let req_vtype = VType::decode(vtype_bits as u32)?;
 
             // Calculate the maximum number of elements per register group
             // (under some configurations, e.g. Sew=8,Lmul=1/4,Vlen=32, this could be < 1 which is illegal)
@@ -215,9 +219,9 @@ impl Rv32v {
                 self.vtype = req_vtype;
                 // dbg!(avl, elems_per_group);
                 // TODO - section 6.3 shows more constraints on setting VL
-                self.vl = min(elems_per_group, avl);
+                self.vl = min(elems_per_group, avl as u32);
 
-                conn.sreg.write(rd, self.vl)?;
+                conn.sreg_write_xlen(rd, self.vl.try_into()?)?;
             } else {
                 self.vtype = VType::illegal();
                 // TODO - move this bail to the next vector instruction that executes
@@ -232,10 +236,8 @@ impl Rv32v {
     }
 }
 
-impl IsaMod<Rv32vConn<'_>> for Rv32v {
-    type Pc = u32;
-
-    fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
+impl Rv32v {
+    pub fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
             // Delegate all instructions under the Vector opcode to the vector unit
@@ -265,7 +267,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
     /// * `inst` - Decoded instruction bits
     /// * `inst_bits` - Raw instruction bits (TODO - we shouldn't need this)
     /// * `conn` - Connection to external resources
-    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, mut conn: Rv32vConn) -> ProcessorResult<Option<u32>> {
+    pub fn execute<uXLEN: Into<u64> + From<u32>>(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: &mut dyn VecMemInterface<uXLEN>) -> ProcessorResult<Option<u32>> {
         use Opcode::*;
         match (opcode, inst) {
             (Vector, InstructionBits::VType{funct3, funct6, rs1, rs2, rd, vm, ..}) => {
@@ -395,7 +397,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
             }
 
             (LoadFP | StoreFP, InstructionBits::FLdStType{rd, rs1, rs2, vm, ..}) => {
-                let op = self.decode_load_store(opcode, inst, &mut conn)?;
+                let op = self.decode_load_store(opcode, inst, conn)?;
                 use MemOpDir::*;
 
                 if op.dir == Load && (!vm) && rd == 0 {
@@ -436,7 +438,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                                 if !self.idx_masked_out(vm, i as usize) {
                                     // ... load from memory into register
                                     let addr_p = (addr, provenance);
-                                    self.load_to_vreg(&mut conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
+                                    self.load_to_vreg(conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
                                 }
                                 // Either way increment the address
                                 addr += addr_base_step * stride;
@@ -458,7 +460,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                                 if !self.idx_masked_out(vm, i as usize) {
                                     // ... store from register into memory
                                     let addr_p = (addr, provenance);
-                                    self.store_to_mem(&mut conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
+                                    self.store_to_mem(conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
                                 }
                                 // Either way increment the address
                                 addr += addr_base_step * stride;
@@ -483,7 +485,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... load from memory(idx) into register(i)
                                 let addr_p = (addr, provenance);
-                                self.load_to_vreg(&mut conn, op.eew, addr_p, rd, i)?;
+                                self.load_to_vreg(conn, op.eew, addr_p, rd, i)?;
                             }
                         }
                     }
@@ -505,7 +507,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... store from register(i) to memory(idx)
                                 let addr_p = (addr, provenance);
-                                self.store_to_mem(&mut conn, op.eew, addr_p, rd, i)?;
+                                self.store_to_mem(conn, op.eew, addr_p, rd, i)?;
                             }
                         }
                     }
@@ -525,7 +527,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                                     // ... load from memory into register
                                     let addr_p = (addr, provenance);
                                     let load_fault: Result<()> = 
-                                        self.load_to_vreg(&mut conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group));
+                                        self.load_to_vreg(conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group));
                                     
                                     if i == 0 {
                                         // Any potentially faulted load should fault as normal if i == 0
@@ -570,7 +572,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                             // Load from memory into register
                             // dbg!("ld", i, addr);
                             let addr_p = (addr, provenance);
-                            self.load_to_vreg(&mut conn, eew, addr_p, rd, i)?;
+                            self.load_to_vreg(conn, eew, addr_p, rd, i)?;
 
                             addr += addr_base_step;
                         }
@@ -589,7 +591,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                             // Store from register into memory
                             // dbg!("st", i, addr);
                             let addr_p = (addr, provenance);
-                            self.store_to_mem(&mut conn, eew, addr_p, rd, i)?;
+                            self.store_to_mem(conn, eew, addr_p, rd, i)?;
 
                             addr += addr_base_step;
                         }
@@ -612,7 +614,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                         let mut addr = base_addr;
                         for i in self.vstart..op.evl {
                             let addr_p = (addr, provenance);
-                            self.load_to_vreg(&mut conn, op.eew, addr_p, rd, i)?;
+                            self.load_to_vreg(conn, op.eew, addr_p, rd, i)?;
 
                             // Increment the address
                             addr += addr_base_step;
@@ -636,7 +638,7 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
                         let mut addr = base_addr;
                         for i in self.vstart..op.evl {
                             let addr_p = (addr, provenance);
-                            self.store_to_mem(&mut conn, op.eew, addr_p, rd, i)?;
+                            self.store_to_mem(conn, op.eew, addr_p, rd, i)?;
 
                             // Increment the address
                             addr += addr_base_step;
@@ -661,14 +663,14 @@ impl IsaMod<Rv32vConn<'_>> for Rv32v {
 impl Rv32v {
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
-    fn load_to_vreg(&mut self, conn: &mut Rv32vConn, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn load_to_vreg<uXLEN>(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> where uXLEN: Into<u64> + From<u32> {
         let val = conn.load_from_memory(eew, addr_provenance)?;
         self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
         Ok(())
     }
     /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
     /// vector register group starting at `vd_base` into a given address `addr` 
-    fn store_to_mem(&mut self, conn: &mut Rv32vConn, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn store_to_mem<uXLEN>(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> where uXLEN: Into<u64> + From<u32> {
         let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
         conn.store_to_memory(eew, val, addr_provenance)?;
         Ok(())
@@ -682,7 +684,7 @@ impl Rv32v {
 
     /// Decode a Load/Store opcode into an OverallMemOp structure.
     /// Performs all checks to ensure the instruction is a valid RISC-V V vector load/store.
-    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &mut Rv32vConn) -> Result<OverallMemOp> {
+    fn decode_load_store<uXLEN>(&self, opcode: Opcode, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<OverallMemOp> where uXLEN: Into<u64> + From<u32> {
         if let InstructionBits::FLdStType{width, rs2, mew, mop, nf, ..} = inst {
             // MEW = Memory Expanded Width(?)
             // Expected to be used for larger widths, because it's right next to the width field,
@@ -760,7 +762,7 @@ impl Rv32v {
             // Determines indexing mode
             let mop = match mop {
                 0b00 => Mop::UnitStride,
-                0b10 => Mop::Strided(conn.sreg.read(rs2)? as u64),
+                0b10 => Mop::Strided(conn.sreg_read_xlen(rs2)?.into()),
                 0b01 => Mop::Indexed{ordered: false},
                 0b11 => Mop::Indexed{ordered: true},
     

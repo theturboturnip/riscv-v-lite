@@ -131,7 +131,7 @@ impl Processor32 {
         }
         if let Some(rvv) = mods.rvv.as_mut() {
             if rvv.will_handle(opcode, inst) {
-                let requested_pc = rvv.execute(opcode, inst, inst_bits, self.vector_conn())?;
+                let requested_pc = rvv.execute(opcode, inst, inst_bits, &mut self.vector_conn())?;
                 if let Some(requested_pc) = requested_pc {
                     next_pc = requested_pc;
                 }
