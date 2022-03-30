@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.8
 
 import argparse
 import contextlib
@@ -301,19 +301,24 @@ for (uint32_t i = 0; i < 128; i++) {
     data[i] = i;
 }
 
-// ONLY copy 103 values
-memcpy_fn(103, data, out_data);
+// ONLY copy 110 bytes
+// Assume vectors are 32/64 bytes
+// We want to force memcpy_fn to copy with a not-full vector register, to test vlen
+// regardless of what element width (1byte, 2byte, 4byte, 8byte) it uses
+// => choose a value that isn't a multiple of 32,64
+// = 110
+memcpy_fn(110, data, out_data);
 
-// Check the first 103 values of output are the same
+// Check the first 110 bytes of output are the same
 // This ensures that the emulator correctly loaded/stored enough values
-for (uint32_t i = 0; i < 103; i++) {
+for (uint32_t i = 0; i < 110; i++) {
     if (data[i] != out_data[i]) {
         return 0;
     }
 }
 // Check that the rest are 0 (the original value)
 // This ensures that the emulator didn't store more elements than it should have
-for (uint32_t i = 103; i < 128; i++) {
+for (uint32_t i = 110; i < 128; i++) {
     if (out_data[i] != 0) {
         return 0;
     }

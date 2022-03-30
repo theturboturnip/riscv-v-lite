@@ -1,14 +1,5 @@
-// int fib(const int a)
-// {
-//   if(a<2)
-//     return a;
-//   else
-//     return fib(a-1) + fib(a-2);
-// }
-
-#include <riscv_vector.h>
+#include "vec_wrappers.hpp"
 #include <stdint.h>
-
 
 // Patch over differences between GCC vector intrinsics and clang ones
 #if defined(__GNUC__) && !defined(__llvm__) && !defined(__INTEL_COMPILER)
@@ -22,7 +13,12 @@
 #define ENABLE_BYTEMASKLOAD 0
 // it has been tested with the inline asm whole-register loads
 #define ENABLE_ASM_WHOLEREG 1
-// TODO it doesn't seem to compile fault-only-first correctly, put that behind a #define?
+
+#define ENABLE_INDEXED 1
+#define ENABLE_MASKED 1
+#define ENABLE_STRIDED 1
+// it doesn't seem to compile fault-only-first correctly, put that behind a #define?
+#define ENABLE_FAULTONLYFIRST 0
 #else
 // Clang intrinsics are correct for segmented loads,
 // supports fractional LMUL,
@@ -36,6 +32,18 @@
     #define ENABLE_BYTEMASKLOAD 0
     #endif
 #define ENABLE_ASM_WHOLEREG 1
+    #if __has_feature(capabilities)
+    // These haven't been ported to use CHERI-compatible VEC_INTRIN() wrappers
+    #define ENABLE_INDEXED 0
+    #define ENABLE_MASKED 0
+    #define ENABLE_STRIDED 0
+    #define ENABLE_FAULTONLYFIRST 0
+    #else
+    #define ENABLE_INDEXED 1
+    #define ENABLE_MASKED 1
+    #define ENABLE_STRIDED 1
+    #define ENABLE_FAULTONLYFIRST 1
+    #endif
 #endif
 
 #ifdef __cplusplus
@@ -54,6 +62,7 @@ void* memset(void* dest, int ch, size_t count) {
 }
 #endif
 
+#if ENABLE_INDEXED
 void vector_memcpy_indexed(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     // Generate indices
     uint32_t indices[128] = {0};
@@ -86,7 +95,9 @@ void vector_memcpy_indexed(size_t n, const int32_t* __restrict__ in, int32_t* __
         out += copied_per_iter;
     }
 }
+#endif // ENABLE_INDEXED
 
+#if ENABLE_MASKED
 // special version that only copies odd-indexed elements
 void vector_memcpy_masked(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     // Generate mask
@@ -117,6 +128,7 @@ void vector_memcpy_masked(size_t n, const int32_t* __restrict__ in, int32_t* __r
         out += copied_per_iter;
     }
 }
+#endif // ENABLE_MASKED
 
 // See https://raw.githubusercontent.com/riscv-non-isa/rvv-intrinsic-doc/master/intrinsic_funcs.md
 // vlm_v_bX and vsm_v_bX *should* exist as intrinsict for bytemask load/store,
@@ -160,6 +172,7 @@ void vector_memcpy_masked_bytemaskload(size_t n, const int32_t* __restrict__ in,
 }
 #endif // ENABLE_BYTEMASKLOAD
 
+#if ENABLE_STRIDED
 void vector_memcpy_8strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     const size_t STRIDE_FACTOR = 4;
     size_t copied_per_iter = 0;
@@ -267,6 +280,7 @@ void vector_memcpy_32strided(size_t n, const int32_t* __restrict__ in, int32_t* 
         }
     }
 }
+#endif // ENABLE_STRIDED
 
 #if ENABLE_FRAC
 // f2 => LMUL = 1/2, which means only 1/2 of the vector register is used per iteration
@@ -277,17 +291,14 @@ void vector_memcpy_32mf2(size_t n, const int32_t* __restrict__ in, int32_t* __re
         copied_per_iter = vsetvl_e32mf2(n);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
-        vint32mf2_t data = vle32_v_i32mf2(in, copied_per_iter);
-        vse32_v_i32mf2(out, data, copied_per_iter);
+        vint32mf2_t data = VEC_INTRIN(vle32_v_i32mf2)(in, copied_per_iter);
+        VEC_INTRIN(vse32_v_i32mf2)(out, data, copied_per_iter);
 
         in += copied_per_iter;
         out += copied_per_iter;
     }
 }
 #endif // ENABLE_FRAC
-
-// TODO - find a way to invoke WholeRegister loads/stores
-// There aren't any intrinsics for it as of 28/01/2022
 
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)
@@ -299,8 +310,8 @@ void vector_memcpy_8m8(size_t n, const int32_t* __restrict__ in, int32_t* __rest
         copied_per_iter = vsetvl_e8m8(n*4);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
-        vint8m8_t data = vle8_v_i8m8(in, copied_per_iter);
-        vse8_v_i8m8(out, data, copied_per_iter);
+        vint8m8_t data = VEC_INTRIN(vle8_v_i8m8)(in, copied_per_iter);
+        VEC_INTRIN(vse8_v_i8m8)(out, data, copied_per_iter);
 
         in += (copied_per_iter/4);
         out += (copied_per_iter/4);
@@ -317,8 +328,8 @@ void vector_memcpy_16m8(size_t n, const int32_t* __restrict__ in, int32_t* __res
         copied_per_iter = vsetvl_e16m8(n*2);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
-        vint16m8_t data = vle16_v_i16m8(in, copied_per_iter);
-        vse16_v_i16m8(out, data, copied_per_iter);
+        vint16m8_t data = VEC_INTRIN(vle16_v_i16m8)(in, copied_per_iter);
+        VEC_INTRIN(vse16_v_i16m8)(out, data, copied_per_iter);
 
         in += (copied_per_iter/2);
         out += (copied_per_iter/2);
@@ -334,8 +345,8 @@ void vector_memcpy_32m8(size_t n, const int32_t* __restrict__ in, int32_t* __res
         copied_per_iter = vsetvl_e32m8(n);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
-        vint32m8_t data = vle32_v_i32m8(in, copied_per_iter);
-        vse32_v_i32m8(out, data, copied_per_iter);
+        vint32m8_t data = VEC_INTRIN(vle32_v_i32m8)(in, copied_per_iter);
+        VEC_INTRIN(vse32_v_i32m8)(out, data, copied_per_iter);
 
         in += copied_per_iter;
         out += copied_per_iter;
@@ -380,6 +391,7 @@ void vector_memcpy_32m1_wholereg(size_t n, const int32_t* __restrict__ in, int32
 #endif // ENABLE_ASM_WHOLEREG
 
 
+#if ENABLE_FAULTONLYFIRST
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)
 // out = pointer to output data (should be aligned?)
@@ -403,6 +415,7 @@ void vector_memcpy_32m8_faultonlyfirst(size_t n, const int32_t* __restrict__ in,
         out += copied_per_iter;
     }
 }
+#endif // ENABLE_FAULTONLYFIRST
 
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)
@@ -459,6 +472,7 @@ int vector_memcpy_harness(void (*memcpy_fn)(size_t, const int32_t*, int32_t*)) {
     return 1;
 }
 
+#if ENABLE_MASKED
 int vector_memcpy_masked_harness(void (*memcpy_fn)(size_t, const int32_t*, int32_t*)) {
     // This is different to the normal harness, to better test mask stuff.
     // It only tests odd-indexed elements for copy, because that's what masked memcpys do
@@ -497,7 +511,9 @@ int vector_memcpy_masked_harness(void (*memcpy_fn)(size_t, const int32_t*, int32
     }
     return 1;
 }
+#endif // ENABLE_MASKED
 
+#if ENABLE_SEG
 int vector_memcpy_segmented_harness_i32(void (*memcpy_fn)(size_t, const int32_t* __restrict__, int32_t* __restrict__ [4])) {
     // This is different to the normal harness, to better test segmented accesses.
     // Tests are expected to copy data out into four separate arrays
@@ -542,7 +558,9 @@ int vector_memcpy_segmented_harness_i32(void (*memcpy_fn)(size_t, const int32_t*
     }
     return 1;
 }
+#endif // ENABLE_SEG
 
+#if ENABLE_FAULTONLYFIRST
 int vector_unit_faultonlyfirst_test_under_fault(void) {
     // TODO this breaks on GCC 10.2
 
@@ -574,6 +592,7 @@ int vector_unit_faultonlyfirst_test_under_fault(void) {
     }
     return 1;
 }
+#endif // ENABLE_FAULTONLYFIRST
 
 #ifdef __cplusplus
 extern "C" {
@@ -593,14 +612,20 @@ int main(void)
   result |= 0 << 3;
   #endif // ENABLE_FRAC
 
-
+  #if ENABLE_STRIDED
   result |= vector_memcpy_harness(vector_memcpy_8strided) << 4;
   result |= vector_memcpy_harness(vector_memcpy_16strided) << 5;
   result |= vector_memcpy_harness(vector_memcpy_32strided) << 6;
+  #endif // ENABLE_STRIDED
+
+  #if ENABLE_INDEXED
   result |= vector_memcpy_harness(vector_memcpy_indexed) << 7;
+  #endif // ENABLE_INDEXED
 
-
+  #if ENABLE_MASKED
   result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 8;
+  #endif // ENABLE_MASKED
+
   #if ENABLE_SEG
   result |= vector_memcpy_segmented_harness_i32(vector_memcpy_32m2_seg4load) << 9;
   #else
@@ -611,10 +636,12 @@ int main(void)
   #else
   result |= 0 << 10;
   #endif // ENABLE_BYTEMASKLOAD
+
+  #if ENABLE_FAULTONLYFIRST
   result |= vector_memcpy_harness(vector_memcpy_32m8_faultonlyfirst) << 11;
-
-
   result |= vector_unit_faultonlyfirst_test_under_fault() << 12;
+  #endif // ENABLE_FAULTONLYFIRST
+
   #if ENABLE_ASM_WHOLEREG
   result |= vector_memcpy_harness(vector_memcpy_32m1_wholereg) << 13;
   #else

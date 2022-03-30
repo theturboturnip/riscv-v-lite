@@ -1,4 +1,5 @@
-
+#ifndef CHERI_VECTOR_WRAPPERS
+#define CHERI_VECTOR_WRAPPERS
 #include <stdint.h>
 #include <riscv_vector.h>
 
@@ -15,6 +16,16 @@
 // and hardcode the address as '(ca0)' with no offset.
 // This works because the first argument to each function is the pointer,
 // and the RISC-V CHERI ABI puts that argument in the ca0 register every time.
+
+// Define VEC_INTRIN(i) which calls the CHERI version if available
+#if __has_feature(capabilities)
+#define VEC_INTRIN(i) cheri_ ## i
+#else
+#define VEC_INTRIN(i) i
+#endif // __has_feature(capabilities)
+
+// Only generate CHERI versions if we're in CHERI
+#if __has_feature(capabilities)
 
 vuint8mf8_t cheri_vle8_v_u8mf8(const uint8_t* ptr, size_t vlen) {
     vuint8mf8_t data;
@@ -414,3 +425,5 @@ void cheri_vse32_v_u32m8(uint8_t* ptr, vuint32m8_t data, size_t vlen) {
         : "memory"
     )
 }
+#endif // __has_feature(capabilities)
+#endif // CHERI_VECTOR_WRAPPERS

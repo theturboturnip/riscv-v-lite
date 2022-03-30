@@ -1,4 +1,8 @@
-add_executable(vector_memcpy ${INIT_S} vector_memcpy.cpp)
+find_package(Python3 3.8 COMPONENTS Interpreter)
+add_custom_command(OUTPUT vec_wrappers.hpp
+                   COMMAND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/vector_intrinsic_gen.py ${CMAKE_CURRENT_SOURCE_DIR}/vec_wrappers.hpp)
+
+add_executable(vector_memcpy ${INIT_S} vector_memcpy.cpp vec_wrappers.hpp)
 set_target_properties(vector_memcpy PROPERTIES LINK_DEPENDS ${LINK_LD})
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${LINK_LD} -nostdlib")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -fno-inline-functions -ffreestanding -Werror=implicit-function-declaration")
