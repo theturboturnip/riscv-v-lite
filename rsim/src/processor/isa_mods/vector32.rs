@@ -1,3 +1,4 @@
+use crate::processor::elements::cheri::{CheriRV64RegisterFile,CheriAggregateMemory};
 use crate::processor::isa_mods::*;
 use crate::processor::elements::registers::RegisterFile;
 use crate::processor::exceptions::IllegalInstructionException::*;
@@ -69,6 +70,11 @@ pub struct Rv32vConn<'a> {
     pub memory: &'a mut dyn Memory32,
 }
 
+pub struct Rv32vCheriConn<'a> {
+    pub sreg: &'a mut CheriRV64RegisterFile,
+    pub memory: &'a mut CheriAggregateMemory,
+}
+
 #[derive(Debug,Copy,Clone)]
 pub struct Provenance {
     reg: u8
@@ -118,6 +124,53 @@ impl<'a> VecMemInterface<u32> for Rv32vConn<'a> {
             }
             Sew::e32 => {
                 self.memory.store_u32(addr, val.try_into()?)?
+            }
+            Sew::e64 => { bail!("store_to_memory {:?} unsupported", eew) }
+        }
+        Ok(())
+    }
+}
+impl<'a> VecMemInterface<u64> for Rv32vCheriConn<'a> {
+    fn sreg_read_xlen(&mut self, reg: u8) -> Result<u64> {
+        Ok(self.sreg.read(reg)?)
+    }
+    fn sreg_write_xlen(&mut self, reg: u8, val: u64) -> Result<()> {
+        Ok(self.sreg.write(reg, val)?)
+    }
+    fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)> {
+        Ok((self.sreg.read(reg)?, Provenance{ reg }))
+    }
+    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<uELEN> {
+        let (addr, prov) = addr_provenance;
+        let mut cap = self.sreg.read_maybe_cap(prov.reg)?.to_cap();
+        cap.set_address_unchecked(addr);
+        let val = match eew {
+            Sew::e8 => {
+                self.memory.load_u8(cap)? as u32
+            }
+            Sew::e16 => {
+                self.memory.load_u16(cap)? as u32
+            }
+            Sew::e32 => {
+                self.memory.load_u32(cap)? as u32
+            }
+            Sew::e64 => { bail!("load_from_memory {:?} unsupported", eew) }
+        };
+        Ok(val)
+    }
+    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()> {
+        let (addr, prov) = addr_provenance;
+        let mut cap = self.sreg.read_maybe_cap(prov.reg)?.to_cap();
+        cap.set_address_unchecked(addr);
+        match eew {
+            Sew::e8 => {
+                self.memory.store_u8(cap, val.try_into()?)?
+            }
+            Sew::e16 => {
+                self.memory.store_u16(cap, val.try_into()?)?
+            }
+            Sew::e32 => {
+                self.memory.store_u32(cap, val.try_into()?)?
             }
             Sew::e64 => { bail!("store_to_memory {:?} unsupported", eew) }
         }

@@ -25,6 +25,6 @@ pub use rv64im::{Rv64im,Rv64imConn};
 mod csrs;
 pub use csrs::{Zicsr32, Zicsr32Conn, Zicsr64, Zicsr64Conn, CSRProvider};
 mod vector32;
-pub use vector32::{Rv32v,Rv32vConn};
+pub use vector32::{Rv32v,Rv32vConn,Rv32vCheriConn};
 mod cheri;
 pub use cheri::{XCheri64,XCheri64Conn};
