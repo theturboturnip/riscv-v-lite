@@ -9,7 +9,7 @@ class Sew(Enum):
     e8 = 8
     e16 = 16
     e32 = 32
-    # e64 = 3
+    # e64 = 64
 
     def get_ecode(x: 'Sew') -> str:
         return f"e{str(x.value)}"
@@ -34,6 +34,13 @@ class Lmul(Enum):
             Lmul.e8: "m8",
         }[x]
 
+    def valid_for(self, sew: Sew) -> bool:
+        # compute sew / lmul
+        # if that's >= 128 then false
+        if sew.value / ((2 ** self.value) / 8) >= 128:
+            return False
+        return True
+
 @dataclass
 class VType:
     sew: Sew
@@ -45,6 +52,7 @@ class VType:
             VType(s, l)
             for l in Lmul
             for s in Sew
+            if l.valid_for(s)
         ]
 
     def get_code(self) -> str:
@@ -53,34 +61,35 @@ class VType:
     def get_unsigned_type(self) -> str:
         return f"vuint{self.sew.value}{self.lmul.get_code()}_t"
 
+    def get_signed_type(self) -> str:
+        return f"vint{self.sew.value}{self.lmul.get_code()}_t"
+
     def get_vsetvl_func(self) -> str:
         return f"vsetvl_{self.sew.get_ecode()}{self.lmul.get_code()}"
 
 PREFIX="cheri_"
 
-def generate_load(vtype: VType, name: str, instr: str):
-    vec_data_type = vtype.get_unsigned_type()
+def generate_load(data_type: str, name: str, instr: str):
     return f'''
-{vec_data_type} {PREFIX}{name}(const uint8_t* ptr, size_t vlen) {{
-    {vec_data_type} data;
+{data_type} {PREFIX}{name}(const void* ptr, size_t vlen) {{
+    {data_type} data;
     asm volatile(
         "{instr} %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }}
 '''
-def generate_store(vtype: VType, name: str, instr: str):
-    vec_data_type = vtype.get_unsigned_type()    
+def generate_store(data_type: str, name: str, instr: str):
     return f'''
-void {PREFIX}{name}(uint8_t* ptr, {vec_data_type} data, size_t vlen) {{
+void {PREFIX}{name}(void* ptr, {data_type} data, size_t vlen) {{
     asm volatile(
         "{instr} %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }}
 '''
 
@@ -120,14 +129,18 @@ POSTAMBLE=f"""#endif // __has_feature(capabilities)
 def generate_unit_intrinsics() -> str:
     instrinsics = ""
     for vtype in VType.iterate():
-        vtype_unit_load = f"vle{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
-        vtype_unit_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_uload = f"vle{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_iload = f"vle{vtype.sew.value}_v_i{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_ustore = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_istore = f"vse{vtype.sew.value}_v_i{vtype.sew.value}{vtype.lmul.get_code()}"
         
         vtype_unit_load_instr = f"vle{vtype.sew.value}.v"
         vtype_unit_store_instr = f"vse{vtype.sew.value}.v"
 
-        instrinsics += generate_load(vtype, vtype_unit_load, vtype_unit_load_instr)
-        instrinsics += generate_store(vtype, vtype_unit_store, vtype_unit_store_instr)
+        instrinsics += generate_load(vtype.get_unsigned_type(), vtype_unit_uload, vtype_unit_load_instr)
+        instrinsics += generate_store(vtype.get_unsigned_type(), vtype_unit_ustore, vtype_unit_store_instr)
+        instrinsics += generate_load(vtype.get_signed_type(), vtype_unit_iload, vtype_unit_load_instr)
+        instrinsics += generate_store(vtype.get_signed_type(), vtype_unit_istore, vtype_unit_store_instr)
 
     return instrinsics
 

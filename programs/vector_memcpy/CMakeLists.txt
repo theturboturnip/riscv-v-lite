@@ -1,6 +1,7 @@
 find_package(Python3 3.8 COMPONENTS Interpreter)
 add_custom_command(OUTPUT vec_wrappers.hpp
-                   COMMAND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/vector_intrinsic_gen.py ${CMAKE_CURRENT_SOURCE_DIR}/vec_wrappers.hpp)
+                   COMMAND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/vector_intrinsic_gen.py ${CMAKE_CURRENT_SOURCE_DIR}/vec_wrappers.hpp
+                   DEPENDS vector_intrinsic_gen.py)
 
 add_executable(vector_memcpy ${INIT_S} vector_memcpy.cpp vec_wrappers.hpp)
 set_target_properties(vector_memcpy PROPERTIES LINK_DEPENDS ${LINK_LD})

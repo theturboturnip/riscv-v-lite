@@ -27,403 +27,688 @@
 // Only generate CHERI versions if we're in CHERI
 #if __has_feature(capabilities)
 
-vuint8mf8_t cheri_vle8_v_u8mf8(const uint8_t* ptr, size_t vlen) {
+vuint8mf8_t cheri_vle8_v_u8mf8(const void* ptr, size_t vlen) {
     vuint8mf8_t data;
     asm volatile(
         "vle8.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse8_v_u8mf8(uint8_t* ptr, vuint8mf8_t data, size_t vlen) {
+void cheri_vse8_v_u8mf8(void* ptr, vuint8mf8_t data, size_t vlen) {
     asm volatile(
         "vse8.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint16mf8_t cheri_vle16_v_u16mf8(const uint8_t* ptr, size_t vlen) {
-    vuint16mf8_t data;
+vint8mf8_t cheri_vle8_v_i8mf8(const void* ptr, size_t vlen) {
+    vint8mf8_t data;
     asm volatile(
-        "vle16.v %0, (ca0)"
+        "vle8.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse16_v_u16mf8(uint8_t* ptr, vuint16mf8_t data, size_t vlen) {
+void cheri_vse8_v_i8mf8(void* ptr, vint8mf8_t data, size_t vlen) {
     asm volatile(
-        "vse16.v %0, (ca0)"
+        "vse8.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint32mf8_t cheri_vle32_v_u32mf8(const uint8_t* ptr, size_t vlen) {
-    vuint32mf8_t data;
-    asm volatile(
-        "vle32.v %0, (ca0)"
-        : "=vr"(data) // Vector register output
-        : // no extra input (we specify ca0 directly)
-    )
-    return data;
-}
-
-void cheri_vse32_v_u32mf8(uint8_t* ptr, vuint32mf8_t data, size_t vlen) {
-    asm volatile(
-        "vse32.v %0, (ca0)"
-        : // no output (we specify ca0 directly)
-        : "vr"(data) // input = vector register
-        : "memory"
-    )
-}
-
-vuint8mf4_t cheri_vle8_v_u8mf4(const uint8_t* ptr, size_t vlen) {
+vuint8mf4_t cheri_vle8_v_u8mf4(const void* ptr, size_t vlen) {
     vuint8mf4_t data;
     asm volatile(
         "vle8.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse8_v_u8mf4(uint8_t* ptr, vuint8mf4_t data, size_t vlen) {
+void cheri_vse8_v_u8mf4(void* ptr, vuint8mf4_t data, size_t vlen) {
     asm volatile(
         "vse8.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint16mf4_t cheri_vle16_v_u16mf4(const uint8_t* ptr, size_t vlen) {
+vint8mf4_t cheri_vle8_v_i8mf4(const void* ptr, size_t vlen) {
+    vint8mf4_t data;
+    asm volatile(
+        "vle8.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse8_v_i8mf4(void* ptr, vint8mf4_t data, size_t vlen) {
+    asm volatile(
+        "vse8.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint16mf4_t cheri_vle16_v_u16mf4(const void* ptr, size_t vlen) {
     vuint16mf4_t data;
     asm volatile(
         "vle16.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse16_v_u16mf4(uint8_t* ptr, vuint16mf4_t data, size_t vlen) {
+void cheri_vse16_v_u16mf4(void* ptr, vuint16mf4_t data, size_t vlen) {
     asm volatile(
         "vse16.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint32mf4_t cheri_vle32_v_u32mf4(const uint8_t* ptr, size_t vlen) {
-    vuint32mf4_t data;
+vint16mf4_t cheri_vle16_v_i16mf4(const void* ptr, size_t vlen) {
+    vint16mf4_t data;
     asm volatile(
-        "vle32.v %0, (ca0)"
+        "vle16.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse32_v_u32mf4(uint8_t* ptr, vuint32mf4_t data, size_t vlen) {
+void cheri_vse16_v_i16mf4(void* ptr, vint16mf4_t data, size_t vlen) {
     asm volatile(
-        "vse32.v %0, (ca0)"
+        "vse16.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint8mf2_t cheri_vle8_v_u8mf2(const uint8_t* ptr, size_t vlen) {
+vuint8mf2_t cheri_vle8_v_u8mf2(const void* ptr, size_t vlen) {
     vuint8mf2_t data;
     asm volatile(
         "vle8.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse8_v_u8mf2(uint8_t* ptr, vuint8mf2_t data, size_t vlen) {
+void cheri_vse8_v_u8mf2(void* ptr, vuint8mf2_t data, size_t vlen) {
     asm volatile(
         "vse8.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint16mf2_t cheri_vle16_v_u16mf2(const uint8_t* ptr, size_t vlen) {
+vint8mf2_t cheri_vle8_v_i8mf2(const void* ptr, size_t vlen) {
+    vint8mf2_t data;
+    asm volatile(
+        "vle8.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse8_v_i8mf2(void* ptr, vint8mf2_t data, size_t vlen) {
+    asm volatile(
+        "vse8.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint16mf2_t cheri_vle16_v_u16mf2(const void* ptr, size_t vlen) {
     vuint16mf2_t data;
     asm volatile(
         "vle16.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse16_v_u16mf2(uint8_t* ptr, vuint16mf2_t data, size_t vlen) {
+void cheri_vse16_v_u16mf2(void* ptr, vuint16mf2_t data, size_t vlen) {
     asm volatile(
         "vse16.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint32mf2_t cheri_vle32_v_u32mf2(const uint8_t* ptr, size_t vlen) {
+vint16mf2_t cheri_vle16_v_i16mf2(const void* ptr, size_t vlen) {
+    vint16mf2_t data;
+    asm volatile(
+        "vle16.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse16_v_i16mf2(void* ptr, vint16mf2_t data, size_t vlen) {
+    asm volatile(
+        "vse16.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint32mf2_t cheri_vle32_v_u32mf2(const void* ptr, size_t vlen) {
     vuint32mf2_t data;
     asm volatile(
         "vle32.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse32_v_u32mf2(uint8_t* ptr, vuint32mf2_t data, size_t vlen) {
+void cheri_vse32_v_u32mf2(void* ptr, vuint32mf2_t data, size_t vlen) {
     asm volatile(
         "vse32.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint8m1_t cheri_vle8_v_u8m1(const uint8_t* ptr, size_t vlen) {
+vint32mf2_t cheri_vle32_v_i32mf2(const void* ptr, size_t vlen) {
+    vint32mf2_t data;
+    asm volatile(
+        "vle32.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse32_v_i32mf2(void* ptr, vint32mf2_t data, size_t vlen) {
+    asm volatile(
+        "vse32.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint8m1_t cheri_vle8_v_u8m1(const void* ptr, size_t vlen) {
     vuint8m1_t data;
     asm volatile(
         "vle8.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse8_v_u8m1(uint8_t* ptr, vuint8m1_t data, size_t vlen) {
+void cheri_vse8_v_u8m1(void* ptr, vuint8m1_t data, size_t vlen) {
     asm volatile(
         "vse8.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint16m1_t cheri_vle16_v_u16m1(const uint8_t* ptr, size_t vlen) {
+vint8m1_t cheri_vle8_v_i8m1(const void* ptr, size_t vlen) {
+    vint8m1_t data;
+    asm volatile(
+        "vle8.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse8_v_i8m1(void* ptr, vint8m1_t data, size_t vlen) {
+    asm volatile(
+        "vse8.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint16m1_t cheri_vle16_v_u16m1(const void* ptr, size_t vlen) {
     vuint16m1_t data;
     asm volatile(
         "vle16.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse16_v_u16m1(uint8_t* ptr, vuint16m1_t data, size_t vlen) {
+void cheri_vse16_v_u16m1(void* ptr, vuint16m1_t data, size_t vlen) {
     asm volatile(
         "vse16.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint32m1_t cheri_vle32_v_u32m1(const uint8_t* ptr, size_t vlen) {
+vint16m1_t cheri_vle16_v_i16m1(const void* ptr, size_t vlen) {
+    vint16m1_t data;
+    asm volatile(
+        "vle16.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse16_v_i16m1(void* ptr, vint16m1_t data, size_t vlen) {
+    asm volatile(
+        "vse16.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint32m1_t cheri_vle32_v_u32m1(const void* ptr, size_t vlen) {
     vuint32m1_t data;
     asm volatile(
         "vle32.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse32_v_u32m1(uint8_t* ptr, vuint32m1_t data, size_t vlen) {
+void cheri_vse32_v_u32m1(void* ptr, vuint32m1_t data, size_t vlen) {
     asm volatile(
         "vse32.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint8m2_t cheri_vle8_v_u8m2(const uint8_t* ptr, size_t vlen) {
+vint32m1_t cheri_vle32_v_i32m1(const void* ptr, size_t vlen) {
+    vint32m1_t data;
+    asm volatile(
+        "vle32.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse32_v_i32m1(void* ptr, vint32m1_t data, size_t vlen) {
+    asm volatile(
+        "vse32.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint8m2_t cheri_vle8_v_u8m2(const void* ptr, size_t vlen) {
     vuint8m2_t data;
     asm volatile(
         "vle8.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse8_v_u8m2(uint8_t* ptr, vuint8m2_t data, size_t vlen) {
+void cheri_vse8_v_u8m2(void* ptr, vuint8m2_t data, size_t vlen) {
     asm volatile(
         "vse8.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint16m2_t cheri_vle16_v_u16m2(const uint8_t* ptr, size_t vlen) {
+vint8m2_t cheri_vle8_v_i8m2(const void* ptr, size_t vlen) {
+    vint8m2_t data;
+    asm volatile(
+        "vle8.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse8_v_i8m2(void* ptr, vint8m2_t data, size_t vlen) {
+    asm volatile(
+        "vse8.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint16m2_t cheri_vle16_v_u16m2(const void* ptr, size_t vlen) {
     vuint16m2_t data;
     asm volatile(
         "vle16.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse16_v_u16m2(uint8_t* ptr, vuint16m2_t data, size_t vlen) {
+void cheri_vse16_v_u16m2(void* ptr, vuint16m2_t data, size_t vlen) {
     asm volatile(
         "vse16.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint32m2_t cheri_vle32_v_u32m2(const uint8_t* ptr, size_t vlen) {
+vint16m2_t cheri_vle16_v_i16m2(const void* ptr, size_t vlen) {
+    vint16m2_t data;
+    asm volatile(
+        "vle16.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse16_v_i16m2(void* ptr, vint16m2_t data, size_t vlen) {
+    asm volatile(
+        "vse16.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint32m2_t cheri_vle32_v_u32m2(const void* ptr, size_t vlen) {
     vuint32m2_t data;
     asm volatile(
         "vle32.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse32_v_u32m2(uint8_t* ptr, vuint32m2_t data, size_t vlen) {
+void cheri_vse32_v_u32m2(void* ptr, vuint32m2_t data, size_t vlen) {
     asm volatile(
         "vse32.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint8m4_t cheri_vle8_v_u8m4(const uint8_t* ptr, size_t vlen) {
+vint32m2_t cheri_vle32_v_i32m2(const void* ptr, size_t vlen) {
+    vint32m2_t data;
+    asm volatile(
+        "vle32.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse32_v_i32m2(void* ptr, vint32m2_t data, size_t vlen) {
+    asm volatile(
+        "vse32.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint8m4_t cheri_vle8_v_u8m4(const void* ptr, size_t vlen) {
     vuint8m4_t data;
     asm volatile(
         "vle8.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse8_v_u8m4(uint8_t* ptr, vuint8m4_t data, size_t vlen) {
+void cheri_vse8_v_u8m4(void* ptr, vuint8m4_t data, size_t vlen) {
     asm volatile(
         "vse8.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint16m4_t cheri_vle16_v_u16m4(const uint8_t* ptr, size_t vlen) {
+vint8m4_t cheri_vle8_v_i8m4(const void* ptr, size_t vlen) {
+    vint8m4_t data;
+    asm volatile(
+        "vle8.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse8_v_i8m4(void* ptr, vint8m4_t data, size_t vlen) {
+    asm volatile(
+        "vse8.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint16m4_t cheri_vle16_v_u16m4(const void* ptr, size_t vlen) {
     vuint16m4_t data;
     asm volatile(
         "vle16.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse16_v_u16m4(uint8_t* ptr, vuint16m4_t data, size_t vlen) {
+void cheri_vse16_v_u16m4(void* ptr, vuint16m4_t data, size_t vlen) {
     asm volatile(
         "vse16.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint32m4_t cheri_vle32_v_u32m4(const uint8_t* ptr, size_t vlen) {
+vint16m4_t cheri_vle16_v_i16m4(const void* ptr, size_t vlen) {
+    vint16m4_t data;
+    asm volatile(
+        "vle16.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse16_v_i16m4(void* ptr, vint16m4_t data, size_t vlen) {
+    asm volatile(
+        "vse16.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint32m4_t cheri_vle32_v_u32m4(const void* ptr, size_t vlen) {
     vuint32m4_t data;
     asm volatile(
         "vle32.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse32_v_u32m4(uint8_t* ptr, vuint32m4_t data, size_t vlen) {
+void cheri_vse32_v_u32m4(void* ptr, vuint32m4_t data, size_t vlen) {
     asm volatile(
         "vse32.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint8m8_t cheri_vle8_v_u8m8(const uint8_t* ptr, size_t vlen) {
+vint32m4_t cheri_vle32_v_i32m4(const void* ptr, size_t vlen) {
+    vint32m4_t data;
+    asm volatile(
+        "vle32.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse32_v_i32m4(void* ptr, vint32m4_t data, size_t vlen) {
+    asm volatile(
+        "vse32.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint8m8_t cheri_vle8_v_u8m8(const void* ptr, size_t vlen) {
     vuint8m8_t data;
     asm volatile(
         "vle8.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse8_v_u8m8(uint8_t* ptr, vuint8m8_t data, size_t vlen) {
+void cheri_vse8_v_u8m8(void* ptr, vuint8m8_t data, size_t vlen) {
     asm volatile(
         "vse8.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint16m8_t cheri_vle16_v_u16m8(const uint8_t* ptr, size_t vlen) {
+vint8m8_t cheri_vle8_v_i8m8(const void* ptr, size_t vlen) {
+    vint8m8_t data;
+    asm volatile(
+        "vle8.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse8_v_i8m8(void* ptr, vint8m8_t data, size_t vlen) {
+    asm volatile(
+        "vse8.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint16m8_t cheri_vle16_v_u16m8(const void* ptr, size_t vlen) {
     vuint16m8_t data;
     asm volatile(
         "vle16.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse16_v_u16m8(uint8_t* ptr, vuint16m8_t data, size_t vlen) {
+void cheri_vse16_v_u16m8(void* ptr, vuint16m8_t data, size_t vlen) {
     asm volatile(
         "vse16.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
 }
 
-vuint32m8_t cheri_vle32_v_u32m8(const uint8_t* ptr, size_t vlen) {
+vint16m8_t cheri_vle16_v_i16m8(const void* ptr, size_t vlen) {
+    vint16m8_t data;
+    asm volatile(
+        "vle16.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse16_v_i16m8(void* ptr, vint16m8_t data, size_t vlen) {
+    asm volatile(
+        "vse16.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
+}
+
+vuint32m8_t cheri_vle32_v_u32m8(const void* ptr, size_t vlen) {
     vuint32m8_t data;
     asm volatile(
         "vle32.v %0, (ca0)"
         : "=vr"(data) // Vector register output
         : // no extra input (we specify ca0 directly)
-    )
+    );
     return data;
 }
 
-void cheri_vse32_v_u32m8(uint8_t* ptr, vuint32m8_t data, size_t vlen) {
+void cheri_vse32_v_u32m8(void* ptr, vuint32m8_t data, size_t vlen) {
     asm volatile(
         "vse32.v %0, (ca0)"
         : // no output (we specify ca0 directly)
         : "vr"(data) // input = vector register
         : "memory"
-    )
+    );
+}
+
+vint32m8_t cheri_vle32_v_i32m8(const void* ptr, size_t vlen) {
+    vint32m8_t data;
+    asm volatile(
+        "vle32.v %0, (ca0)"
+        : "=vr"(data) // Vector register output
+        : // no extra input (we specify ca0 directly)
+    );
+    return data;
+}
+
+void cheri_vse32_v_i32m8(void* ptr, vint32m8_t data, size_t vlen) {
+    asm volatile(
+        "vse32.v %0, (ca0)"
+        : // no output (we specify ca0 directly)
+        : "vr"(data) // input = vector register
+        : "memory"
+    );
 }
 #endif // __has_feature(capabilities)
 #endif // CHERI_VECTOR_WRAPPERS

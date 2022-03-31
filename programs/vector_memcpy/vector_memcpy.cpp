@@ -24,25 +24,28 @@
 // supports fractional LMUL,
 // clang 14+ has the correct intrinsics for bytemask loads,
 // and clang has been tested with wholereg ASM
-#define ENABLE_SEG 1
-#define ENABLE_FRAC 1
     #if __clang_major__ >= 14
     #define ENABLE_BYTEMASKLOAD 1
     #else
     #define ENABLE_BYTEMASKLOAD 0
     #endif
-#define ENABLE_ASM_WHOLEREG 1
     #if __has_feature(capabilities)
     // These haven't been ported to use CHERI-compatible VEC_INTRIN() wrappers
     #define ENABLE_INDEXED 0
     #define ENABLE_MASKED 0
     #define ENABLE_STRIDED 0
     #define ENABLE_FAULTONLYFIRST 0
+    #define ENABLE_ASM_WHOLEREG 0
+    #define ENABLE_SEG 0
+    #define ENABLE_FRAC 1
     #else
     #define ENABLE_INDEXED 1
     #define ENABLE_MASKED 1
     #define ENABLE_STRIDED 1
     #define ENABLE_FAULTONLYFIRST 1
+    #define ENABLE_ASM_WHOLEREG 1
+    #define ENABLE_SEG 1
+    #define ENABLE_FRAC 1
     #endif
 #endif
 
