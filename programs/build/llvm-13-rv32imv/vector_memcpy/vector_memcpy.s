@@ -1,7 +1,7 @@
 	.text
 	.attribute	4, 16
 	.attribute	5, "rv32i2p0_m2p0_v0p10_zvlsseg0p10"
-	.file	"vector_memcpy.cpp"
+	.file	"vector_memcpy.c"
 	.globl	memset
 	.p2align	2
 	.type	memset,@function
@@ -18,10 +18,10 @@ memset:
 .Lfunc_end0:
 	.size	memset, .Lfunc_end0-memset
 
-	.globl	_Z21vector_memcpy_indexedjPKiPi
+	.globl	vector_memcpy_indexed
 	.p2align	2
-	.type	_Z21vector_memcpy_indexedjPKiPi,@function
-_Z21vector_memcpy_indexedjPKiPi:
+	.type	vector_memcpy_indexed,@function
+vector_memcpy_indexed:
 	addi	sp, sp, -544
 	sw	ra, 540(sp)
 	sw	s0, 536(sp)
@@ -73,12 +73,12 @@ _Z21vector_memcpy_indexedjPKiPi:
 	vsoxei32.v	v8, (s2), v28
 	j	.LBB1_6
 .Lfunc_end1:
-	.size	_Z21vector_memcpy_indexedjPKiPi, .Lfunc_end1-_Z21vector_memcpy_indexedjPKiPi
+	.size	vector_memcpy_indexed, .Lfunc_end1-vector_memcpy_indexed
 
-	.globl	_Z20vector_memcpy_maskedjPKiPi
+	.globl	vector_memcpy_masked
 	.p2align	2
-	.type	_Z20vector_memcpy_maskedjPKiPi,@function
-_Z20vector_memcpy_maskedjPKiPi:
+	.type	vector_memcpy_masked,@function
+vector_memcpy_masked:
 	addi	sp, sp, -544
 	sw	ra, 540(sp)
 	sw	s0, 536(sp)
@@ -129,12 +129,12 @@ _Z20vector_memcpy_maskedjPKiPi:
 	addi	sp, sp, 544
 	ret
 .Lfunc_end2:
-	.size	_Z20vector_memcpy_maskedjPKiPi, .Lfunc_end2-_Z20vector_memcpy_maskedjPKiPi
+	.size	vector_memcpy_masked, .Lfunc_end2-vector_memcpy_masked
 
-	.globl	_Z22vector_memcpy_8stridedjPKiPi
+	.globl	vector_memcpy_8strided
 	.p2align	2
-	.type	_Z22vector_memcpy_8stridedjPKiPi,@function
-_Z22vector_memcpy_8stridedjPKiPi:
+	.type	vector_memcpy_8strided,@function
+vector_memcpy_8strided:
 	beqz	a0, .LBB3_7
 	lui	a3, 262144
 	addi	a6, a3, -1
@@ -169,12 +169,12 @@ _Z22vector_memcpy_8stridedjPKiPi:
 .LBB3_7:
 	ret
 .Lfunc_end3:
-	.size	_Z22vector_memcpy_8stridedjPKiPi, .Lfunc_end3-_Z22vector_memcpy_8stridedjPKiPi
+	.size	vector_memcpy_8strided, .Lfunc_end3-vector_memcpy_8strided
 
-	.globl	_Z23vector_memcpy_16stridedjPKiPi
+	.globl	vector_memcpy_16strided
 	.p2align	2
-	.type	_Z23vector_memcpy_16stridedjPKiPi,@function
-_Z23vector_memcpy_16stridedjPKiPi:
+	.type	vector_memcpy_16strided,@function
+vector_memcpy_16strided:
 	beqz	a0, .LBB4_9
 	mv	a3, zero
 	addi	a6, zero, 1
@@ -215,12 +215,12 @@ _Z23vector_memcpy_16stridedjPKiPi:
 .LBB4_9:
 	ret
 .Lfunc_end4:
-	.size	_Z23vector_memcpy_16stridedjPKiPi, .Lfunc_end4-_Z23vector_memcpy_16stridedjPKiPi
+	.size	vector_memcpy_16strided, .Lfunc_end4-vector_memcpy_16strided
 
-	.globl	_Z23vector_memcpy_32stridedjPKiPi
+	.globl	vector_memcpy_32strided
 	.p2align	2
-	.type	_Z23vector_memcpy_32stridedjPKiPi,@function
-_Z23vector_memcpy_32stridedjPKiPi:
+	.type	vector_memcpy_32strided,@function
+vector_memcpy_32strided:
 	beqz	a0, .LBB5_8
 	addi	t0, zero, 4
 	addi	a7, zero, 16
@@ -252,12 +252,12 @@ _Z23vector_memcpy_32stridedjPKiPi:
 .LBB5_8:
 	ret
 .Lfunc_end5:
-	.size	_Z23vector_memcpy_32stridedjPKiPi, .Lfunc_end5-_Z23vector_memcpy_32stridedjPKiPi
+	.size	vector_memcpy_32strided, .Lfunc_end5-vector_memcpy_32strided
 
-	.globl	_Z19vector_memcpy_32mf2jPKiPi
+	.globl	vector_memcpy_32mf2
 	.p2align	2
-	.type	_Z19vector_memcpy_32mf2jPKiPi,@function
-_Z19vector_memcpy_32mf2jPKiPi:
+	.type	vector_memcpy_32mf2,@function
+vector_memcpy_32mf2:
 	beqz	a0, .LBB6_2
 .LBB6_1:
 	vsetvli	a3, a0, e32, mf2, ta, mu
@@ -271,12 +271,12 @@ _Z19vector_memcpy_32mf2jPKiPi:
 .LBB6_2:
 	ret
 .Lfunc_end6:
-	.size	_Z19vector_memcpy_32mf2jPKiPi, .Lfunc_end6-_Z19vector_memcpy_32mf2jPKiPi
+	.size	vector_memcpy_32mf2, .Lfunc_end6-vector_memcpy_32mf2
 
-	.globl	_Z17vector_memcpy_8m8jPKiPi
+	.globl	vector_memcpy_8m8
 	.p2align	2
-	.type	_Z17vector_memcpy_8m8jPKiPi,@function
-_Z17vector_memcpy_8m8jPKiPi:
+	.type	vector_memcpy_8m8,@function
+vector_memcpy_8m8:
 	beqz	a0, .LBB7_4
 	mv	a4, zero
 	addi	a6, zero, 3
@@ -299,12 +299,12 @@ _Z17vector_memcpy_8m8jPKiPi:
 .LBB7_4:
 	ret
 .Lfunc_end7:
-	.size	_Z17vector_memcpy_8m8jPKiPi, .Lfunc_end7-_Z17vector_memcpy_8m8jPKiPi
+	.size	vector_memcpy_8m8, .Lfunc_end7-vector_memcpy_8m8
 
-	.globl	_Z18vector_memcpy_16m8jPKiPi
+	.globl	vector_memcpy_16m8
 	.p2align	2
-	.type	_Z18vector_memcpy_16m8jPKiPi,@function
-_Z18vector_memcpy_16m8jPKiPi:
+	.type	vector_memcpy_16m8,@function
+vector_memcpy_16m8:
 	beqz	a0, .LBB8_4
 	mv	a4, zero
 	addi	a6, zero, 1
@@ -327,12 +327,12 @@ _Z18vector_memcpy_16m8jPKiPi:
 .LBB8_4:
 	ret
 .Lfunc_end8:
-	.size	_Z18vector_memcpy_16m8jPKiPi, .Lfunc_end8-_Z18vector_memcpy_16m8jPKiPi
+	.size	vector_memcpy_16m8, .Lfunc_end8-vector_memcpy_16m8
 
-	.globl	_Z18vector_memcpy_32m8jPKiPi
+	.globl	vector_memcpy_32m8
 	.p2align	2
-	.type	_Z18vector_memcpy_32m8jPKiPi,@function
-_Z18vector_memcpy_32m8jPKiPi:
+	.type	vector_memcpy_32m8,@function
+vector_memcpy_32m8:
 	beqz	a0, .LBB9_2
 .LBB9_1:
 	vsetvli	a3, a0, e32, m8, ta, mu
@@ -346,12 +346,12 @@ _Z18vector_memcpy_32m8jPKiPi:
 .LBB9_2:
 	ret
 .Lfunc_end9:
-	.size	_Z18vector_memcpy_32m8jPKiPi, .Lfunc_end9-_Z18vector_memcpy_32m8jPKiPi
+	.size	vector_memcpy_32m8, .Lfunc_end9-vector_memcpy_32m8
 
-	.globl	_Z27vector_memcpy_32m1_wholeregjPKiPi
+	.globl	vector_memcpy_32m1_wholereg
 	.p2align	2
-	.type	_Z27vector_memcpy_32m1_wholeregjPKiPi,@function
-_Z27vector_memcpy_32m1_wholeregjPKiPi:
+	.type	vector_memcpy_32m1_wholereg,@function
+vector_memcpy_32m1_wholereg:
 	vsetvli	a3, zero, e32, m1, ta, mu
 	bnez	a0, .LBB10_4
 .LBB10_1:
@@ -376,41 +376,41 @@ _Z27vector_memcpy_32m1_wholeregjPKiPi:
 	#NO_APP
 	j	.LBB10_3
 .Lfunc_end10:
-	.size	_Z27vector_memcpy_32m1_wholeregjPKiPi, .Lfunc_end10-_Z27vector_memcpy_32m1_wholeregjPKiPi
+	.size	vector_memcpy_32m1_wholereg, .Lfunc_end10-vector_memcpy_32m1_wholereg
 
-	.globl	_Z33vector_memcpy_32m8_faultonlyfirstjPKiPi
+	.globl	vector_memcpy_32m8_faultonlyfirst
 	.p2align	2
-	.type	_Z33vector_memcpy_32m8_faultonlyfirstjPKiPi,@function
-_Z33vector_memcpy_32m8_faultonlyfirstjPKiPi:
-	bnez	a0, .LBB11_3
-.LBB11_1:
-	ret
+	.type	vector_memcpy_32m8_faultonlyfirst,@function
+vector_memcpy_32m8_faultonlyfirst:
+	beqz	a0, .LBB11_5
+	lui	a3, 65793
+	addi	a3, a3, 16
+	lui	a6, 983040
+	j	.LBB11_3
 .LBB11_2:
-	xor	a4, a4, a3
-	seqz	a4, a4
-	sub	a0, a0, a3
-	xori	a3, a4, 1
-	seqz	a4, a0
-	or	a3, a3, a4
-	bnez	a3, .LBB11_1
+	vsetvli	zero, a5, e32, m8, ta, mu
+	vse32.v	v8, (a2)
+	slli	a4, a5, 2
+	add	a1, a1, a4
+	sub	a0, a0, a5
+	add	a2, a2, a4
+	beqz	a0, .LBB11_5
 .LBB11_3:
-	vsetvli	a3, a0, e32, m8, ta, mu
+	vsetvli	a5, a0, e32, m8, ta, mu
 	vle32ff.v	v8, (a1)
 	csrr	a4, vl
-	bne	a4, a3, .LBB11_2
-	vsetvli	zero, a3, e32, m8, ta, mu
-	vse32.v	v8, (a2)
-	slli	a5, a3, 2
-	add	a1, a1, a5
-	add	a2, a2, a5
+	beq	a4, a5, .LBB11_2
+	sw	a3, 0(a6)
 	j	.LBB11_2
+.LBB11_5:
+	ret
 .Lfunc_end11:
-	.size	_Z33vector_memcpy_32m8_faultonlyfirstjPKiPi, .Lfunc_end11-_Z33vector_memcpy_32m8_faultonlyfirstjPKiPi
+	.size	vector_memcpy_32m8_faultonlyfirst, .Lfunc_end11-vector_memcpy_32m8_faultonlyfirst
 
-	.globl	_Z27vector_memcpy_32m2_seg4loadjPKiPrPi
+	.globl	vector_memcpy_32m2_seg4load
 	.p2align	2
-	.type	_Z27vector_memcpy_32m2_seg4loadjPKiPrPi,@function
-_Z27vector_memcpy_32m2_seg4loadjPKiPrPi:
+	.type	vector_memcpy_32m2_seg4load,@function
+vector_memcpy_32m2_seg4load:
 	beqz	a0, .LBB12_5
 	addi	a7, zero, 16
 .LBB12_2:
@@ -440,23 +440,17 @@ _Z27vector_memcpy_32m2_seg4loadjPKiPrPi:
 .LBB12_5:
 	ret
 .Lfunc_end12:
-	.size	_Z27vector_memcpy_32m2_seg4loadjPKiPrPi, .Lfunc_end12-_Z27vector_memcpy_32m2_seg4loadjPKiPrPi
+	.size	vector_memcpy_32m2_seg4load, .Lfunc_end12-vector_memcpy_32m2_seg4load
 
-	.globl	_Z21vector_memcpy_harnessPFvjPKiPiE
+	.globl	vector_memcpy_harness
 	.p2align	2
-	.type	_Z21vector_memcpy_harnessPFvjPKiPiE,@function
-_Z21vector_memcpy_harnessPFvjPKiPiE:
-	.cfi_startproc
+	.type	vector_memcpy_harness,@function
+vector_memcpy_harness:
 	addi	sp, sp, -1056
-	.cfi_def_cfa_offset 1056
 	sw	ra, 1052(sp)
 	sw	s0, 1048(sp)
 	sw	s1, 1044(sp)
 	sw	s2, 1040(sp)
-	.cfi_offset ra, -4
-	.cfi_offset s0, -8
-	.cfi_offset s1, -12
-	.cfi_offset s2, -16
 	mv	s2, a0
 	addi	a0, sp, 528
 	addi	a2, zero, 512
@@ -517,26 +511,18 @@ _Z21vector_memcpy_harnessPFvjPKiPiE:
 	addi	sp, sp, 1056
 	ret
 .Lfunc_end13:
-	.size	_Z21vector_memcpy_harnessPFvjPKiPiE, .Lfunc_end13-_Z21vector_memcpy_harnessPFvjPKiPiE
-	.cfi_endproc
+	.size	vector_memcpy_harness, .Lfunc_end13-vector_memcpy_harness
 
-	.globl	_Z28vector_memcpy_masked_harnessPFvjPKiPiE
+	.globl	vector_memcpy_masked_harness
 	.p2align	2
-	.type	_Z28vector_memcpy_masked_harnessPFvjPKiPiE,@function
-_Z28vector_memcpy_masked_harnessPFvjPKiPiE:
-	.cfi_startproc
+	.type	vector_memcpy_masked_harness,@function
+vector_memcpy_masked_harness:
 	addi	sp, sp, -1056
-	.cfi_def_cfa_offset 1056
 	sw	ra, 1052(sp)
 	sw	s0, 1048(sp)
 	sw	s1, 1044(sp)
 	sw	s2, 1040(sp)
 	sw	s3, 1036(sp)
-	.cfi_offset ra, -4
-	.cfi_offset s0, -8
-	.cfi_offset s1, -12
-	.cfi_offset s2, -16
-	.cfi_offset s3, -20
 	mv	s2, a0
 	addi	a0, sp, 524
 	addi	a2, zero, 512
@@ -613,28 +599,19 @@ _Z28vector_memcpy_masked_harnessPFvjPKiPiE:
 	sltu	a0, a0, a3
 	j	.LBB14_9
 .Lfunc_end14:
-	.size	_Z28vector_memcpy_masked_harnessPFvjPKiPiE, .Lfunc_end14-_Z28vector_memcpy_masked_harnessPFvjPKiPiE
-	.cfi_endproc
+	.size	vector_memcpy_masked_harness, .Lfunc_end14-vector_memcpy_masked_harness
 
-	.globl	_Z35vector_memcpy_segmented_harness_i32PFvjPKiPrPiE
+	.globl	vector_memcpy_segmented_harness_i32
 	.p2align	2
-	.type	_Z35vector_memcpy_segmented_harness_i32PFvjPKiPrPiE,@function
-_Z35vector_memcpy_segmented_harness_i32PFvjPKiPrPiE:
-	.cfi_startproc
+	.type	vector_memcpy_segmented_harness_i32,@function
+vector_memcpy_segmented_harness_i32:
 	addi	sp, sp, -1072
-	.cfi_def_cfa_offset 1072
 	sw	ra, 1068(sp)
 	sw	s0, 1064(sp)
 	sw	s1, 1060(sp)
 	sw	s2, 1056(sp)
 	sw	s3, 1052(sp)
 	sw	s4, 1048(sp)
-	.cfi_offset ra, -4
-	.cfi_offset s0, -8
-	.cfi_offset s1, -12
-	.cfi_offset s2, -16
-	.cfi_offset s3, -20
-	.cfi_offset s4, -24
 	mv	s2, a0
 	addi	a0, sp, 536
 	addi	a2, zero, 512
@@ -743,13 +720,12 @@ _Z35vector_memcpy_segmented_harness_i32PFvjPKiPrPiE:
 	beqz	s0, .LBB15_13
 	j	.LBB15_9
 .Lfunc_end15:
-	.size	_Z35vector_memcpy_segmented_harness_i32PFvjPKiPrPiE, .Lfunc_end15-_Z35vector_memcpy_segmented_harness_i32PFvjPKiPrPiE
-	.cfi_endproc
+	.size	vector_memcpy_segmented_harness_i32, .Lfunc_end15-vector_memcpy_segmented_harness_i32
 
-	.globl	_Z43vector_unit_faultonlyfirst_test_under_faultv
+	.globl	vector_unit_faultonlyfirst_test_under_fault
 	.p2align	2
-	.type	_Z43vector_unit_faultonlyfirst_test_under_faultv,@function
-_Z43vector_unit_faultonlyfirst_test_under_faultv:
+	.type	vector_unit_faultonlyfirst_test_under_fault,@function
+vector_unit_faultonlyfirst_test_under_fault:
 	vsetvli	a1, zero, e32, m1, ta, mu
 	beqz	a1, .LBB16_3
 	mv	a0, zero
@@ -787,79 +763,75 @@ _Z43vector_unit_faultonlyfirst_test_under_faultv:
 .LBB16_9:
 	ret
 .Lfunc_end16:
-	.size	_Z43vector_unit_faultonlyfirst_test_under_faultv, .Lfunc_end16-_Z43vector_unit_faultonlyfirst_test_under_faultv
+	.size	vector_unit_faultonlyfirst_test_under_fault, .Lfunc_end16-vector_unit_faultonlyfirst_test_under_fault
 
 	.globl	main
 	.p2align	2
 	.type	main,@function
 main:
-	.cfi_startproc
 	addi	sp, sp, -16
-	.cfi_def_cfa_offset 16
 	sw	ra, 12(sp)
 	sw	s0, 8(sp)
-	.cfi_offset ra, -4
-	.cfi_offset s0, -8
-	lui	a0, %hi(_Z17vector_memcpy_8m8jPKiPi)
-	addi	a0, a0, %lo(_Z17vector_memcpy_8m8jPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_8m8)
+	addi	a0, a0, %lo(vector_memcpy_8m8)
+	call	vector_memcpy_harness
 	mv	s0, a0
-	lui	a0, %hi(_Z18vector_memcpy_16m8jPKiPi)
-	addi	a0, a0, %lo(_Z18vector_memcpy_16m8jPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_16m8)
+	addi	a0, a0, %lo(vector_memcpy_16m8)
+	call	vector_memcpy_harness
 	slli	a0, a0, 1
 	or	s0, a0, s0
-	lui	a0, %hi(_Z18vector_memcpy_32m8jPKiPi)
-	addi	a0, a0, %lo(_Z18vector_memcpy_32m8jPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_32m8)
+	addi	a0, a0, %lo(vector_memcpy_32m8)
+	call	vector_memcpy_harness
 	slli	a0, a0, 2
 	or	s0, s0, a0
-	lui	a0, %hi(_Z19vector_memcpy_32mf2jPKiPi)
-	addi	a0, a0, %lo(_Z19vector_memcpy_32mf2jPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_32mf2)
+	addi	a0, a0, %lo(vector_memcpy_32mf2)
+	call	vector_memcpy_harness
 	slli	a0, a0, 3
 	or	s0, s0, a0
-	lui	a0, %hi(_Z22vector_memcpy_8stridedjPKiPi)
-	addi	a0, a0, %lo(_Z22vector_memcpy_8stridedjPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_8strided)
+	addi	a0, a0, %lo(vector_memcpy_8strided)
+	call	vector_memcpy_harness
 	slli	a0, a0, 4
 	or	s0, s0, a0
-	lui	a0, %hi(_Z23vector_memcpy_16stridedjPKiPi)
-	addi	a0, a0, %lo(_Z23vector_memcpy_16stridedjPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_16strided)
+	addi	a0, a0, %lo(vector_memcpy_16strided)
+	call	vector_memcpy_harness
 	slli	a0, a0, 5
 	or	s0, s0, a0
-	lui	a0, %hi(_Z23vector_memcpy_32stridedjPKiPi)
-	addi	a0, a0, %lo(_Z23vector_memcpy_32stridedjPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_32strided)
+	addi	a0, a0, %lo(vector_memcpy_32strided)
+	call	vector_memcpy_harness
 	slli	a0, a0, 6
 	or	s0, s0, a0
-	lui	a0, %hi(_Z21vector_memcpy_indexedjPKiPi)
-	addi	a0, a0, %lo(_Z21vector_memcpy_indexedjPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_indexed)
+	addi	a0, a0, %lo(vector_memcpy_indexed)
+	call	vector_memcpy_harness
 	slli	a0, a0, 7
 	or	s0, s0, a0
-	lui	a0, %hi(_Z20vector_memcpy_maskedjPKiPi)
-	addi	a0, a0, %lo(_Z20vector_memcpy_maskedjPKiPi)
-	call	_Z28vector_memcpy_masked_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_masked)
+	addi	a0, a0, %lo(vector_memcpy_masked)
+	call	vector_memcpy_masked_harness
 	slli	a0, a0, 8
 	or	s0, s0, a0
-	lui	a0, %hi(_Z27vector_memcpy_32m2_seg4loadjPKiPrPi)
-	addi	a0, a0, %lo(_Z27vector_memcpy_32m2_seg4loadjPKiPrPi)
-	call	_Z35vector_memcpy_segmented_harness_i32PFvjPKiPrPiE
+	lui	a0, %hi(vector_memcpy_32m2_seg4load)
+	addi	a0, a0, %lo(vector_memcpy_32m2_seg4load)
+	call	vector_memcpy_segmented_harness_i32
 	slli	a0, a0, 9
 	or	s0, s0, a0
-	lui	a0, %hi(_Z33vector_memcpy_32m8_faultonlyfirstjPKiPi)
-	addi	a0, a0, %lo(_Z33vector_memcpy_32m8_faultonlyfirstjPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_32m8_faultonlyfirst)
+	addi	a0, a0, %lo(vector_memcpy_32m8_faultonlyfirst)
+	call	vector_memcpy_harness
 	slli	a0, a0, 11
 	or	s0, s0, a0
-	call	_Z43vector_unit_faultonlyfirst_test_under_faultv
+	call	vector_unit_faultonlyfirst_test_under_fault
 	slli	a0, a0, 12
 	or	s0, s0, a0
-	lui	a0, %hi(_Z27vector_memcpy_32m1_wholeregjPKiPi)
-	addi	a0, a0, %lo(_Z27vector_memcpy_32m1_wholeregjPKiPi)
-	call	_Z21vector_memcpy_harnessPFvjPKiPiE
+	lui	a0, %hi(vector_memcpy_32m1_wholereg)
+	addi	a0, a0, %lo(vector_memcpy_32m1_wholereg)
+	call	vector_memcpy_harness
 	slli	a0, a0, 13
 	or	a0, s0, a0
 	lui	a1, 983040
@@ -870,20 +842,19 @@ main:
 	ret
 .Lfunc_end17:
 	.size	main, .Lfunc_end17-main
-	.cfi_endproc
 
 	.ident	"Ubuntu clang version 13.0.1-++20220120110844+75e33f71c2da-1~exp1~20220120230854.66"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
-	.addrsig_sym _Z21vector_memcpy_indexedjPKiPi
-	.addrsig_sym _Z20vector_memcpy_maskedjPKiPi
-	.addrsig_sym _Z22vector_memcpy_8stridedjPKiPi
-	.addrsig_sym _Z23vector_memcpy_16stridedjPKiPi
-	.addrsig_sym _Z23vector_memcpy_32stridedjPKiPi
-	.addrsig_sym _Z19vector_memcpy_32mf2jPKiPi
-	.addrsig_sym _Z17vector_memcpy_8m8jPKiPi
-	.addrsig_sym _Z18vector_memcpy_16m8jPKiPi
-	.addrsig_sym _Z18vector_memcpy_32m8jPKiPi
-	.addrsig_sym _Z27vector_memcpy_32m1_wholeregjPKiPi
-	.addrsig_sym _Z33vector_memcpy_32m8_faultonlyfirstjPKiPi
-	.addrsig_sym _Z27vector_memcpy_32m2_seg4loadjPKiPrPi
+	.addrsig_sym vector_memcpy_indexed
+	.addrsig_sym vector_memcpy_masked
+	.addrsig_sym vector_memcpy_8strided
+	.addrsig_sym vector_memcpy_16strided
+	.addrsig_sym vector_memcpy_32strided
+	.addrsig_sym vector_memcpy_32mf2
+	.addrsig_sym vector_memcpy_8m8
+	.addrsig_sym vector_memcpy_16m8
+	.addrsig_sym vector_memcpy_32m8
+	.addrsig_sym vector_memcpy_32m1_wholereg
+	.addrsig_sym vector_memcpy_32m8_faultonlyfirst
+	.addrsig_sym vector_memcpy_32m2_seg4load

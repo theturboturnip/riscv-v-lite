@@ -1,4 +1,4 @@
-#include "vec_wrappers.hpp"
+#include "vec_wrappers.h"
 #include <stdint.h>
 
 // Patch over differences between GCC vector intrinsics and clang ones
