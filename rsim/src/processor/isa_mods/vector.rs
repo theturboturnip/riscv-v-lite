@@ -1,21 +1,20 @@
 #![allow(non_camel_case_types)]
 
 use std::marker::PhantomData;
-use crate::processor::elements::cheri::{CheriRV64RegisterFile,CheriAggregateMemory};
 use crate::processor::isa_mods::*;
-use crate::processor::elements::registers::RegisterFile;
 use crate::processor::exceptions::IllegalInstructionException::*;
 use super::csrs::CSRProvider;
 use std::cmp::min;
 use anyhow::{Context, Result};
 use std::convert::{TryInto};
 
-use crate::processor::elements::memory::Memory32;
-
 use crate::processor::decode::{Opcode,InstructionBits};
 
 mod types;
 use types::*;
+mod conns;
+use conns::*;
+pub use conns::{Rv32vConn,Rv64vCheriConn};
 
 
 /// The Vector Unit for the processor.
@@ -42,120 +41,6 @@ pub struct Rvv<uXLEN: PossibleXlen> {
 }
 pub type Rv32v = Rvv<u32>;
 pub type Rv64v = Rvv<u64>;
-
-/// References to all scalar resources touched by the vector unit.
-pub struct Rv32vConn<'a> {
-    pub sreg: &'a mut dyn RegisterFile<u32>,
-    pub memory: &'a mut dyn Memory32,
-}
-
-pub struct Rv64vCheriConn<'a> {
-    pub sreg: &'a mut CheriRV64RegisterFile,
-    pub memory: &'a mut CheriAggregateMemory,
-}
-
-#[derive(Debug,Copy,Clone)]
-pub struct Provenance {
-    reg: u8
-}
-
-pub trait VecMemInterface<uXLEN> where uXLEN: PossibleXlen {
-    fn sreg_read_xlen(&mut self, reg: u8) -> Result<uXLEN>;
-    fn sreg_write_xlen(&mut self, reg: u8, val: uXLEN) -> Result<()>;
-    fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)>;
-    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<uELEN>;
-    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()>;
-}
-impl<'a> VecMemInterface<u32> for Rv32vConn<'a> {
-    fn sreg_read_xlen(&mut self, reg: u8) -> Result<u32> {
-        Ok(self.sreg.read(reg)?)
-    }
-    fn sreg_write_xlen(&mut self, reg: u8, val: u32) -> Result<()> {
-        Ok(self.sreg.write(reg, val)?)
-    }
-    fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)> {
-        Ok((self.sreg.read(reg)? as u64, Provenance{ reg }))
-    }
-    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<uELEN> {
-        let (addr, _) = addr_provenance;
-        let val = match eew {
-            Sew::e8 => {
-                self.memory.load_u8(addr)? as u32
-            }
-            Sew::e16 => {
-                self.memory.load_u16(addr)? as u32
-            }
-            Sew::e32 => {
-                self.memory.load_u32(addr)? as u32
-            }
-            Sew::e64 => { bail!("load_from_memory {:?} unsupported", eew) }
-        };
-        Ok(val)
-    }
-    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()> {
-        let (addr, _) = addr_provenance;
-        match eew {
-            Sew::e8 => {
-                self.memory.store_u8(addr, val.try_into()?)?
-            }
-            Sew::e16 => {
-                self.memory.store_u16(addr, val.try_into()?)?
-            }
-            Sew::e32 => {
-                self.memory.store_u32(addr, val.try_into()?)?
-            }
-            Sew::e64 => { bail!("store_to_memory {:?} unsupported", eew) }
-        }
-        Ok(())
-    }
-}
-impl<'a> VecMemInterface<u64> for Rv64vCheriConn<'a> {
-    fn sreg_read_xlen(&mut self, reg: u8) -> Result<u64> {
-        Ok(self.sreg.read(reg)?)
-    }
-    fn sreg_write_xlen(&mut self, reg: u8, val: u64) -> Result<()> {
-        Ok(self.sreg.write(reg, val)?)
-    }
-    fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)> {
-        Ok((self.sreg.read(reg)?, Provenance{ reg }))
-    }
-    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<uELEN> {
-        let (addr, prov) = addr_provenance;
-        let mut cap = self.sreg.read_maybe_cap(prov.reg)?.to_cap();
-        cap.set_address_unchecked(addr);
-        let val = match eew {
-            Sew::e8 => {
-                self.memory.load_u8(cap)? as u32
-            }
-            Sew::e16 => {
-                self.memory.load_u16(cap)? as u32
-            }
-            Sew::e32 => {
-                self.memory.load_u32(cap)? as u32
-            }
-            Sew::e64 => { bail!("load_from_memory {:?} unsupported", eew) }
-        };
-        Ok(val)
-    }
-    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()> {
-        let (addr, prov) = addr_provenance;
-        let mut cap = self.sreg.read_maybe_cap(prov.reg)?.to_cap();
-        cap.set_address_unchecked(addr);
-        match eew {
-            Sew::e8 => {
-                self.memory.store_u8(cap, val.try_into()?)?
-            }
-            Sew::e16 => {
-                self.memory.store_u16(cap, val.try_into()?)?
-            }
-            Sew::e32 => {
-                self.memory.store_u32(cap, val.try_into()?)?
-            }
-            Sew::e64 => { bail!("store_to_memory {:?} unsupported", eew) }
-        }
-        Ok(())
-    }
-}
 
 
 impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
