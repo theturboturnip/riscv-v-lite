@@ -179,8 +179,6 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                             bail!(CapabilityException::LengthViolation{ cap: cs1_reg, base: new_base, top: new_top });
                         }
 
-                        dbg!(cs1_val, new_base, new_top);
-
                         let (_, new_cap) = Cc128::setCapBounds(&cs1_val, new_base, new_top);
                         dbg!(new_cap);
                         conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
@@ -322,7 +320,8 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         }
                         0xa => {
                             // CMove
-                            bail!("Haven't implemented CMove")
+                            let val = conn.sreg.read_maybe_cap(rs1)?;
+                            conn.sreg.write_maybe_cap(rd, val)?;
                         }
                         0xb => {
                             // CClearTag
