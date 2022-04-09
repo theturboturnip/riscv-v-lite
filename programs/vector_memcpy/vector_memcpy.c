@@ -305,17 +305,20 @@ void vector_memcpy_32mf2(size_t n, const int32_t* __restrict__ in, int32_t* __re
 // n = number of elements to copy
 // in = pointer to data (should be aligned to 128-bit?)
 // out = pointer to output data (should be aligned?)
-void vector_memcpy_8m8(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+void vector_memcpy_8m8(size_t n_32, const int32_t* __restrict__ in_32, int32_t* __restrict__ out_32) {
+    size_t n = n_32 * 4;
+    const int8_t* in = (const int8_t*)in_32;
+    int8_t* out = (int8_t*)out_32;
+
     size_t copied_per_iter = 0;
-    // TODO infinite loops
-    for (; n > 0 && !(n == 1 && copied_per_iter < 4); n -= (copied_per_iter/4)) {
-        copied_per_iter = vsetvl_e8m8(n*4);
+    for (; n > 0; n -= copied_per_iter) {
+        copied_per_iter = vsetvl_e8m8(n);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
         VEC_INTRIN(vse8_v_i8m8)(out, VEC_INTRIN(vle8_v_i8m8)(in, copied_per_iter), copied_per_iter);
 
-        in += (copied_per_iter/4);
-        out += (copied_per_iter/4);
+        in += copied_per_iter;
+        out += copied_per_iter;
     }
 }
 

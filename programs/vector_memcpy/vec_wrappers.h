@@ -29,648 +29,648 @@
 
 int cheri_vle8_v_u8mf8(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v1, (ca0)"
+        "vle8.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_u8mf8(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_i8mf8(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v1, (ca0)"
+        "vle8.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_i8mf8(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_u8mf4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v1, (ca0)"
+        "vle8.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_u8mf4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_i8mf4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v1, (ca0)"
+        "vle8.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_i8mf4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_u16mf4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v1, (ca0)"
+        "vle16.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_u16mf4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_i16mf4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v1, (ca0)"
+        "vle16.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_i16mf4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_u8mf2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v1, (ca0)"
+        "vle8.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_u8mf2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_i8mf2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v1, (ca0)"
+        "vle8.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_i8mf2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_u16mf2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v1, (ca0)"
+        "vle16.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_u16mf2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_i16mf2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v1, (ca0)"
+        "vle16.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_i16mf2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_u32mf2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v1, (ca0)"
+        "vle32.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_u32mf2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_i32mf2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v1, (ca0)"
+        "vle32.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_i32mf2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_u8m1(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v1, (ca0)"
+        "vle8.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_u8m1(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_i8m1(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v1, (ca0)"
+        "vle8.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_i8m1(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_u16m1(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v1, (ca0)"
+        "vle16.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_u16m1(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_i16m1(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v1, (ca0)"
+        "vle16.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_i16m1(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_u32m1(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v1, (ca0)"
+        "vle32.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_u32m1(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_i32m1(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v1, (ca0)"
+        "vle32.v v1, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_i32m1(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v1, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v1, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_u8m2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v2, (ca0)"
+        "vle8.v v2, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_u8m2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v2, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v2, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_i8m2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v2, (ca0)"
+        "vle8.v v2, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_i8m2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v2, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v2, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_u16m2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v2, (ca0)"
+        "vle16.v v2, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_u16m2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v2, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v2, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_i16m2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v2, (ca0)"
+        "vle16.v v2, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_i16m2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v2, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v2, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_u32m2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v2, (ca0)"
+        "vle32.v v2, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_u32m2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v2, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v2, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_i32m2(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v2, (ca0)"
+        "vle32.v v2, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_i32m2(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v2, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v2, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_u8m4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v4, (ca0)"
+        "vle8.v v4, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_u8m4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v4, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v4, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_i8m4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v4, (ca0)"
+        "vle8.v v4, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_i8m4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v4, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v4, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_u16m4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v4, (ca0)"
+        "vle16.v v4, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_u16m4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v4, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v4, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_i16m4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v4, (ca0)"
+        "vle16.v v4, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_i16m4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v4, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v4, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_u32m4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v4, (ca0)"
+        "vle32.v v4, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_u32m4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v4, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v4, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_i32m4(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v4, (ca0)"
+        "vle32.v v4, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_i32m4(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v4, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v4, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_u8m8(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v8, (ca0)"
+        "vle8.v v8, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_u8m8(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v8, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v8, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle8_v_i8m8(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle8.v v8, (ca0)"
+        "vle8.v v8, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse8_v_i8m8(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse8.v v8, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse8.v v8, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_u16m8(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v8, (ca0)"
+        "vle16.v v8, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_u16m8(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v8, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v8, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle16_v_i16m8(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle16.v v8, (ca0)"
+        "vle16.v v8, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse16_v_i16m8(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse16.v v8, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse16.v v8, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_u32m8(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v8, (ca0)"
+        "vle32.v v8, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_u32m8(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v8, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v8, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }
 
 int cheri_vle32_v_i32m8(const void* ptr, size_t vlen) {
     asm volatile(
-        "vle32.v v8, (ca0)"
+        "vle32.v v8, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }
 
 void cheri_vse32_v_i32m8(void* ptr, int fake_data, size_t vlen) {
     asm volatile(
-        "vse32.v v8, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "vse32.v v8, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }

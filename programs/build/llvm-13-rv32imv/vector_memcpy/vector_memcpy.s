@@ -277,26 +277,17 @@ vector_memcpy_32mf2:
 	.p2align	2
 	.type	vector_memcpy_8m8,@function
 vector_memcpy_8m8:
-	beqz	a0, .LBB7_4
-	mv	a4, zero
-	addi	a6, zero, 3
-.LBB7_2:
-	addi	a5, a0, -1
-	snez	a5, a5
-	sltu	a4, a6, a4
-	or	a4, a5, a4
-	beqz	a4, .LBB7_4
-	slli	a4, a0, 2
-	vsetvli	a4, a4, e8, m8, ta, mu
+	slli	a0, a0, 2
+	beqz	a0, .LBB7_2
+.LBB7_1:
+	vsetvli	a3, a0, e8, m8, ta, mu
 	vle8.v	v8, (a1)
 	vse8.v	v8, (a2)
-	srli	a5, a4, 2
-	slli	a3, a5, 2
 	add	a1, a1, a3
-	sub	a0, a0, a5
+	sub	a0, a0, a3
 	add	a2, a2, a3
-	bnez	a0, .LBB7_2
-.LBB7_4:
+	bnez	a0, .LBB7_1
+.LBB7_2:
 	ret
 .Lfunc_end7:
 	.size	vector_memcpy_8m8, .Lfunc_end7-vector_memcpy_8m8

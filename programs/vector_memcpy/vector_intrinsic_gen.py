@@ -84,9 +84,9 @@ def generate_load(vtype: VType, data_type: str, name: str, instr: str):
     return f'''
 int {PREFIX}{name}(const void* ptr, size_t vlen) {{
     asm volatile(
-        "{instr} v{pick_vector_reg(vtype)}, (ca0)"
+        "{instr} v{pick_vector_reg(vtype)}, (%0)"
         : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
-        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : "C"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
     return 0;
 }}
@@ -95,9 +95,9 @@ def generate_store(vtype: VType, data_type: str, name: str, instr: str):
     return f'''
 void {PREFIX}{name}(void* ptr, int fake_data, size_t vlen) {{
     asm volatile(
-        "{instr} v{pick_vector_reg(vtype)}, (ca0)"
-        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
-        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
+        "{instr} v{pick_vector_reg(vtype)}, (%0)"
+        : // no "outputs" (we write out to *ptr but can't do "=m"(*ptr))
+        : "C"(ptr) // use (ptr) to establish dependency. input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }}

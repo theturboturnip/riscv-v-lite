@@ -6,15 +6,10 @@
 	.p2align	2
 	.type	cheri_vle8_v_u8mf8,@function
 cheri_vle8_v_u8mf8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end0:
 	.size	cheri_vle8_v_u8mf8, .Lfunc_end0-cheri_vle8_v_u8mf8
@@ -23,14 +18,9 @@ cheri_vle8_v_u8mf8:
 	.p2align	2
 	.type	cheri_vse8_v_u8mf8,@function
 cheri_vse8_v_u8mf8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end1:
 	.size	cheri_vse8_v_u8mf8, .Lfunc_end1-cheri_vse8_v_u8mf8
@@ -39,15 +29,10 @@ cheri_vse8_v_u8mf8:
 	.p2align	2
 	.type	cheri_vle8_v_i8mf8,@function
 cheri_vle8_v_i8mf8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end2:
 	.size	cheri_vle8_v_i8mf8, .Lfunc_end2-cheri_vle8_v_i8mf8
@@ -56,14 +41,9 @@ cheri_vle8_v_i8mf8:
 	.p2align	2
 	.type	cheri_vse8_v_i8mf8,@function
 cheri_vse8_v_i8mf8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end3:
 	.size	cheri_vse8_v_i8mf8, .Lfunc_end3-cheri_vse8_v_i8mf8
@@ -72,15 +52,10 @@ cheri_vse8_v_i8mf8:
 	.p2align	2
 	.type	cheri_vle8_v_u8mf4,@function
 cheri_vle8_v_u8mf4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end4:
 	.size	cheri_vle8_v_u8mf4, .Lfunc_end4-cheri_vle8_v_u8mf4
@@ -89,14 +64,9 @@ cheri_vle8_v_u8mf4:
 	.p2align	2
 	.type	cheri_vse8_v_u8mf4,@function
 cheri_vse8_v_u8mf4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end5:
 	.size	cheri_vse8_v_u8mf4, .Lfunc_end5-cheri_vse8_v_u8mf4
@@ -105,15 +75,10 @@ cheri_vse8_v_u8mf4:
 	.p2align	2
 	.type	cheri_vle8_v_i8mf4,@function
 cheri_vle8_v_i8mf4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end6:
 	.size	cheri_vle8_v_i8mf4, .Lfunc_end6-cheri_vle8_v_i8mf4
@@ -122,14 +87,9 @@ cheri_vle8_v_i8mf4:
 	.p2align	2
 	.type	cheri_vse8_v_i8mf4,@function
 cheri_vse8_v_i8mf4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end7:
 	.size	cheri_vse8_v_i8mf4, .Lfunc_end7-cheri_vse8_v_i8mf4
@@ -138,15 +98,10 @@ cheri_vse8_v_i8mf4:
 	.p2align	2
 	.type	cheri_vle16_v_u16mf4,@function
 cheri_vle16_v_u16mf4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end8:
 	.size	cheri_vle16_v_u16mf4, .Lfunc_end8-cheri_vle16_v_u16mf4
@@ -155,14 +110,9 @@ cheri_vle16_v_u16mf4:
 	.p2align	2
 	.type	cheri_vse16_v_u16mf4,@function
 cheri_vse16_v_u16mf4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end9:
 	.size	cheri_vse16_v_u16mf4, .Lfunc_end9-cheri_vse16_v_u16mf4
@@ -171,15 +121,10 @@ cheri_vse16_v_u16mf4:
 	.p2align	2
 	.type	cheri_vle16_v_i16mf4,@function
 cheri_vle16_v_i16mf4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end10:
 	.size	cheri_vle16_v_i16mf4, .Lfunc_end10-cheri_vle16_v_i16mf4
@@ -188,14 +133,9 @@ cheri_vle16_v_i16mf4:
 	.p2align	2
 	.type	cheri_vse16_v_i16mf4,@function
 cheri_vse16_v_i16mf4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end11:
 	.size	cheri_vse16_v_i16mf4, .Lfunc_end11-cheri_vse16_v_i16mf4
@@ -204,15 +144,10 @@ cheri_vse16_v_i16mf4:
 	.p2align	2
 	.type	cheri_vle8_v_u8mf2,@function
 cheri_vle8_v_u8mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end12:
 	.size	cheri_vle8_v_u8mf2, .Lfunc_end12-cheri_vle8_v_u8mf2
@@ -221,14 +156,9 @@ cheri_vle8_v_u8mf2:
 	.p2align	2
 	.type	cheri_vse8_v_u8mf2,@function
 cheri_vse8_v_u8mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end13:
 	.size	cheri_vse8_v_u8mf2, .Lfunc_end13-cheri_vse8_v_u8mf2
@@ -237,15 +167,10 @@ cheri_vse8_v_u8mf2:
 	.p2align	2
 	.type	cheri_vle8_v_i8mf2,@function
 cheri_vle8_v_i8mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end14:
 	.size	cheri_vle8_v_i8mf2, .Lfunc_end14-cheri_vle8_v_i8mf2
@@ -254,14 +179,9 @@ cheri_vle8_v_i8mf2:
 	.p2align	2
 	.type	cheri_vse8_v_i8mf2,@function
 cheri_vse8_v_i8mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end15:
 	.size	cheri_vse8_v_i8mf2, .Lfunc_end15-cheri_vse8_v_i8mf2
@@ -270,15 +190,10 @@ cheri_vse8_v_i8mf2:
 	.p2align	2
 	.type	cheri_vle16_v_u16mf2,@function
 cheri_vle16_v_u16mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end16:
 	.size	cheri_vle16_v_u16mf2, .Lfunc_end16-cheri_vle16_v_u16mf2
@@ -287,14 +202,9 @@ cheri_vle16_v_u16mf2:
 	.p2align	2
 	.type	cheri_vse16_v_u16mf2,@function
 cheri_vse16_v_u16mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end17:
 	.size	cheri_vse16_v_u16mf2, .Lfunc_end17-cheri_vse16_v_u16mf2
@@ -303,15 +213,10 @@ cheri_vse16_v_u16mf2:
 	.p2align	2
 	.type	cheri_vle16_v_i16mf2,@function
 cheri_vle16_v_i16mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end18:
 	.size	cheri_vle16_v_i16mf2, .Lfunc_end18-cheri_vle16_v_i16mf2
@@ -320,14 +225,9 @@ cheri_vle16_v_i16mf2:
 	.p2align	2
 	.type	cheri_vse16_v_i16mf2,@function
 cheri_vse16_v_i16mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end19:
 	.size	cheri_vse16_v_i16mf2, .Lfunc_end19-cheri_vse16_v_i16mf2
@@ -336,15 +236,10 @@ cheri_vse16_v_i16mf2:
 	.p2align	2
 	.type	cheri_vle32_v_u32mf2,@function
 cheri_vle32_v_u32mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end20:
 	.size	cheri_vle32_v_u32mf2, .Lfunc_end20-cheri_vle32_v_u32mf2
@@ -353,14 +248,9 @@ cheri_vle32_v_u32mf2:
 	.p2align	2
 	.type	cheri_vse32_v_u32mf2,@function
 cheri_vse32_v_u32mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end21:
 	.size	cheri_vse32_v_u32mf2, .Lfunc_end21-cheri_vse32_v_u32mf2
@@ -369,15 +259,10 @@ cheri_vse32_v_u32mf2:
 	.p2align	2
 	.type	cheri_vle32_v_i32mf2,@function
 cheri_vle32_v_i32mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end22:
 	.size	cheri_vle32_v_i32mf2, .Lfunc_end22-cheri_vle32_v_i32mf2
@@ -386,14 +271,9 @@ cheri_vle32_v_i32mf2:
 	.p2align	2
 	.type	cheri_vse32_v_i32mf2,@function
 cheri_vse32_v_i32mf2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end23:
 	.size	cheri_vse32_v_i32mf2, .Lfunc_end23-cheri_vse32_v_i32mf2
@@ -402,15 +282,10 @@ cheri_vse32_v_i32mf2:
 	.p2align	2
 	.type	cheri_vle8_v_u8m1,@function
 cheri_vle8_v_u8m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end24:
 	.size	cheri_vle8_v_u8m1, .Lfunc_end24-cheri_vle8_v_u8m1
@@ -419,14 +294,9 @@ cheri_vle8_v_u8m1:
 	.p2align	2
 	.type	cheri_vse8_v_u8m1,@function
 cheri_vse8_v_u8m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end25:
 	.size	cheri_vse8_v_u8m1, .Lfunc_end25-cheri_vse8_v_u8m1
@@ -435,15 +305,10 @@ cheri_vse8_v_u8m1:
 	.p2align	2
 	.type	cheri_vle8_v_i8m1,@function
 cheri_vle8_v_i8m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end26:
 	.size	cheri_vle8_v_i8m1, .Lfunc_end26-cheri_vle8_v_i8m1
@@ -452,14 +317,9 @@ cheri_vle8_v_i8m1:
 	.p2align	2
 	.type	cheri_vse8_v_i8m1,@function
 cheri_vse8_v_i8m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end27:
 	.size	cheri_vse8_v_i8m1, .Lfunc_end27-cheri_vse8_v_i8m1
@@ -468,15 +328,10 @@ cheri_vse8_v_i8m1:
 	.p2align	2
 	.type	cheri_vle16_v_u16m1,@function
 cheri_vle16_v_u16m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end28:
 	.size	cheri_vle16_v_u16m1, .Lfunc_end28-cheri_vle16_v_u16m1
@@ -485,14 +340,9 @@ cheri_vle16_v_u16m1:
 	.p2align	2
 	.type	cheri_vse16_v_u16m1,@function
 cheri_vse16_v_u16m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end29:
 	.size	cheri_vse16_v_u16m1, .Lfunc_end29-cheri_vse16_v_u16m1
@@ -501,15 +351,10 @@ cheri_vse16_v_u16m1:
 	.p2align	2
 	.type	cheri_vle16_v_i16m1,@function
 cheri_vle16_v_i16m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end30:
 	.size	cheri_vle16_v_i16m1, .Lfunc_end30-cheri_vle16_v_i16m1
@@ -518,14 +363,9 @@ cheri_vle16_v_i16m1:
 	.p2align	2
 	.type	cheri_vse16_v_i16m1,@function
 cheri_vse16_v_i16m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end31:
 	.size	cheri_vse16_v_i16m1, .Lfunc_end31-cheri_vse16_v_i16m1
@@ -534,15 +374,10 @@ cheri_vse16_v_i16m1:
 	.p2align	2
 	.type	cheri_vle32_v_u32m1,@function
 cheri_vle32_v_u32m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end32:
 	.size	cheri_vle32_v_u32m1, .Lfunc_end32-cheri_vle32_v_u32m1
@@ -551,14 +386,9 @@ cheri_vle32_v_u32m1:
 	.p2align	2
 	.type	cheri_vse32_v_u32m1,@function
 cheri_vse32_v_u32m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end33:
 	.size	cheri_vse32_v_u32m1, .Lfunc_end33-cheri_vse32_v_u32m1
@@ -567,15 +397,10 @@ cheri_vse32_v_u32m1:
 	.p2align	2
 	.type	cheri_vle32_v_i32m1,@function
 cheri_vle32_v_i32m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v1, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end34:
 	.size	cheri_vle32_v_i32m1, .Lfunc_end34-cheri_vle32_v_i32m1
@@ -584,14 +409,9 @@ cheri_vle32_v_i32m1:
 	.p2align	2
 	.type	cheri_vse32_v_i32m1,@function
 cheri_vse32_v_i32m1:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v1, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end35:
 	.size	cheri_vse32_v_i32m1, .Lfunc_end35-cheri_vse32_v_i32m1
@@ -600,15 +420,10 @@ cheri_vse32_v_i32m1:
 	.p2align	2
 	.type	cheri_vle8_v_u8m2,@function
 cheri_vle8_v_u8m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v2, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end36:
 	.size	cheri_vle8_v_u8m2, .Lfunc_end36-cheri_vle8_v_u8m2
@@ -617,14 +432,9 @@ cheri_vle8_v_u8m2:
 	.p2align	2
 	.type	cheri_vse8_v_u8m2,@function
 cheri_vse8_v_u8m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v2, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end37:
 	.size	cheri_vse8_v_u8m2, .Lfunc_end37-cheri_vse8_v_u8m2
@@ -633,15 +443,10 @@ cheri_vse8_v_u8m2:
 	.p2align	2
 	.type	cheri_vle8_v_i8m2,@function
 cheri_vle8_v_i8m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v2, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end38:
 	.size	cheri_vle8_v_i8m2, .Lfunc_end38-cheri_vle8_v_i8m2
@@ -650,14 +455,9 @@ cheri_vle8_v_i8m2:
 	.p2align	2
 	.type	cheri_vse8_v_i8m2,@function
 cheri_vse8_v_i8m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v2, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end39:
 	.size	cheri_vse8_v_i8m2, .Lfunc_end39-cheri_vse8_v_i8m2
@@ -666,15 +466,10 @@ cheri_vse8_v_i8m2:
 	.p2align	2
 	.type	cheri_vle16_v_u16m2,@function
 cheri_vle16_v_u16m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v2, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end40:
 	.size	cheri_vle16_v_u16m2, .Lfunc_end40-cheri_vle16_v_u16m2
@@ -683,14 +478,9 @@ cheri_vle16_v_u16m2:
 	.p2align	2
 	.type	cheri_vse16_v_u16m2,@function
 cheri_vse16_v_u16m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v2, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end41:
 	.size	cheri_vse16_v_u16m2, .Lfunc_end41-cheri_vse16_v_u16m2
@@ -699,15 +489,10 @@ cheri_vse16_v_u16m2:
 	.p2align	2
 	.type	cheri_vle16_v_i16m2,@function
 cheri_vle16_v_i16m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v2, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end42:
 	.size	cheri_vle16_v_i16m2, .Lfunc_end42-cheri_vle16_v_i16m2
@@ -716,14 +501,9 @@ cheri_vle16_v_i16m2:
 	.p2align	2
 	.type	cheri_vse16_v_i16m2,@function
 cheri_vse16_v_i16m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v2, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end43:
 	.size	cheri_vse16_v_i16m2, .Lfunc_end43-cheri_vse16_v_i16m2
@@ -732,15 +512,10 @@ cheri_vse16_v_i16m2:
 	.p2align	2
 	.type	cheri_vle32_v_u32m2,@function
 cheri_vle32_v_u32m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v2, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end44:
 	.size	cheri_vle32_v_u32m2, .Lfunc_end44-cheri_vle32_v_u32m2
@@ -749,14 +524,9 @@ cheri_vle32_v_u32m2:
 	.p2align	2
 	.type	cheri_vse32_v_u32m2,@function
 cheri_vse32_v_u32m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v2, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end45:
 	.size	cheri_vse32_v_u32m2, .Lfunc_end45-cheri_vse32_v_u32m2
@@ -765,15 +535,10 @@ cheri_vse32_v_u32m2:
 	.p2align	2
 	.type	cheri_vle32_v_i32m2,@function
 cheri_vle32_v_i32m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v2, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end46:
 	.size	cheri_vle32_v_i32m2, .Lfunc_end46-cheri_vle32_v_i32m2
@@ -782,14 +547,9 @@ cheri_vle32_v_i32m2:
 	.p2align	2
 	.type	cheri_vse32_v_i32m2,@function
 cheri_vse32_v_i32m2:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v2, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end47:
 	.size	cheri_vse32_v_i32m2, .Lfunc_end47-cheri_vse32_v_i32m2
@@ -798,15 +558,10 @@ cheri_vse32_v_i32m2:
 	.p2align	2
 	.type	cheri_vle8_v_u8m4,@function
 cheri_vle8_v_u8m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v4, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end48:
 	.size	cheri_vle8_v_u8m4, .Lfunc_end48-cheri_vle8_v_u8m4
@@ -815,14 +570,9 @@ cheri_vle8_v_u8m4:
 	.p2align	2
 	.type	cheri_vse8_v_u8m4,@function
 cheri_vse8_v_u8m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v4, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end49:
 	.size	cheri_vse8_v_u8m4, .Lfunc_end49-cheri_vse8_v_u8m4
@@ -831,15 +581,10 @@ cheri_vse8_v_u8m4:
 	.p2align	2
 	.type	cheri_vle8_v_i8m4,@function
 cheri_vle8_v_i8m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v4, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end50:
 	.size	cheri_vle8_v_i8m4, .Lfunc_end50-cheri_vle8_v_i8m4
@@ -848,14 +593,9 @@ cheri_vle8_v_i8m4:
 	.p2align	2
 	.type	cheri_vse8_v_i8m4,@function
 cheri_vse8_v_i8m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v4, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end51:
 	.size	cheri_vse8_v_i8m4, .Lfunc_end51-cheri_vse8_v_i8m4
@@ -864,15 +604,10 @@ cheri_vse8_v_i8m4:
 	.p2align	2
 	.type	cheri_vle16_v_u16m4,@function
 cheri_vle16_v_u16m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v4, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end52:
 	.size	cheri_vle16_v_u16m4, .Lfunc_end52-cheri_vle16_v_u16m4
@@ -881,14 +616,9 @@ cheri_vle16_v_u16m4:
 	.p2align	2
 	.type	cheri_vse16_v_u16m4,@function
 cheri_vse16_v_u16m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v4, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end53:
 	.size	cheri_vse16_v_u16m4, .Lfunc_end53-cheri_vse16_v_u16m4
@@ -897,15 +627,10 @@ cheri_vse16_v_u16m4:
 	.p2align	2
 	.type	cheri_vle16_v_i16m4,@function
 cheri_vle16_v_i16m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v4, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end54:
 	.size	cheri_vle16_v_i16m4, .Lfunc_end54-cheri_vle16_v_i16m4
@@ -914,14 +639,9 @@ cheri_vle16_v_i16m4:
 	.p2align	2
 	.type	cheri_vse16_v_i16m4,@function
 cheri_vse16_v_i16m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v4, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end55:
 	.size	cheri_vse16_v_i16m4, .Lfunc_end55-cheri_vse16_v_i16m4
@@ -930,15 +650,10 @@ cheri_vse16_v_i16m4:
 	.p2align	2
 	.type	cheri_vle32_v_u32m4,@function
 cheri_vle32_v_u32m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v4, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end56:
 	.size	cheri_vle32_v_u32m4, .Lfunc_end56-cheri_vle32_v_u32m4
@@ -947,14 +662,9 @@ cheri_vle32_v_u32m4:
 	.p2align	2
 	.type	cheri_vse32_v_u32m4,@function
 cheri_vse32_v_u32m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v4, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end57:
 	.size	cheri_vse32_v_u32m4, .Lfunc_end57-cheri_vse32_v_u32m4
@@ -963,15 +673,10 @@ cheri_vse32_v_u32m4:
 	.p2align	2
 	.type	cheri_vle32_v_i32m4,@function
 cheri_vle32_v_i32m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v4, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end58:
 	.size	cheri_vle32_v_i32m4, .Lfunc_end58-cheri_vle32_v_i32m4
@@ -980,14 +685,9 @@ cheri_vle32_v_i32m4:
 	.p2align	2
 	.type	cheri_vse32_v_i32m4,@function
 cheri_vse32_v_i32m4:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v4, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end59:
 	.size	cheri_vse32_v_i32m4, .Lfunc_end59-cheri_vse32_v_i32m4
@@ -996,15 +696,10 @@ cheri_vse32_v_i32m4:
 	.p2align	2
 	.type	cheri_vle8_v_u8m8,@function
 cheri_vle8_v_u8m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v8, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end60:
 	.size	cheri_vle8_v_u8m8, .Lfunc_end60-cheri_vle8_v_u8m8
@@ -1013,14 +708,9 @@ cheri_vle8_v_u8m8:
 	.p2align	2
 	.type	cheri_vse8_v_u8m8,@function
 cheri_vse8_v_u8m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v8, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end61:
 	.size	cheri_vse8_v_u8m8, .Lfunc_end61-cheri_vse8_v_u8m8
@@ -1029,15 +719,10 @@ cheri_vse8_v_u8m8:
 	.p2align	2
 	.type	cheri_vle8_v_i8m8,@function
 cheri_vle8_v_i8m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle8.v	v8, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end62:
 	.size	cheri_vle8_v_i8m8, .Lfunc_end62-cheri_vle8_v_i8m8
@@ -1046,14 +731,9 @@ cheri_vle8_v_i8m8:
 	.p2align	2
 	.type	cheri_vse8_v_i8m8,@function
 cheri_vse8_v_i8m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse8.v	v8, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end63:
 	.size	cheri_vse8_v_i8m8, .Lfunc_end63-cheri_vse8_v_i8m8
@@ -1062,15 +742,10 @@ cheri_vse8_v_i8m8:
 	.p2align	2
 	.type	cheri_vle16_v_u16m8,@function
 cheri_vle16_v_u16m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v8, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end64:
 	.size	cheri_vle16_v_u16m8, .Lfunc_end64-cheri_vle16_v_u16m8
@@ -1079,14 +754,9 @@ cheri_vle16_v_u16m8:
 	.p2align	2
 	.type	cheri_vse16_v_u16m8,@function
 cheri_vse16_v_u16m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v8, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end65:
 	.size	cheri_vse16_v_u16m8, .Lfunc_end65-cheri_vse16_v_u16m8
@@ -1095,15 +765,10 @@ cheri_vse16_v_u16m8:
 	.p2align	2
 	.type	cheri_vle16_v_i16m8,@function
 cheri_vle16_v_i16m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle16.v	v8, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end66:
 	.size	cheri_vle16_v_i16m8, .Lfunc_end66-cheri_vle16_v_i16m8
@@ -1112,14 +777,9 @@ cheri_vle16_v_i16m8:
 	.p2align	2
 	.type	cheri_vse16_v_i16m8,@function
 cheri_vse16_v_i16m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse16.v	v8, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end67:
 	.size	cheri_vse16_v_i16m8, .Lfunc_end67-cheri_vse16_v_i16m8
@@ -1128,15 +788,10 @@ cheri_vse16_v_i16m8:
 	.p2align	2
 	.type	cheri_vle32_v_u32m8,@function
 cheri_vle32_v_u32m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v8, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end68:
 	.size	cheri_vle32_v_u32m8, .Lfunc_end68-cheri_vle32_v_u32m8
@@ -1145,14 +800,9 @@ cheri_vle32_v_u32m8:
 	.p2align	2
 	.type	cheri_vse32_v_u32m8,@function
 cheri_vse32_v_u32m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v8, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end69:
 	.size	cheri_vse32_v_u32m8, .Lfunc_end69-cheri_vse32_v_u32m8
@@ -1161,15 +811,10 @@ cheri_vse32_v_u32m8:
 	.p2align	2
 	.type	cheri_vle32_v_i32m8,@function
 cheri_vle32_v_i32m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vle32.v	v8, (ca0)
 	#NO_APP
 	mv	a0, zero
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end70:
 	.size	cheri_vle32_v_i32m8, .Lfunc_end70-cheri_vle32_v_i32m8
@@ -1178,14 +823,9 @@ cheri_vle32_v_i32m8:
 	.p2align	2
 	.type	cheri_vse32_v_i32m8,@function
 cheri_vse32_v_i32m8:
-	cincoffset	csp, csp, -16
-	csc	ca0, 0(csp)
-	cincoffset	ca0, csp, 0
-	csetbounds	ca0, ca0, 16
 	#APP
 	vse32.v	v8, (ca0)
 	#NO_APP
-	cincoffset	csp, csp, 16
 	cret
 .Lfunc_end71:
 	.size	cheri_vse32_v_i32m8, .Lfunc_end71-cheri_vse32_v_i32m8
@@ -1247,46 +887,34 @@ vector_memcpy_32mf2:
 	.p2align	2
 	.type	vector_memcpy_8m8,@function
 vector_memcpy_8m8:
-	cincoffset	csp, csp, -96
-	csc	cra, 80(csp)
-	csc	cs0, 64(csp)
-	csc	cs1, 48(csp)
-	csc	cs2, 32(csp)
-	csc	cs3, 16(csp)
-	csc	cs4, 0(csp)
-	beqz	a0, .LBB74_4
+	cincoffset	csp, csp, -80
+	csc	cra, 64(csp)
+	csc	cs0, 48(csp)
+	csc	cs1, 32(csp)
+	csc	cs2, 16(csp)
+	csc	cs3, 0(csp)
+	slli	s0, a0, 2
+	beqz	s0, .LBB74_3
 	cmove	cs2, ca2
 	cmove	cs1, ca1
-	mv	s0, a0
-	mv	s4, zero
-	addi	s3, zero, 3
 .LBB74_2:
-	addi	a0, s0, -1
-	snez	a0, a0
-	sltu	a1, s3, s4
-	or	a0, a0, a1
-	beqz	a0, .LBB74_4
-	slli	a0, s0, 2
-	vsetvli	s4, a0, e8, m8, ta, mu
+	vsetvli	s3, s0, e8, m8, ta, mu
 	cmove	ca0, cs1
 	ccall	cheri_vle8_v_i8m8
 	cmove	ca0, cs2
 	mv	a1, zero
 	ccall	cheri_vse8_v_i8m8
-	srli	a0, s4, 2
-	slli	a1, a0, 2
-	cincoffset	cs1, cs1, a1
-	sub	s0, s0, a0
-	cincoffset	cs2, cs2, a1
+	cincoffset	cs1, cs1, s3
+	sub	s0, s0, s3
+	cincoffset	cs2, cs2, s3
 	bnez	s0, .LBB74_2
-.LBB74_4:
-	clc	cs4, 0(csp)
-	clc	cs3, 16(csp)
-	clc	cs2, 32(csp)
-	clc	cs1, 48(csp)
-	clc	cs0, 64(csp)
-	clc	cra, 80(csp)
-	cincoffset	csp, csp, 96
+.LBB74_3:
+	clc	cs3, 0(csp)
+	clc	cs2, 16(csp)
+	clc	cs1, 32(csp)
+	clc	cs0, 48(csp)
+	clc	cra, 64(csp)
+	cincoffset	csp, csp, 80
 	cret
 .Lfunc_end74:
 	.size	vector_memcpy_8m8, .Lfunc_end74-vector_memcpy_8m8
@@ -1388,13 +1016,11 @@ vector_memcpy_harness:
 	csc	cs3, 1040(csp)
 	cmove	cs2, ca0
 	cincoffset	ca0, csp, 528
-	csetbounds	cs1, ca0, 512
 	addi	a2, zero, 512
-	cmove	ca0, cs1
+	cincoffset	cs0, csp, 528
 	mv	a1, zero
 	ccall	memset
 	cincoffset	ca0, csp, 16
-	csetbounds	ca0, ca0, 512
 	addi	a2, zero, 512
 	mv	a1, zero
 	ccall	memset
@@ -1402,25 +1028,23 @@ vector_memcpy_harness:
 	addi	a1, zero, 128
 .LBB77_1:
 	slli	a2, a0, 2
-	cincoffset	ca2, cs1, a2
+	cincoffset	ca2, cs0, a2
 	csw	a0, 0(ca2)
 	addi	a0, a0, 1
 	bne	a0, a1, .LBB77_1
-	cincoffset	ca0, csp, 528
-	csetbounds	cs1, ca0, 512
-	cincoffset	ca0, csp, 16
-	csetbounds	cs0, ca0, 512
-	addi	a0, zero, 103
 	addi	s3, zero, 103
-	cmove	ca1, cs1
-	cmove	ca2, cs0
+	cincoffset	cs0, csp, 528
+	addi	a0, zero, 103
+	cincoffset	ca1, csp, 528
+	cincoffset	ca2, csp, 16
+	cincoffset	cs1, csp, 16
 	cjalr	cs2
 	mv	a0, zero
 .LBB77_3:
 	slli	a1, a0, 2
-	cincoffset	ca2, cs1, a1
+	cincoffset	ca2, cs0, a1
 	clw	a2, 0(ca2)
-	cincoffset	ca1, cs0, a1
+	cincoffset	ca1, cs1, a1
 	clw	a1, 0(ca1)
 	bne	a2, a1, .LBB77_10
 	addi	a0, a0, 1
@@ -1428,21 +1052,20 @@ vector_memcpy_harness:
 	clw	a1, 428(csp)
 	mv	a0, zero
 	bnez	a1, .LBB77_11
-	addi	a2, zero, 103
+	addi	a3, zero, 103
 	addi	a0, zero, 127
 	cincoffset	ca1, csp, 16
-	csetbounds	ca1, ca1, 512
 .LBB77_7:
-	mv	a3, a2
-	beq	a2, a0, .LBB77_9
-	addi	a2, a3, 1
-	slli	a4, a2, 2
+	mv	a2, a3
+	beq	a3, a0, .LBB77_9
+	addi	a3, a2, 1
+	slli	a4, a3, 2
 	cincoffset	ca4, ca1, a4
 	clw	a4, 0(ca4)
 	beqz	a4, .LBB77_7
 .LBB77_9:
 	addi	a0, zero, 126
-	sltu	a0, a0, a3
+	sltu	a0, a0, a2
 	j	.LBB77_11
 .LBB77_10:
 	mv	a0, zero
