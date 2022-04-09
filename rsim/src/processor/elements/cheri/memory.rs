@@ -126,7 +126,8 @@ impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMe
         self.base_mem.write(cap.address(), val)?;
 
         // Set the tag on the 128-bit range containing (addr) to false
-        self.tag_mem.write(cap.address(), false)?;
+        // Use an aligned address to clear the tag - otherwise it complains
+        self.tag_mem.write(cap.address() & !0xFFFF, false)?;
         // Assert the numerical type cannot extend over multiple tagged regions.
         // We know the address was aligned to size_of<TData>, so as long as that size
         // is smaller than 128-bits we're fine.
