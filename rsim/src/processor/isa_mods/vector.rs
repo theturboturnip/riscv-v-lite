@@ -6,7 +6,6 @@ use crate::processor::isa_mods::*;
 use crate::processor::elements::registers::RegisterFile;
 use crate::processor::exceptions::IllegalInstructionException::*;
 use super::csrs::CSRProvider;
-use std::mem::size_of;
 use std::cmp::min;
 use anyhow::{Context, Result};
 use std::convert::{TryInto};
@@ -15,42 +14,15 @@ use crate::processor::elements::memory::Memory32;
 
 use crate::processor::decode::{Opcode,InstructionBits};
 
+mod types;
+use types::*;
 
-/// Unsigned type of length [ELEN]
-/// 
-/// ```
-/// use rsim::processor::vector::{uELEN, ELEN};
-/// use std::mem::size_of;
-/// 
-/// assert_eq!(size_of::<uELEN>() * 8, ELEN);
-/// ```
-#[allow(non_camel_case_types)]
-pub type uELEN = u32;
-
-
-
-/// Vector register length in bits
-pub const VLEN: usize = 128; // ELEN * 4
-
-/// Unsigned type of length [VLEN]
-/// 
-/// Used for storing vector registers
-/// 
-/// ```
-/// use rsim::processor::vector::{uVLEN, VLEN};
-/// use std::mem::size_of;
-/// 
-/// assert_eq!(size_of::<uVLEN>() * 8, VLEN);
-/// ```
-#[allow(non_camel_case_types)]
-pub type uVLEN = u128;
-const_assert!(size_of::<uVLEN>() * 8 == VLEN);
 
 /// The Vector Unit for the processor.
 /// Stores all vector state, including registers.
 /// Call [Rv32v::exec_inst()] on it when you encounter a vector instruction.
 /// This requires a [VecMemInterface<uXLEN>] to access other resources.
-pub struct Rv32v<uXLEN: Into<u64> + From<u32>> {
+pub struct Rv32v<uXLEN: PossibleXlen> {
     // TODO use a RegisterFile for this?
     vreg: [uVLEN; 32],
 
@@ -85,7 +57,7 @@ pub struct Provenance {
     reg: u8
 }
 
-pub trait VecMemInterface<uXLEN> where uXLEN: Into<u64> + From<u32> {
+pub trait VecMemInterface<uXLEN> where uXLEN: PossibleXlen {
     fn sreg_read_xlen(&mut self, reg: u8) -> Result<uXLEN>;
     fn sreg_write_xlen(&mut self, reg: u8, val: uXLEN) -> Result<()>;
     fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)>;
@@ -184,7 +156,7 @@ impl<'a> VecMemInterface<u64> for Rv32vCheriConn<'a> {
 }
 
 
-impl<uXLEN: Into<u64> + From<u32>> Rv32v<uXLEN> {
+impl<uXLEN: PossibleXlen> Rv32v<uXLEN> {
     /// Returns an initialized vector unit.
     pub fn new() -> Self {
         Rv32v {
@@ -281,7 +253,7 @@ impl<uXLEN: Into<u64> + From<u32>> Rv32v<uXLEN> {
                 // TODO - section 6.3 shows more constraints on setting VL
                 self.vl = min(elems_per_group, avl as u32);
 
-                conn.sreg_write_xlen(rd, self.vl.try_into()?)?;
+                conn.sreg_write_xlen(rd, self.vl.into())?;
             } else {
                 self.vtype = VType::illegal();
                 // TODO - move this bail to the next vector instruction that executes
@@ -296,7 +268,7 @@ impl<uXLEN: Into<u64> + From<u32>> Rv32v<uXLEN> {
     }
 }
 
-impl<uXLEN: Into<u64> + From<u32>> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rv32v<uXLEN> {
+impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rv32v<uXLEN> {
     type Pc = ();
     fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
         use crate::processor::decode::Opcode::*;
@@ -721,7 +693,7 @@ impl<uXLEN: Into<u64> + From<u32>> IsaMod<&mut dyn VecMemInterface<uXLEN>> for R
     }
 }
 
-impl<uXLEN: Into<u64> + From<u32>> Rv32v<uXLEN> {
+impl<uXLEN: PossibleXlen> Rv32v<uXLEN> {
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
     fn load_to_vreg(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
@@ -995,7 +967,7 @@ impl<uXLEN: Into<u64> + From<u32>> Rv32v<uXLEN> {
     }
 }
 
-impl<uXLEN: Into<u64> + From<u32>> CSRProvider<u32> for Rv32v<uXLEN> {
+impl<uXLEN: PossibleXlen> CSRProvider<u32> for Rv32v<uXLEN> {
     fn has_csr(&self, csr: u32) -> bool {
         match csr {
             // Should be implemented, aren't yet
