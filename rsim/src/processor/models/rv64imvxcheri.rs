@@ -26,7 +26,7 @@ pub struct Rv64imvXCheriProcessor {
 pub struct Rv64imvXCheriProcessorModules {
     rv64im: Rv64im,
     xcheri: XCheri64,
-    rvv: Rv32v,
+    rvv: Rv32v<u64>,
     zicsr: Option<Zicsr64>
 }
 
@@ -73,7 +73,7 @@ impl Rv64imvXCheriProcessor {
         let mut mods = Rv64imvXCheriProcessorModules {
             rv64im: Rv64im{},
             xcheri: XCheri64{},
-            rvv: Rv32v::new(),
+            rvv: Rv32v::<u64>::new(),
             zicsr: Some(Zicsr64::default())
         };
 

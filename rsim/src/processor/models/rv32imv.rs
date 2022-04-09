@@ -21,7 +21,7 @@ pub struct Processor32 {
 
 pub struct ProcessorModules32 {
     rv32im: Rv32im,
-    rvv: Option<Rv32v>,
+    rvv: Option<Rv32v<u32>>,
     zicsr: Option<Zicsr32>
 }
 
@@ -51,7 +51,7 @@ impl Processor32 {
         };
         let mut mods = ProcessorModules32 {
             rv32im: Rv32im{},
-            rvv: Some(Rv32v::new()),
+            rvv: Some(Rv32v::<u32>::new()),
             zicsr: Some(Zicsr32::default())
         };
 
@@ -83,7 +83,7 @@ impl Processor32 {
         }
     }
 
-    fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Option<Rv32v>) -> Zicsr32Conn<'b> where 'a: 'b {
+    fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Option<Rv32v<u32>>) -> Zicsr32Conn<'b> where 'a: 'b {
         let mut csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider<u32>];
         if let Some(rvv) = rvv.as_mut() {
             csr_providers.push(rvv as &mut dyn CSRProvider<u32>)
@@ -131,10 +131,7 @@ impl Processor32 {
         }
         if let Some(rvv) = mods.rvv.as_mut() {
             if rvv.will_handle(opcode, inst) {
-                let requested_pc = rvv.execute(opcode, inst, inst_bits, &mut self.vector_conn())?;
-                if let Some(requested_pc) = requested_pc {
-                    next_pc = requested_pc;
-                }
+                rvv.execute(opcode, inst, inst_bits, &mut self.vector_conn())?;
                 return Ok(next_pc);
             }
         }

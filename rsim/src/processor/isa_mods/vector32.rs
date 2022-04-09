@@ -1,3 +1,6 @@
+#![allow(non_camel_case_types)]
+
+use std::marker::PhantomData;
 use crate::processor::elements::cheri::{CheriRV64RegisterFile,CheriAggregateMemory};
 use crate::processor::isa_mods::*;
 use crate::processor::elements::registers::RegisterFile;
@@ -47,7 +50,7 @@ const_assert!(size_of::<uVLEN>() * 8 == VLEN);
 /// Stores all vector state, including registers.
 /// Call [Rv32v::exec_inst()] on it when you encounter a vector instruction.
 /// This requires a [VecMemInterface<uXLEN>] to access other resources.
-pub struct Rv32v {
+pub struct Rv32v<uXLEN: Into<u64> + From<u32>> {
     // TODO use a RegisterFile for this?
     vreg: [uVLEN; 32],
 
@@ -62,6 +65,8 @@ pub struct Rv32v {
     /// This potentially impacts fast paths, 
     /// e.g. if a fast-path load pulls full lines from memory into a vector register, vstart must be 0.
     vstart: u32,
+
+    _phantom_xlen: PhantomData<uXLEN>,
 }
 
 /// References to all scalar resources touched by the vector unit.
@@ -179,7 +184,7 @@ impl<'a> VecMemInterface<u64> for Rv32vCheriConn<'a> {
 }
 
 
-impl Rv32v {
+impl<uXLEN: Into<u64> + From<u32>> Rv32v<uXLEN> {
     /// Returns an initialized vector unit.
     pub fn new() -> Self {
         Rv32v {
@@ -188,6 +193,8 @@ impl Rv32v {
             vtype: VType::illegal(),
             vl: 0,
             vstart: 0,
+
+            _phantom_xlen: PhantomData,
         }
     }
 
@@ -207,7 +214,7 @@ impl Rv32v {
     /// * `inst_kind` - Which kind of configuration instruction to execute
     /// * `inst` - Decoded instruction bits
     /// * `conn` - Connection to external resources
-    fn exec_config<uXLEN>(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> where uXLEN: Into<u64> + From<u32> {
+    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
         if let InstructionBits::VType{rd, funct3, rs1, rs2, zimm11, zimm10, ..} = inst {
             assert_eq!(funct3, 0b111);
 
@@ -289,8 +296,9 @@ impl Rv32v {
     }
 }
 
-impl Rv32v {
-    pub fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
+impl<uXLEN: Into<u64> + From<u32>> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rv32v<uXLEN> {
+    type Pc = ();
+    fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
             // Delegate all instructions under the Vector opcode to the vector unit
@@ -320,7 +328,7 @@ impl Rv32v {
     /// * `inst` - Decoded instruction bits
     /// * `inst_bits` - Raw instruction bits (TODO - we shouldn't need this)
     /// * `conn` - Connection to external resources
-    pub fn execute<uXLEN: Into<u64> + From<u32>>(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: &mut dyn VecMemInterface<uXLEN>) -> ProcessorResult<Option<u32>> {
+    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: &mut dyn VecMemInterface<uXLEN>) -> ProcessorResult<Option<()>> {
         use Opcode::*;
         match (opcode, inst) {
             (Vector, InstructionBits::VType{funct3, funct6, rs1, rs2, rd, vm, ..}) => {
@@ -713,17 +721,17 @@ impl Rv32v {
     }
 }
 
-impl Rv32v {
+impl<uXLEN: Into<u64> + From<u32>> Rv32v<uXLEN> {
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
-    fn load_to_vreg<uXLEN>(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> where uXLEN: Into<u64> + From<u32> {
+    fn load_to_vreg(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
         let val = conn.load_from_memory(eew, addr_provenance)?;
         self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
         Ok(())
     }
     /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
     /// vector register group starting at `vd_base` into a given address `addr` 
-    fn store_to_mem<uXLEN>(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> where uXLEN: Into<u64> + From<u32> {
+    fn store_to_mem(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
         let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
         conn.store_to_memory(eew, val, addr_provenance)?;
         Ok(())
@@ -737,7 +745,7 @@ impl Rv32v {
 
     /// Decode a Load/Store opcode into an OverallMemOp structure.
     /// Performs all checks to ensure the instruction is a valid RISC-V V vector load/store.
-    fn decode_load_store<uXLEN>(&self, opcode: Opcode, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<OverallMemOp> where uXLEN: Into<u64> + From<u32> {
+    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<OverallMemOp> {
         if let InstructionBits::FLdStType{width, rs2, mew, mop, nf, ..} = inst {
             // MEW = Memory Expanded Width(?)
             // Expected to be used for larger widths, because it's right next to the width field,
@@ -987,7 +995,7 @@ impl Rv32v {
     }
 }
 
-impl CSRProvider<u32> for Rv32v {
+impl<uXLEN: Into<u64> + From<u32>> CSRProvider<u32> for Rv32v<uXLEN> {
     fn has_csr(&self, csr: u32) -> bool {
         match csr {
             // Should be implemented, aren't yet
