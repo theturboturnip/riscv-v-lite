@@ -408,86 +408,82 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
             }
 
             (LoadFP | StoreFP, InstructionBits::FLdStType{rd, rs1, rs2, vm, ..}) => {
-                let op = self.decode_load_store(opcode, inst, conn)?;
+                let op = DecodedMemOp::decode_load_store(opcode, inst, self.vtype, self.vl, conn)?;
                 use MemOpDir::*;
 
-                if op.dir == Load && (!vm) && rd == 0 {
+                let (op_emul, op_eew) = op.access_params();
+
+                if op.dir() == Load && (!vm) && rd == 0 {
                     // If we're masked, we can't load over v0 as that's the mask register
                     bail!("Masked instruction cannot load into v0");
                 }
 
-                if op.evl <= self.vstart {
-                    println!("EVL {} <= vstart {} => vector {:?} is no-op", op.evl, self.vstart, op.dir);
-                    return Ok(None)
+                if let Some(evl) = op.try_get_evl() {
+                    if evl <= self.vstart {
+                        println!("EVL {} <= vstart {} => vector {:?} is no-op", evl, self.vstart, op.dir());
+                        return Ok(None)
+                    }
                 }
 
                 let (base_addr, provenance) = conn.get_addr_provenance(rs1)?;
 
-                let addr_base_step = match op.eew {
+                let addr_base_step = match op_eew {
                     Sew::e8 => 1,
                     Sew::e16 => 2,
                     Sew::e32 => 4,
-                    Sew::e64 => bail!("unsupported {:?} in vector load/store", op.eew),
+                    Sew::e64 => bail!("unsupported {:?} in vector load/store", op_eew),
                 };
 
-                let elems_per_group = val_times_lmul_over_sew(VLEN as u32, op.eew, op.emul);
+                let elems_per_group = val_times_lmul_over_sew(VLEN as u32, op_eew, op_emul);
 
-                use OverallMemOpKind::*;
-                match (op.dir, op.kind) {
-                    (Load, Strided(stride)) => {
-                        if stride > 1 && op.nf > 1 {
-                            println!("Non-unit stride Load with NFIELDS != 1 ({}) not checked", op.nf);
-                        }
-
+                use DecodedMemOp::*;
+                match op {
+                    Strided{dir: Load, stride, evl, nf, eew, ..} => {
                         // i = element index in logical vector (which includes groups)
                         let mut addr = base_addr;
                         // For each segment
-                        for i in self.vstart..op.evl {
+                        for i in self.vstart..evl {
                             // For each field
-                            for i_field in 0..op.nf {
+                            for i_field in 0..nf {
                                 // If we aren't masked out...
                                 if !self.idx_masked_out(vm, i as usize) {
                                     // ... load from memory into register
                                     let addr_p = (addr, provenance);
-                                    self.load_to_vreg(conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
+                                    self.load_to_vreg(conn, eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
                                 }
                                 // Either way increment the address
                                 addr += addr_base_step * stride;
                             }
                         }
                     }
-                    (Store, Strided(stride)) => {
-                        if stride > 1 && op.nf > 1 {
-                            println!("Non-unit stride Store with NFIELDS != 1 ({}) not checked", op.nf);
-                        }
-
+                    Strided{dir: Store, stride, evl, nf, eew, ..} => {
                         // i = element index in logical vector (which includes groups)
                         let mut addr = base_addr;
                         // For each segment
-                        for i in self.vstart..op.evl {
+                        for i in self.vstart..evl {
                             // For each field
-                            for i_field in 0..op.nf {
+                            for i_field in 0..nf {
                                 // If we aren't masked out...
                                 if !self.idx_masked_out(vm, i as usize) {
                                     // ... store from register into memory
                                     let addr_p = (addr, provenance);
-                                    self.store_to_mem(conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
+                                    self.store_to_mem(conn, eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
                                 }
                                 // Either way increment the address
                                 addr += addr_base_step * stride;
                             }
                         }
                     }
-                    (Load, Indexed{ordered: _ordered, index_ew}) => {
+                    Indexed{dir: Load, ordered: _, index_ew, evl, nf, eew, ..} => {
                         if index_ew != Sew::e32 {
                             bail!("Indexed Load with index width != 32 not supported")
                         }
-                        if op.nf > 1 {
-                            bail!("Indexed Load with NFIELDS != 1 ({}) not supported", op.nf);
+                        if nf > 1 {
+                            bail!("Indexed Load with NFIELDS != 1 ({}) not supported", nf);
                         }
 
                         // i = element index in logical vector (which includes groups)
-                        for i in self.vstart..op.evl {
+                        for i in self.vstart..evl {
                             // Get our index
                             let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
                             let addr = base_addr + addr_base_step * (idx as u64);
@@ -496,20 +492,20 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... load from memory(idx) into register(i)
                                 let addr_p = (addr, provenance);
-                                self.load_to_vreg(conn, op.eew, addr_p, rd, i)?;
+                                self.load_to_vreg(conn, eew, addr_p, rd, i)?;
                             }
                         }
                     }
-                    (Store, Indexed{ordered: _ordered, index_ew}) => {
+                    Indexed{dir: Store, ordered: _, index_ew, evl, nf, eew, ..} => {
                         if index_ew != Sew::e32 {
                             bail!("Indexed Store with index width != 32 not supported")
                         }
-                        if op.nf > 1 {
-                            bail!("Indexed Store with NFIELDS != 1 ({}) not supported", op.nf);
+                        if nf > 1 {
+                            bail!("Indexed Store with NFIELDS != 1 ({}) not supported", nf);
                         }
 
                         // i = element index in logical vector (which includes groups)
-                        for i in self.vstart..op.evl {
+                        for i in self.vstart..evl {
                             // Get our index
                             let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
                             let addr = base_addr + addr_base_step * (idx as u64);
@@ -518,11 +514,11 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                             if !self.idx_masked_out(vm, i as usize) {
                                 // ... store from register(i) to memory(idx)
                                 let addr_p = (addr, provenance);
-                                self.store_to_mem(conn, op.eew, addr_p, rd, i)?;
+                                self.store_to_mem(conn, eew, addr_p, rd, i)?;
                             }
                         }
                     }
-                    (Load, FaultOnlyFirst) => {
+                    FaultOnlyFirst{evl, nf, eew, ..} => {
                         // FaultOnlyFirst loads can be strided 
                         // (https://github.com/riscv/riscv-opcodes/blob/master/opcodes-rvv, non-zero NF is allowed)
 
@@ -530,15 +526,15 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                         // i = element index in logical vector (which includes groups)
                         let mut addr = base_addr;
                         // For each segment
-                        'top_loop: for i in self.vstart..op.evl {
+                        'top_loop: for i in self.vstart..evl {
                             // For each field
-                            for i_field in 0..op.nf {
+                            for i_field in 0..nf {
                                 // If we aren't masked out...
                                 if !self.idx_masked_out(vm, i as usize) {
                                     // ... load from memory into register
                                     let addr_p = (addr, provenance);
                                     let load_fault: Result<()> = 
-                                        self.load_to_vreg(conn, op.eew, addr_p, rd, i + (i_field as u32 * elems_per_group));
+                                        self.load_to_vreg(conn, eew, addr_p, rd, i + (i_field as u32 * elems_per_group));
                                     
                                     if i == 0 {
                                         // Any potentially faulted load should fault as normal if i == 0
@@ -569,12 +565,11 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                             }
                         }
                     }
-                    (Load, WholeRegister) => {
+                    WholeRegister{dir: Load, nf, emul: _} => {
                         let mut addr = base_addr;
 
-                        // TODO refactor decoding to make this unnecessary
                         let eew = Sew::e8;
-                        let vl = (op.nf as u32) * ((VLEN/8) as u32);
+                        let vl = (nf as u32) * ((VLEN/8) as u32);
                         let addr_base_step = 1;
                         // vstart is ignored, except for the vstart >= evl case above
                         // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
@@ -588,12 +583,11 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                             addr += addr_base_step;
                         }
                     }
-                    (Store, WholeRegister) => {
+                    WholeRegister{dir: Store, nf, emul: _} => {
                         let mut addr = base_addr;
 
-                        // TODO refactor decoding to make this unnecessary
                         let eew = Sew::e8;
-                        let vl = (op.nf as u32) * ((VLEN/8) as u32);
+                        let vl = (nf as u32) * ((VLEN/8) as u32);
                         let addr_base_step = 1;
                         // vstart is ignored, except for the vstart >= evl case above
                         // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
@@ -607,56 +601,36 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                             addr += addr_base_step;
                         }
                     }
-                    (Load, ByteMask) => {
-                        if op.eew != Sew::e8 {
-                            bail!("ByteMask {:?} must have EEW = byte", op.eew);
+                    ByteMask{dir: Load, evl, emul: _} => {
+                        if vm == false {
+                            // vlm, vsm cannot be masked out
+                            bail!("ByteMask operations cannot be masked")
                         }
-                        if op.nf != 1 {
-                            // See https://github.com/riscv/riscv-opcodes/blob/master/opcodes-rvv
-                            // vlm.v, vsm.v both specify the top bits (i.e. nf) = 0
-                            // this gets incremented by the decode so it must be 1
-                            bail!("NF for ByteMask operations must == 1");
+
+                        let mut addr = base_addr;
+                        for i in self.vstart..evl {
+                            let addr_p = (addr, provenance);
+                            self.load_to_vreg(conn, Sew::e8, addr_p, rd, i)?;
+
+                            // Increment the address
+                            addr += addr_base_step;
                         }
+                    }
+                    ByteMask{dir: Store, evl, emul: _} => {
                         if vm == false {
                             // As above, vlm, vsm cannot be masked out
                             bail!("ByteMask operations cannot be masked")
                         }
 
                         let mut addr = base_addr;
-                        for i in self.vstart..op.evl {
+                        for i in self.vstart..evl {
                             let addr_p = (addr, provenance);
-                            self.load_to_vreg(conn, op.eew, addr_p, rd, i)?;
+                            self.store_to_mem(conn, Sew::e8, addr_p, rd, i)?;
 
                             // Increment the address
                             addr += addr_base_step;
                         }
                     }
-                    (Store, ByteMask) => {
-                        if op.eew != Sew::e8 {
-                            bail!("ByteMask {:?} must have EEW = byte", op.eew);
-                        }
-                        if op.nf != 1 {
-                            // See https://github.com/riscv/riscv-opcodes/blob/master/opcodes-rvv
-                            // vlm.v, vsm.v both specify the top bits (i.e. nf) = 0
-                            // this gets incremented by the decode so it must be 1
-                            bail!("NF for ByteMask operations must == 1");
-                        }
-                        if vm == false {
-                            // As above, vlm, vsm cannot be masked out
-                            bail!("ByteMask operations cannot be masked")
-                        }
-
-                        let mut addr = base_addr;
-                        for i in self.vstart..op.evl {
-                            let addr_p = (addr, provenance);
-                            self.store_to_mem(conn, op.eew, addr_p, rd, i)?;
-
-                            // Increment the address
-                            addr += addr_base_step;
-                        }
-                    }
-
-                    _ => bail!("vector memory op {:?} {:?} not yet supported", op.dir, op.kind)
                 }
             }
 
@@ -676,181 +650,6 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     fn idx_masked_out(&self, vm: bool, i: usize) -> bool {
         // vm == 1 for mask disabled, 0 for mask enabled
         (!vm) && (bits!(self.vreg[0], i:i) == 0)
-    }
-
-    /// Decode a Load/Store opcode into an OverallMemOp structure.
-    /// Performs all checks to ensure the instruction is a valid RISC-V V vector load/store.
-    fn decode_load_store(&self, opcode: Opcode, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<OverallMemOp> {
-        if let InstructionBits::FLdStType{width, rs2, mew, mop, nf, ..} = inst {
-            // MEW = Memory Expanded Width(?)
-            // Expected to be used for larger widths, because it's right next to the width field,
-            // but for now it has to be 0
-            if mew { bail!("LoadFP with mew = 1 is reserved") }
-    
-            // Get the element width we want to use (which is NOT the same as the one encoded in vtype)
-            // EEW = Effective Element Width
-            let eew_num = match width {
-                0b0001 | 0b0010 | 0b0011 | 0b0100 => bail!("LoadFP uses width for normal floats, not vectors"),
-                0b1000..=0b1111 => bail!("LoadFP using reserved width {}", width),
-    
-                0b0000 => 8,
-                0b0101 => 16,
-                0b0110 => 32,
-                0b0111 => 64,
-    
-                _ => bail!("LoadFP has impossible width {}", width)
-            };
-    
-            if eew_num == 64 {
-                // We are allowed to reject values of EEW that aren't supported for SEW in vtype
-                // (see section 7.3 of RISC-V V spec)
-                bail!("effective element width of 64 is not supported");
-            }
-    
-            // Check the effective element width is valid, given the current SEW and LMUL
-    
-            // EMUL = Effective LMUL
-            // because LMULs can be as small as 1/8th, evaluate it as an integer * 8 (effectively 29.3 fixed point)
-            let emul_times_8 = self.vtype.val_times_lmul_over_sew(eew_num * 8);
-    
-            // Limit EMUL to the same values as LMUL
-            if emul_times_8 > 64 || emul_times_8 <= 1 {
-                bail!("emul * 8 too big or too small: {}", emul_times_8);
-            }
-    
-            // NF = Number of Fields
-            // If NF > 1, it's a *segmented* load/store
-            // where "packed contiguous segments" are moved into "multiple destination vector register groups"
-            // For example
-            // a0 => rgbrgbrgbrgbrgb (24-bit pixels, 8-bits-per-component)
-            // vlseg3e8 v8, (a0) ; NF = 3, EEW = 8
-            //  ->  v8  = rrrr
-            //      v9  = gggg
-            //      v10 = bbbb
-            let nf = nf + 1;
-    
-            // EMUL * NF = number of underlying registers in use
-            // => EMUL * NF should be <= 8
-            if (emul_times_8 * (nf as u32)) > 64 {
-                bail!("emul * nf too big: {}", emul_times_8 * (nf as u32) / 8);
-            }
-    
-            // Convert EEW, EMUL to enums
-            let eew = match eew_num {
-                8  => Sew::e8,
-                16 => Sew::e16,
-                32 => Sew::e32,
-                64 => Sew::e64,
-                _ => bail!("Impossible EEW {}", eew_num)
-            };
-            let emul = match emul_times_8 {
-                1 => Lmul::eEighth,
-                2 => Lmul::eQuarter,
-                4 => Lmul::eHalf,
-                8 => Lmul::e1,
-                16 => Lmul::e2,
-                32 => Lmul::e4,
-                64 => Lmul::e8,
-                _ => bail!("Impossible EMUL-times-8 {}", emul_times_8)
-            };
-    
-            // MOP = Memory OPeration
-            // Determines indexing mode
-            let mop = match mop {
-                0b00 => Mop::UnitStride,
-                0b10 => Mop::Strided(conn.sreg_read_xlen(rs2)?.into()),
-                0b01 => Mop::Indexed{ordered: false},
-                0b11 => Mop::Indexed{ordered: true},
-    
-                _ => panic!("impossible mop bits {:2b}", mop)
-            };
-    
-            let kind = match mop {
-                Mop::UnitStride => {
-                    match opcode {
-                        Opcode::LoadFP => {
-                            use UnitStrideLoadOp::*;
-                            let lumop = match rs2 {
-                                0b00000 => Load,
-                                0b01000 => WholeRegister,
-                                0b01011 => ByteMaskLoad,
-                                0b10000 => FaultOnlyFirst,
-        
-                                _ => bail!("invalid unit stride type {:05b}", rs2)
-                            };
-    
-                            match lumop {
-                                Load => OverallMemOpKind::Strided(1),
-                                WholeRegister => OverallMemOpKind::WholeRegister,
-                                ByteMaskLoad => OverallMemOpKind::ByteMask,
-                                FaultOnlyFirst => OverallMemOpKind::FaultOnlyFirst,
-                            }
-                        },
-                        Opcode::StoreFP => {
-                            use UnitStrideStoreOp::*;
-                            let sumop = match rs2 {
-                                0b00000 => Store,
-                                0b01000 => WholeRegister,
-                                0b01011 => ByteMaskStore,
-            
-                                _ => bail!("invalid unit stride type {:05b}", rs2)
-                            };
-            
-                            match sumop {
-                                Store => OverallMemOpKind::Strided(1),
-                                WholeRegister => OverallMemOpKind::WholeRegister,
-                                ByteMaskStore => OverallMemOpKind::ByteMask,
-                            }
-                        },
-                        _ => bail!("Incorrect opcode passed to decode_load_store: {:?}", opcode)
-                    }
-                    
-                }
-                Mop::Strided(stride) => OverallMemOpKind::Strided(stride),
-                Mop::Indexed{ordered} => OverallMemOpKind::Indexed{ordered, index_ew: eew}
-            };
-
-            if kind == OverallMemOpKind::ByteMask && eew != Sew::e8 {
-                bail!("Trying to do a byte-masked operation with EEW != 8 is impossible");
-            }
-
-            let nf_pow2 = match nf {
-                1 | 2 | 4 | 8 => true,
-                _ => false
-            };
-            if kind == OverallMemOpKind::WholeRegister && !nf_pow2 {
-                bail!("WholeRegister operation with non-power2 nf {} impossible", nf);
-            }
-    
-            Ok(OverallMemOp {
-                dir: match opcode {
-                    Opcode::LoadFP => MemOpDir::Load,
-                    Opcode::StoreFP => MemOpDir::Store,
-                    _ => bail!("Incorrect opcode passed to decode_load_store: {:?}", opcode)
-                },
-                eew: match kind {
-                    // Indexed accesses use SEW as the unit for accessing elements from memory,
-                    // and EEW for the size of the indices
-                    OverallMemOpKind::Indexed{index_ew: _index_ew, ..} => self.vtype.vsew,
-                    _ => eew
-                },
-                emul,
-                evl: match kind {
-                    OverallMemOpKind::ByteMask => {
-                        // As per section 7.4, evl = ceil(vl/8)
-                        // We don't have div_ceil in Rust yet, so do (vl + 7) / 8 which is equivalent
-                        (self.vl + 7) / 8
-                    }
-                    // For WholeRegister, this is ignored
-                    OverallMemOpKind::WholeRegister => self.vl,
-                    _ => self.vl
-                },
-                kind,
-                nf: nf
-            })
-        } else {
-            bail!("decode_load_store MUST be passed an instruction of FLdStType, got {:?}", inst)
-        }
     }
 }
 
