@@ -1,5 +1,6 @@
 #![allow(non_camel_case_types)]
 
+use std::ops::Range;
 use std::marker::PhantomData;
 use crate::processor::isa_mods::*;
 use crate::processor::exceptions::IllegalInstructionException::*;
@@ -157,8 +158,208 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
         }
     }
 
+    /// Check the accesses for a vector load/store, returning Err() if accesses are invalid
+    fn check_load_store(&mut self, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
+        let (_, op_eew) = op.access_params();
 
+        let (base_addr, provenance) = conn.get_addr_provenance(rs1)?;
 
+        let addr_base_step = match op_eew {
+            Sew::e8 => 1,
+            Sew::e16 => 2,
+            Sew::e32 => 4,
+            Sew::e64 => bail!("unsupported {:?} in vector load/store", op_eew),
+        };
+
+        // FAST PATH CHECKS
+
+        use DecodedMemOp::*;
+        match op {
+            Strided{dir, stride, evl, nf, ..} => {
+                // vm = true implies NOT masked 
+                if vm {
+                    let index_range = Range::<u64> {
+                        start: self.vstart as u64,
+                        end: (evl as u64) * (nf as u64)
+                    };
+                    let addr_range = Range::<u64> {
+                        start: base_addr + index_range.start * addr_base_step * stride,
+                        end: base_addr + index_range.end * addr_base_step * stride,
+                    };
+                    return conn.check_addr_range_against_provenance(addr_range, provenance, dir);
+                }
+            },
+            FaultOnlyFirst{evl, nf, ..} => {
+                if vm {
+                    let index_range = Range::<u64> {
+                        start: self.vstart as u64,
+                        end: (evl as u64) * (nf as u64)
+                    };
+                    let addr_range = Range::<u64> {
+                        start: base_addr + index_range.start * addr_base_step,
+                        end: base_addr + index_range.end * addr_base_step,
+                    };
+                    return conn.check_addr_range_against_provenance(addr_range, provenance, MemOpDir::Load);
+                }
+            },
+            WholeRegister{dir, nf, emul: _} => {
+                let vl = (nf as u32) * ((VLEN/8) as u32);
+                if vm {
+                    let index_range = Range::<u64> {
+                        start: self.vstart as u64,
+                        end: (vl as u64)
+                    };
+                    let addr_range = Range::<u64> {
+                        start: base_addr + index_range.start * 1,
+                        end: base_addr + index_range.end * 1,
+                    };
+                    return conn.check_addr_range_against_provenance(addr_range, provenance, dir);
+                }
+            }
+            ByteMask{dir, evl, emul: _} => {
+                if vm {
+                    let index_range = Range::<u64> {
+                        start: self.vstart as u64,
+                        end: (evl as u64)
+                    };
+                    let addr_range = Range::<u64> {
+                        start: base_addr + index_range.start * 1,
+                        end: base_addr + index_range.end * 1,
+                    };
+                    return conn.check_addr_range_against_provenance(addr_range, provenance, dir);
+                }
+            }
+            
+            _ => {}
+        };
+        println!("Couldn't do fast check for {:?}, vm: {}", op, vm);
+
+        // BRUTE FORCE CHECKS
+
+        match op {
+            Strided{dir, stride, evl, nf, eew, ..} => {
+                // i = element index in logical vector (which includes groups)
+                let mut addr = base_addr;
+                // For each segment
+                for i in self.vstart..evl {
+                    // For each field
+                    for _i_field in 0..nf {
+                        // If we aren't masked out...
+                        if !self.idx_masked_out(vm, i as usize) {
+                            // ... check
+                            let addr_p = (addr, provenance);
+                            conn.check_elem_bounds_against_provenance(eew, addr_p, dir)?;
+                        }
+                        // Either way increment the address
+                        addr += addr_base_step * stride;
+                    }
+                }
+            }
+            Indexed{dir, ordered: _, index_ew, evl, nf, eew, ..} => {
+                if index_ew != Sew::e32 {
+                    bail!("Indexed Load with index width != 32 not supported yet")
+                }
+                if nf > 1 {
+                    bail!("Indexed Load with NFIELDS != 1 ({}) not supported yet", nf);
+                }
+
+                // i = element index in logical vector (which includes groups)
+                for i in self.vstart..evl {
+                    // Get our index
+                    let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
+                    let addr = base_addr + addr_base_step * (idx as u64);
+
+                    // If we aren't masked out...
+                    if !self.idx_masked_out(vm, i as usize) {
+                        // ... check
+                        let addr_p = (addr, provenance);
+                        conn.check_elem_bounds_against_provenance(eew, addr_p, dir)?;
+                    }
+                }
+            }
+            FaultOnlyFirst{evl, nf, eew, ..} => {
+                // FaultOnlyFirst loads can be strided 
+                // (https://github.com/riscv/riscv-opcodes/blob/master/opcodes-rvv, non-zero NF is allowed)
+
+                let stride = 1;
+                // i = element index in logical vector (which includes groups)
+                let mut addr = base_addr;
+                // For each segment
+                'top_loop: for i in self.vstart..evl {
+                    // For each field
+                    for _i_field in 0..nf {
+                        // If we aren't masked out...
+                        if !self.idx_masked_out(vm, i as usize) {
+                            // ... check load
+                            let addr_p = (addr, provenance);
+                            let load_fault: Result<()> = conn.check_elem_bounds_against_provenance(eew, addr_p, MemOpDir::Load);
+                            
+                            if i == 0 {
+                                // Any potentially faulted load should fault as normal if i == 0
+                                load_fault?;
+                            } else if load_fault.is_err() {
+                                use crate::processor::exceptions::MemoryException;
+                                // There was *some* error from the load, check if it was a memory fault
+                                let load_err = load_fault.unwrap_err();
+                                // Only shrink the vlen if it's a MemError related to an invalid address
+                                let error_reduces_vlen = match load_err.downcast_ref::<MemoryException>() {
+                                    Some(MemoryException::AddressUnmapped{..}) => true,
+                                    _ => false
+                                };
+                                if error_reduces_vlen {
+                                    // "vector length vl is reduced to the index of the 
+                                    // element that would have raised an exception"
+                                    self.vl = i;
+                                    // error received, finish instruction
+                                    break 'top_loop;
+                                } else {
+                                    // Re-raise error
+                                    return Err(load_err)
+                                }
+                            }
+                        }
+                        // Either way increment the address
+                        addr += addr_base_step * stride;
+                    }
+                }
+            }
+            WholeRegister{dir, nf, emul: _} => {
+                let mut addr = base_addr;
+
+                let eew = Sew::e8;
+                let vl = (nf as u32) * ((VLEN/8) as u32);
+                let addr_base_step = 1;
+                // vstart is ignored, except for the vstart >= evl case above
+                // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
+                for _ in 0..vl {
+                    // We can't be masked out.
+                    // check addr
+                    let addr_p = (addr, provenance);
+                    conn.check_elem_bounds_against_provenance(eew, addr_p, dir)?;
+
+                    addr += addr_base_step;
+                }
+            }
+            ByteMask{dir, evl, emul: _} => {
+                if vm == false {
+                    // vlm, vsm cannot be masked out
+                    bail!("ByteMask operations cannot be masked")
+                }
+
+                let mut addr = base_addr;
+                for _ in self.vstart..evl {
+                    let addr_p = (addr, provenance);
+                    conn.check_elem_bounds_against_provenance(Sew::e8, addr_p, dir)?;
+
+                    // Increment the address
+                    addr += addr_base_step;
+                }
+            }
+        };
+        Ok(())
+    }
+
+    /// Execute a decoded memory access, assuming all access checks have already been performed.
     fn exec_load_store(&mut self, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
         use MemOpDir::*;
 
@@ -649,7 +850,8 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                     }
                 }
 
-                // TODO pre-check capability access
+                // Pre-check capability access
+                self.check_load_store(rs1, rs2, vm, op, conn)?;
 
                 self.exec_load_store(rd, rs1, rs2, vm, op, conn)
                     .context("Executing pre-checked vector access - shouldn't throw Cap/MemExceptions under any circumstances")?;

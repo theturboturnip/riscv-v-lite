@@ -62,14 +62,31 @@ impl CheriAggregateMemory {
     }
 
     fn check_capability<TData>(&self, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
+        self.check_obj_bounds_against_capability::<TData>(
+            cap.address(),
+            cap,
+            expected_perms
+        )
+    }
+    pub fn check_obj_bounds_against_capability<TData>(&self, addr: u64, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
         let size = std::mem::size_of::<TData>() as u64;
+        self.check_bounds_against_capability(
+            Range{
+                start: addr,
+                end: addr + size - 1
+            },
+            cap,
+            expected_perms
+        )
+    }
+    pub fn check_bounds_against_capability(&self, bounds: Range<u64>, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
         if !cap.tag() {
             bail!(CapabilityException::TagViolation{ cap: CapOrRegister::Cap(cap) })
         } else if cap.permissions() & expected_perms != expected_perms {
             bail!(CapabilityException::PermissionViolation{ cap: CapOrRegister::Cap(cap), perms: expected_perms })
-        } else if !cap_bounds_range(cap).contains(&cap.address()) 
-            || !cap_bounds_range(cap).contains(&(cap.address() + size - 1)) {
-            bail!(CapabilityException::BoundsViolation{ cap: CapOrRegister::Cap(cap), size: size as usize })
+        } else if !cap_bounds_range(cap).contains(&bounds.start) 
+            || !cap_bounds_range(cap).contains(&bounds.end) {
+            bail!(CapabilityException::BoundsViolation{ cap: CapOrRegister::Cap(cap), size: (bounds.end - bounds.start) as usize })
         } else if cap.is_sealed() {
             bail!(CapabilityException::SealViolation{ cap: CapOrRegister::Cap(cap) })
         } else {
