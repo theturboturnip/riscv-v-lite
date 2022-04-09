@@ -54,9 +54,9 @@ fn load_cheri_elf(elf_path: &str) -> Result<(u64, CheriAggregateMemory)> {
     let agg_mem = AggregateMemory64::from_mappings(vec![
         // Allocate 4KB for the program
         // Load in the code+data sections
-        Box::new(MemoryBacking::from_vec(code_data, 0x0..0x1000)),
+        Box::new(MemoryBacking::from_vec(code_data, 0x0..0x2000)),
         // Allocate ~96KB for RAM
-        Box::new(MemoryBacking::zeros(0x1000..0x25_000)),
+        Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
         // Add one I/O memory address, which expects 0x3FFF as a return value
         Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
     ]);
@@ -190,9 +190,9 @@ fn main() -> Result<()> {
                     // Create the memory map
                     let mem = AggregateMemory32::from_mappings(vec![
                         // Allocate 4KB for the program
-                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x1000)),
+                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
                         // Allocate ~96KB for RAM
-                        Box::new(MemoryBacking::zeros(0x1000..0x25_000)),
+                        Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
                         // Add one I/O memory address, which expects 0x3FFF as a return value
                         Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
                     ]);
@@ -204,9 +204,9 @@ fn main() -> Result<()> {
                     // Create the memory map
                     let mem = AggregateMemory64::from_mappings(vec![
                         // Allocate 4KB for the program
-                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x1000)),
+                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
                         // Allocate ~96KB for RAM
-                        Box::new(MemoryBacking::zeros(0x1000..0x25_000)),
+                        Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
                         // Add one I/O memory address, which expects 0x3FFF as a return value
                         Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
                     ]);
