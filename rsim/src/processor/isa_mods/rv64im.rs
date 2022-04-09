@@ -9,7 +9,6 @@ pub struct Rv64imConn<'a> {
     pub sreg: &'a mut dyn RegisterFile<u64>,
     pub memory: &'a mut dyn Memory64,
 }
-impl<'a> IsaModConn for Rv64imConn<'a> {}
 
 pub struct Rv64im {}
 impl IsaMod<Rv64imConn<'_>> for Rv64im {

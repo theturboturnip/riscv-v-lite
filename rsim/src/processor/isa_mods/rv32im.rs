@@ -9,7 +9,6 @@ pub struct Rv32imConn<'a> {
     pub sreg: &'a mut dyn RegisterFile<u32>,
     pub memory: &'a mut dyn Memory32,
 }
-impl<'a> IsaModConn for Rv32imConn<'a> {}
 
 pub struct Rv32im {}
 impl IsaMod<Rv32imConn<'_>> for Rv32im {

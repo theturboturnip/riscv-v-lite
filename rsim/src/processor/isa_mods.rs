@@ -8,8 +8,7 @@
 use crate::processor::exceptions::ProcessorResult;
 use crate::processor::decode::{Opcode, InstructionBits};
 
-pub trait IsaModConn: Sized {}
-pub trait IsaMod<TConn: IsaModConn> {
+pub trait IsaMod<TConn> {
     type Pc;
 
     /// Return true if this ISA module should handle the given instruction

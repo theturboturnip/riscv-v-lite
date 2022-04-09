@@ -9,7 +9,6 @@ pub struct XCheri64Conn<'a> {
     pub sreg: &'a mut CheriRV64RegisterFile,
     pub memory: &'a mut CheriAggregateMemory,
 }
-impl<'a> IsaModConn for XCheri64Conn<'a> {}
 
 pub struct XCheri64 {}
 impl XCheri64 {

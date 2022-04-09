@@ -50,7 +50,6 @@ impl<'a,T> ZicsrConn<'a,T> where T: From<u8> {
         self.csr_providers.iter_mut().find(|provider| provider.has_csr(csr))
     }
 }
-impl<'a,T> IsaModConn for ZicsrConn<'a,T> where T: From<u8> {}
 
 use crate::processor::isa_mods::Opcode::System;
 
