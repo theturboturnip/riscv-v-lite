@@ -268,6 +268,97 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
             unreachable!("vector::exec_config instruction MUST be InstructionBits::VType, got {:?} instead", inst);
         }
     }
+
+    /// Load a value of width `eew` from a given address `addr` 
+    /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
+    fn load_to_vreg(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+        let val = conn.load_from_memory(eew, addr_provenance)?;
+        self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
+        Ok(())
+    }
+    /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
+    /// vector register group starting at `vd_base` into a given address `addr` 
+    fn store_to_mem(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+        let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
+        conn.store_to_memory(eew, val, addr_provenance)?;
+        Ok(())
+    }
+
+    /// Store a value in an element in a vertex register group, with specified EEW.
+    /// Requires the type of the value to store matches the EEW.
+    /// 
+    /// Example: if EEW=32bits, VLEN=128bits (4 32-bit elements per register), `vd_base` = 3, `idx_from_base` = 5,
+    /// the actual `vd` = 3 + (idx_from_base / 4) = 4, and
+    /// the actual `idx` = idx_from_base % 4 = 1.
+    /// This would store `val` into v4\[64:32\] (element 1 of v4)
+    fn store_vreg_elem(&mut self, eew: Sew, vd_base: u8, idx_from_base: u32, val: uELEN) -> Result<()> {
+        let (elem_width_mask, elem_width) : (uELEN, u32) = match eew {
+            Sew::e8  => (0xFF, 8),
+            Sew::e16 => (0xFFFF, 16),
+            Sew::e32 => (0xFFFF_FFFF, 32),
+            Sew::e64 => bail!("64-bit vreg elem unsupported")
+        };
+        // Assert the value doesn't have more data
+        assert_eq!(val & (!elem_width_mask), 0);
+
+        // TODO refactor to use shifting
+        let elems_per_v: u32 = (VLEN as u32)/elem_width;
+        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
+            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
+        let idx = idx_from_base % elems_per_v;
+
+        // Get the previous value for the vector
+        let old_value = self.vreg[vd as usize];
+        // Mask off the element we want to write
+        let mask = (elem_width_mask as uVLEN) << (elem_width*idx);
+        let old_value_with_element_removed = old_value & (!mask);
+        // Create a uVLEN value with just the new element, shifted into the right place
+        let new_element_shifted = (val as uVLEN) << (elem_width*idx);
+        // Combine (old value sans element) with (new element)
+        let new_value = old_value_with_element_removed | new_element_shifted;
+
+        self.vreg[vd as usize] = new_value;
+
+        Ok(())
+    }
+
+    /// Load a value from an element in a vertex register group, with specified EEW
+    /// Requires the type of the value to store matches the EEW.
+    /// 
+    /// Example: if EEW=32bits, VLEN=128bits (4 32-bit elements per register), `vd` = 3, `idx` = 5,
+    /// the actual `vd` = 3 + (idx_from_base / 4) = 4, and
+    /// the actual `idx` = idx_from_base % 4 = 1.
+    /// this would return v4\[64:32\] (element 1 of v4)
+    fn load_vreg_elem(&self, eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<uELEN> {
+        let (elem_width_mask, elem_width) : (uELEN, u32) = match eew {
+            Sew::e8  => (0xFF, 8),
+            Sew::e16 => (0xFFFF, 16),
+            Sew::e32 => (0xFFFF_FFFF, 32),
+            Sew::e64 => bail!("64-bit vreg elem unsupported")
+        };
+
+        // TODO refactor to use shifting
+        let elems_per_v: u32 = (VLEN as u32)/elem_width;
+        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
+            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
+        let idx = idx_from_base % elems_per_v;
+
+        let full_reg = self.vreg[vd as usize];
+        // Shift the register down so the new element is at the bottom,
+        // and mask off the other elements
+        let individual_elem = (full_reg >> (elem_width*idx)) & (elem_width_mask as uVLEN);
+
+        // Convert the element to the expected type and return
+        Ok(individual_elem as uELEN)
+    }
+
+    /// Dump vector unit state to standard output.
+    pub fn dump(&self) {
+        for i in 0..32 {
+            println!("v{} = 0x{:032x}", i, self.vreg[i]);
+        }
+        println!("vl: {}\nvtype: {:?}", self.vl, self.vtype);
+    }
 }
 
 impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN> {
@@ -696,21 +787,6 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
 }
 
 impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
-    /// Load a value of width `eew` from a given address `addr` 
-    /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
-    fn load_to_vreg(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
-        let val = conn.load_from_memory(eew, addr_provenance)?;
-        self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
-        Ok(())
-    }
-    /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
-    /// vector register group starting at `vd_base` into a given address `addr` 
-    fn store_to_mem(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
-        let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
-        conn.store_to_memory(eew, val, addr_provenance)?;
-        Ok(())
-    }
-
     /// Returns true if the mask is enabled and element `i` has been masked *out*, e.g. that it should not be touched.
     fn idx_masked_out(&self, vm: bool, i: usize) -> bool {
         // vm == 1 for mask disabled, 0 for mask enabled
@@ -890,82 +966,6 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
         } else {
             bail!("decode_load_store MUST be passed an instruction of FLdStType, got {:?}", inst)
         }
-    }
-
-    /// Store a value in an element in a vertex register group, with specified EEW.
-    /// Requires the type of the value to store matches the EEW.
-    /// 
-    /// Example: if EEW=32bits, VLEN=128bits (4 32-bit elements per register), `vd_base` = 3, `idx_from_base` = 5,
-    /// the actual `vd` = 3 + (idx_from_base / 4) = 4, and
-    /// the actual `idx` = idx_from_base % 4 = 1.
-    /// This would store `val` into v4\[64:32\] (element 1 of v4)
-    fn store_vreg_elem(&mut self, eew: Sew, vd_base: u8, idx_from_base: u32, val: uELEN) -> Result<()> {
-        let (elem_width_mask, elem_width) : (uELEN, u32) = match eew {
-            Sew::e8  => (0xFF, 8),
-            Sew::e16 => (0xFFFF, 16),
-            Sew::e32 => (0xFFFF_FFFF, 32),
-            Sew::e64 => bail!("64-bit vreg elem unsupported")
-        };
-        // Assert the value doesn't have more data
-        assert_eq!(val & (!elem_width_mask), 0);
-
-        // TODO refactor to use shifting
-        let elems_per_v: u32 = (VLEN as u32)/elem_width;
-        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
-            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
-        let idx = idx_from_base % elems_per_v;
-
-        // Get the previous value for the vector
-        let old_value = self.vreg[vd as usize];
-        // Mask off the element we want to write
-        let mask = (elem_width_mask as uVLEN) << (elem_width*idx);
-        let old_value_with_element_removed = old_value & (!mask);
-        // Create a uVLEN value with just the new element, shifted into the right place
-        let new_element_shifted = (val as uVLEN) << (elem_width*idx);
-        // Combine (old value sans element) with (new element)
-        let new_value = old_value_with_element_removed | new_element_shifted;
-
-        self.vreg[vd as usize] = new_value;
-
-        Ok(())
-    }
-
-    /// Load a value from an element in a vertex register group, with specified EEW
-    /// Requires the type of the value to store matches the EEW.
-    /// 
-    /// Example: if EEW=32bits, VLEN=128bits (4 32-bit elements per register), `vd` = 3, `idx` = 5,
-    /// the actual `vd` = 3 + (idx_from_base / 4) = 4, and
-    /// the actual `idx` = idx_from_base % 4 = 1.
-    /// this would return v4\[64:32\] (element 1 of v4)
-    fn load_vreg_elem(&self, eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<uELEN> {
-        let (elem_width_mask, elem_width) : (uELEN, u32) = match eew {
-            Sew::e8  => (0xFF, 8),
-            Sew::e16 => (0xFFFF, 16),
-            Sew::e32 => (0xFFFF_FFFF, 32),
-            Sew::e64 => bail!("64-bit vreg elem unsupported")
-        };
-
-        // TODO refactor to use shifting
-        let elems_per_v: u32 = (VLEN as u32)/elem_width;
-        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
-            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
-        let idx = idx_from_base % elems_per_v;
-
-        let full_reg = self.vreg[vd as usize];
-        // Shift the register down so the new element is at the bottom,
-        // and mask off the other elements
-        let individual_elem = (full_reg >> (elem_width*idx)) & (elem_width_mask as uVLEN);
-
-        // Convert the element to the expected type and return
-        Ok(individual_elem as uELEN)
-    }
-
-    /// Dump vector unit state to standard output.
-    pub fn dump(&self) {
-        for i in 0..32 {
-            println!("v{} = 0x{:032x}", i, self.vreg[i]);
-        }
-        println!("vl: {}\nvtype: {:?}", self.vl, self.vtype);
     }
 }
 
