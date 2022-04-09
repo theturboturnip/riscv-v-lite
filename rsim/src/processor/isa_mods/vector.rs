@@ -457,6 +457,12 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
         Ok(individual_elem as uELEN)
     }
 
+    /// Returns true if the mask is enabled and element `i` has been masked *out*, e.g. that it should not be touched.
+    fn idx_masked_out(&self, vm: bool, i: usize) -> bool {
+        // vm == 1 for mask disabled, 0 for mask enabled
+        (!vm) && (bits!(self.vreg[0], i:i) == 0)
+    }
+
     /// Dump vector unit state to standard output.
     pub fn dump(&self) {
         for i in 0..32 {
@@ -657,14 +663,6 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
         self.vstart = 0;
 
         Ok(None)
-    }
-}
-
-impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
-    /// Returns true if the mask is enabled and element `i` has been masked *out*, e.g. that it should not be touched.
-    fn idx_masked_out(&self, vm: bool, i: usize) -> bool {
-        // vm == 1 for mask disabled, 0 for mask enabled
-        (!vm) && (bits!(self.vreg[0], i:i) == 0)
     }
 }
 
