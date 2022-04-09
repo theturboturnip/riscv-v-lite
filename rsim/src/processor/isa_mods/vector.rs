@@ -22,7 +22,7 @@ use types::*;
 /// Stores all vector state, including registers.
 /// Call [Rv32v::exec_inst()] on it when you encounter a vector instruction.
 /// This requires a [VecMemInterface<uXLEN>] to access other resources.
-pub struct Rv32v<uXLEN: PossibleXlen> {
+pub struct Rvv<uXLEN: PossibleXlen> {
     // TODO use a RegisterFile for this?
     vreg: [uVLEN; 32],
 
@@ -40,6 +40,8 @@ pub struct Rv32v<uXLEN: PossibleXlen> {
 
     _phantom_xlen: PhantomData<uXLEN>,
 }
+pub type Rv32v = Rvv<u32>;
+pub type Rv64v = Rvv<u64>;
 
 /// References to all scalar resources touched by the vector unit.
 pub struct Rv32vConn<'a> {
@@ -47,7 +49,7 @@ pub struct Rv32vConn<'a> {
     pub memory: &'a mut dyn Memory32,
 }
 
-pub struct Rv32vCheriConn<'a> {
+pub struct Rv64vCheriConn<'a> {
     pub sreg: &'a mut CheriRV64RegisterFile,
     pub memory: &'a mut CheriAggregateMemory,
 }
@@ -107,7 +109,7 @@ impl<'a> VecMemInterface<u32> for Rv32vConn<'a> {
         Ok(())
     }
 }
-impl<'a> VecMemInterface<u64> for Rv32vCheriConn<'a> {
+impl<'a> VecMemInterface<u64> for Rv64vCheriConn<'a> {
     fn sreg_read_xlen(&mut self, reg: u8) -> Result<u64> {
         Ok(self.sreg.read(reg)?)
     }
@@ -156,10 +158,10 @@ impl<'a> VecMemInterface<u64> for Rv32vCheriConn<'a> {
 }
 
 
-impl<uXLEN: PossibleXlen> Rv32v<uXLEN> {
+impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     /// Returns an initialized vector unit.
     pub fn new() -> Self {
-        Rv32v {
+        Rvv {
             vreg: [0; 32],
 
             vtype: VType::illegal(),
@@ -268,7 +270,7 @@ impl<uXLEN: PossibleXlen> Rv32v<uXLEN> {
     }
 }
 
-impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rv32v<uXLEN> {
+impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN> {
     type Pc = ();
     fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
         use crate::processor::decode::Opcode::*;
@@ -693,7 +695,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rv32v<uXLE
     }
 }
 
-impl<uXLEN: PossibleXlen> Rv32v<uXLEN> {
+impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
     fn load_to_vreg(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
@@ -967,7 +969,7 @@ impl<uXLEN: PossibleXlen> Rv32v<uXLEN> {
     }
 }
 
-impl<uXLEN: PossibleXlen> CSRProvider<u32> for Rv32v<uXLEN> {
+impl<uXLEN: PossibleXlen> CSRProvider<u32> for Rvv<uXLEN> {
     fn has_csr(&self, csr: u32) -> bool {
         match csr {
             // Should be implemented, aren't yet

@@ -8,7 +8,7 @@ use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::registers::{RegisterTracking};
 use crate::processor::elements::cheri::{Cc128Cap,CheriRV64RegisterFile,CheriAggregateMemory};
-use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv32v, Rv32vCheriConn, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64v, Rv64vCheriConn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
@@ -26,7 +26,7 @@ pub struct Rv64imvXCheriProcessor {
 pub struct Rv64imvXCheriProcessorModules {
     rv64im: Rv64im,
     xcheri: XCheri64,
-    rvv: Rv32v<u64>,
+    rvv: Rv64v,
     zicsr: Option<Zicsr64>
 }
 
@@ -73,7 +73,7 @@ impl Rv64imvXCheriProcessor {
         let mut mods = Rv64imvXCheriProcessorModules {
             rv64im: Rv64im{},
             xcheri: XCheri64{},
-            rvv: Rv32v::<u64>::new(),
+            rvv: Rv64v::new(),
             zicsr: Some(Zicsr64::default())
         };
 
@@ -90,8 +90,8 @@ impl Rv64imvXCheriProcessor {
         }
     }
 
-    fn rvv_conn<'a,'b>(&'a mut self) -> Rv32vCheriConn<'b> where 'a: 'b {
-        Rv32vCheriConn {
+    fn rvv_conn<'a,'b>(&'a mut self) -> Rv64vCheriConn<'b> where 'a: 'b {
+        Rv64vCheriConn {
             sreg: &mut self.sreg,
             memory: &mut self.memory,
         }
