@@ -294,8 +294,7 @@ void vector_memcpy_32mf2(size_t n, const int32_t* __restrict__ in, int32_t* __re
         copied_per_iter = vsetvl_e32mf2(n);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
-        vint32mf2_t data = VEC_INTRIN(vle32_v_i32mf2)(in, copied_per_iter);
-        VEC_INTRIN(vse32_v_i32mf2)(out, data, copied_per_iter);
+        VEC_INTRIN(vse32_v_i32mf2)(out, VEC_INTRIN(vle32_v_i32mf2)(in, copied_per_iter), copied_per_iter);
 
         in += copied_per_iter;
         out += copied_per_iter;
@@ -313,8 +312,7 @@ void vector_memcpy_8m8(size_t n, const int32_t* __restrict__ in, int32_t* __rest
         copied_per_iter = vsetvl_e8m8(n*4);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
-        vint8m8_t data = VEC_INTRIN(vle8_v_i8m8)(in, copied_per_iter);
-        VEC_INTRIN(vse8_v_i8m8)(out, data, copied_per_iter);
+        VEC_INTRIN(vse8_v_i8m8)(out, VEC_INTRIN(vle8_v_i8m8)(in, copied_per_iter), copied_per_iter);
 
         in += (copied_per_iter/4);
         out += (copied_per_iter/4);
@@ -331,8 +329,7 @@ void vector_memcpy_16m8(size_t n, const int32_t* __restrict__ in, int32_t* __res
         copied_per_iter = vsetvl_e16m8(n*2);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
-        vint16m8_t data = VEC_INTRIN(vle16_v_i16m8)(in, copied_per_iter);
-        VEC_INTRIN(vse16_v_i16m8)(out, data, copied_per_iter);
+        VEC_INTRIN(vse16_v_i16m8)(out, VEC_INTRIN(vle16_v_i16m8)(in, copied_per_iter), copied_per_iter);
 
         in += (copied_per_iter/2);
         out += (copied_per_iter/2);
@@ -348,8 +345,7 @@ void vector_memcpy_32m8(size_t n, const int32_t* __restrict__ in, int32_t* __res
         copied_per_iter = vsetvl_e32m8(n);
         // copied_per_iter is included in the intrinsic, not because it changes the actual instruction,
         // but if you wanted to change it it would do vsetvl to set architectural state
-        vint32m8_t data = VEC_INTRIN(vle32_v_i32m8)(in, copied_per_iter);
-        VEC_INTRIN(vse32_v_i32m8)(out, data, copied_per_iter);
+        VEC_INTRIN(vse32_v_i32m8)(out, VEC_INTRIN(vle32_v_i32m8)(in, copied_per_iter), copied_per_iter);
 
         in += copied_per_iter;
         out += copied_per_iter;

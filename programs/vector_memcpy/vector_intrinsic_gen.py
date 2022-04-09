@@ -23,6 +23,9 @@ class Lmul(Enum):
     e4 = 5
     e8 = 6
 
+    def get_num_regs_times_8(self) -> int:
+        return 1 << (self.value)
+
     def get_code(x: 'Lmul') -> str:
         return {
             Lmul.eEighth: "mf8",
@@ -69,25 +72,32 @@ class VType:
 
 PREFIX="cheri_"
 
-def generate_load(data_type: str, name: str, instr: str):
+def pick_vector_reg(vtype: VType) -> int:
+    # When we do a load/store of LMUL registers, we should be careful which register we use.
+    # We don't want to overwrite v0, because that could have a mask
+    # If LMUL is integral (i.e. 1,2,4,8), the chosen register needs to be a multiple of LMUL
+    # => for LMUL < 1, pick 1, otherwise pick LMUL
+    return max(1, vtype.lmul.get_num_regs_times_8() // 8)
+
+
+def generate_load(vtype: VType, data_type: str, name: str, instr: str):
     return f'''
-{data_type} {PREFIX}{name}(const void* ptr, size_t vlen) {{
-    {data_type} data;
+int {PREFIX}{name}(const void* ptr, size_t vlen) {{
     asm volatile(
-        "{instr} %0, (ca0)"
-        : "=vr"(data) // Vector register output
-        : // no extra input (we specify ca0 directly)
+        "{instr} v{pick_vector_reg(vtype)}, (ca0)"
+        : // we specify output register directly - passing vectors thru the stack doesn't work with CHERI
+        : "m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
     );
-    return data;
+    return 0;
 }}
 '''
-def generate_store(data_type: str, name: str, instr: str):
+def generate_store(vtype: VType, data_type: str, name: str, instr: str):
     return f'''
-void {PREFIX}{name}(void* ptr, {data_type} data, size_t vlen) {{
+void {PREFIX}{name}(void* ptr, int fake_data, size_t vlen) {{
     asm volatile(
-        "{instr} %0, (ca0)"
-        : // no output (we specify ca0 directly)
-        : "vr"(data) // input = vector register
+        "{instr} v{pick_vector_reg(vtype)}, (ca0)"
+        : "=m"(ptr) // use (ptr) to establish a dependency, but don't use it in the template
+        : // we specify input register directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
 }}
@@ -137,10 +147,10 @@ def generate_unit_intrinsics() -> str:
         vtype_unit_load_instr = f"vle{vtype.sew.value}.v"
         vtype_unit_store_instr = f"vse{vtype.sew.value}.v"
 
-        instrinsics += generate_load(vtype.get_unsigned_type(), vtype_unit_uload, vtype_unit_load_instr)
-        instrinsics += generate_store(vtype.get_unsigned_type(), vtype_unit_ustore, vtype_unit_store_instr)
-        instrinsics += generate_load(vtype.get_signed_type(), vtype_unit_iload, vtype_unit_load_instr)
-        instrinsics += generate_store(vtype.get_signed_type(), vtype_unit_istore, vtype_unit_store_instr)
+        instrinsics += generate_load(vtype, vtype.get_unsigned_type(), vtype_unit_uload, vtype_unit_load_instr)
+        instrinsics += generate_store(vtype, vtype.get_unsigned_type(), vtype_unit_ustore, vtype_unit_store_instr)
+        instrinsics += generate_load(vtype, vtype.get_signed_type(), vtype_unit_iload, vtype_unit_load_instr)
+        instrinsics += generate_store(vtype, vtype.get_signed_type(), vtype_unit_istore, vtype_unit_store_instr)
 
     return instrinsics
 

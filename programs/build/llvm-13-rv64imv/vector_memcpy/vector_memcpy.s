@@ -379,29 +379,28 @@ vector_memcpy_32m1_wholereg:
 	.p2align	2
 	.type	vector_memcpy_32m8_faultonlyfirst,@function
 vector_memcpy_32m8_faultonlyfirst:
-	beqz	a0, .LBB11_5
-	addi	a3, zero, 15
-	slli	a6, a3, 28
-	lui	a4, 65793
-	addiw	a4, a4, 16
-	j	.LBB11_3
-.LBB11_2:
-	vsetvli	zero, a5, e32, m8, ta, mu
-	vse32.v	v8, (a2)
-	slli	a3, a5, 2
-	add	a1, a1, a3
-	sub	a0, a0, a5
-	add	a2, a2, a3
-	beqz	a0, .LBB11_5
-.LBB11_3:
-	vsetvli	a5, a0, e32, m8, ta, mu
-	vle32ff.v	v8, (a1)
-	csrr	a3, vl
-	beq	a3, a5, .LBB11_2
-	sw	a4, 0(a6)
-	j	.LBB11_2
-.LBB11_5:
+	bnez	a0, .LBB11_3
+.LBB11_1:
 	ret
+.LBB11_2:
+	xor	a4, a4, a3
+	seqz	a4, a4
+	sub	a0, a0, a3
+	xori	a3, a4, 1
+	seqz	a4, a0
+	or	a3, a3, a4
+	bnez	a3, .LBB11_1
+.LBB11_3:
+	vsetvli	a3, a0, e32, m8, ta, mu
+	vle32ff.v	v8, (a1)
+	csrr	a4, vl
+	bne	a4, a3, .LBB11_2
+	vsetvli	zero, a3, e32, m8, ta, mu
+	vse32.v	v8, (a2)
+	slli	a5, a3, 2
+	add	a1, a1, a5
+	add	a2, a2, a5
+	j	.LBB11_2
 .Lfunc_end11:
 	.size	vector_memcpy_32m8_faultonlyfirst, .Lfunc_end11-vector_memcpy_32m8_faultonlyfirst
 

@@ -382,28 +382,28 @@ vector_memcpy_32m1_wholereg:
 	.p2align	2
 	.type	vector_memcpy_32m8_faultonlyfirst,@function
 vector_memcpy_32m8_faultonlyfirst:
-	beqz	a0, .LBB11_5
-	lui	a3, 65793
-	addi	a3, a3, 16
-	lui	a6, 983040
-	j	.LBB11_3
+	bnez	a0, .LBB11_3
+.LBB11_1:
+	ret
 .LBB11_2:
-	vsetvli	zero, a5, e32, m8, ta, mu
-	vse32.v	v8, (a2)
-	slli	a4, a5, 2
-	add	a1, a1, a4
-	sub	a0, a0, a5
-	add	a2, a2, a4
-	beqz	a0, .LBB11_5
+	xor	a4, a4, a3
+	seqz	a4, a4
+	sub	a0, a0, a3
+	xori	a3, a4, 1
+	seqz	a4, a0
+	or	a3, a3, a4
+	bnez	a3, .LBB11_1
 .LBB11_3:
-	vsetvli	a5, a0, e32, m8, ta, mu
+	vsetvli	a3, a0, e32, m8, ta, mu
 	vle32ff.v	v8, (a1)
 	csrr	a4, vl
-	beq	a4, a5, .LBB11_2
-	sw	a3, 0(a6)
+	bne	a4, a3, .LBB11_2
+	vsetvli	zero, a3, e32, m8, ta, mu
+	vse32.v	v8, (a2)
+	slli	a5, a3, 2
+	add	a1, a1, a5
+	add	a2, a2, a5
 	j	.LBB11_2
-.LBB11_5:
-	ret
 .Lfunc_end11:
 	.size	vector_memcpy_32m8_faultonlyfirst, .Lfunc_end11-vector_memcpy_32m8_faultonlyfirst
 

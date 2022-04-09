@@ -7,6 +7,13 @@ add_executable(vector_memcpy ${INIT_S} vector_memcpy.c vec_wrappers.h)
 set_target_properties(vector_memcpy PROPERTIES LINK_DEPENDS ${LINK_LD})
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${LINK_LD} -nostdlib")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -fno-inline-functions -ffreestanding -Werror=implicit-function-declaration")
+# If you ever try to store vector values on the stack, it will cause problems in the cheri stack bounds processor
+# because vectors are variable-size. This is not currently required, but notes have been kept for future reference.
+# I tried disabling it with this argument, but that doesn't appear to be exposed to clang.
+# If absolutely necessary, recompile clang after changing the default in llvm/lib/CodeGen/CheriBoundAllocas.cpp to Never.
+# if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "xcheri")
+#     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -cheri-stack-bounds=never")
+# endif()
 
 # generate an assembly version of the vector_memcpy.c file
 # slight hack - CMake represents CMAKE_C_FLAGS as a string, but to pass the individual flags to the compiler we need them as a list.
