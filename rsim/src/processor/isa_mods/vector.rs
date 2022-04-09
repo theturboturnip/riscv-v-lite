@@ -12,10 +12,13 @@ use crate::processor::decode::{Opcode,InstructionBits};
 
 mod types;
 use types::*;
+
 mod conns;
 use conns::*;
 pub use conns::{Rv32vConn,Rv64vCheriConn};
 
+mod decode;
+use decode::*;
 
 /// The Vector Unit for the processor.
 /// Stores all vector state, including registers.
