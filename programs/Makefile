@@ -32,6 +32,7 @@ $(BUILD)/%/.cmakestamp: TC-%.cmake $(ALL_PROGRAMS_CMAKELISTS)
 	@# Tell CMake to create the build system for a specific toolchain.
 	@# If it fails, don't worry - maybe the user doesn't have this specific toolchain installed, and should still try the others
 	@# cmakestamp will only be generated if the toolchain succeeds.
+	@echo "Running cmake for $*"
 	- (cd $(BUILD)/$* && cmake -DCMAKE_TOOLCHAIN_FILE=../../TC-$*.cmake ../../ && touch .cmakestamp)
 
 # Prevent Make from removing cmakestamps automatically
@@ -42,6 +43,7 @@ $(BUILD)/%/.cmakestamp: TC-%.cmake $(ALL_PROGRAMS_CMAKELISTS)
 $(BUILD)/%/.execstamp: $(BUILD)/%/.cmakestamp $(ALL_PROGRAMS_SOURCES) TC-%.cmake $(ALL_PROGRAMS_CMAKELISTS)
 	@# Go to the build directory, check that .cmakestamp exists, then invoke the build system
 	@# (if the toolchain failed, .cmakestamp won't have been generated.)
+	@echo "Building for $*"
 	@cd $(BUILD)/$* && [ -f .cmakestamp ] \
 		&& (cmake --build . -- --no-print-directory && touch .execstamp) \
 		|| echo ".cmakestamp not found for $*, toolchain must have failed. not building..."

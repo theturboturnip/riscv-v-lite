@@ -1016,11 +1016,13 @@ vector_memcpy_harness:
 	csc	cs3, 1040(csp)
 	cmove	cs2, ca0
 	cincoffset	ca0, csp, 528
+	csetbounds	cs1, ca0, 512
 	addi	a2, zero, 512
-	cincoffset	cs0, csp, 528
+	cmove	ca0, cs1
 	mv	a1, zero
 	ccall	memset
 	cincoffset	ca0, csp, 16
+	csetbounds	ca0, ca0, 512
 	addi	a2, zero, 512
 	mv	a1, zero
 	ccall	memset
@@ -1028,23 +1030,25 @@ vector_memcpy_harness:
 	addi	a1, zero, 128
 .LBB77_1:
 	slli	a2, a0, 2
-	cincoffset	ca2, cs0, a2
+	cincoffset	ca2, cs1, a2
 	csw	a0, 0(ca2)
 	addi	a0, a0, 1
 	bne	a0, a1, .LBB77_1
-	addi	s3, zero, 103
-	cincoffset	cs0, csp, 528
+	cincoffset	ca0, csp, 528
+	csetbounds	cs1, ca0, 512
+	cincoffset	ca0, csp, 16
+	csetbounds	cs0, ca0, 512
 	addi	a0, zero, 103
-	cincoffset	ca1, csp, 528
-	cincoffset	ca2, csp, 16
-	cincoffset	cs1, csp, 16
+	addi	s3, zero, 103
+	cmove	ca1, cs1
+	cmove	ca2, cs0
 	cjalr	cs2
 	mv	a0, zero
 .LBB77_3:
 	slli	a1, a0, 2
-	cincoffset	ca2, cs0, a1
+	cincoffset	ca2, cs1, a1
 	clw	a2, 0(ca2)
-	cincoffset	ca1, cs1, a1
+	cincoffset	ca1, cs0, a1
 	clw	a1, 0(ca1)
 	bne	a2, a1, .LBB77_10
 	addi	a0, a0, 1
@@ -1052,20 +1056,21 @@ vector_memcpy_harness:
 	clw	a1, 428(csp)
 	mv	a0, zero
 	bnez	a1, .LBB77_11
-	addi	a3, zero, 103
+	addi	a2, zero, 103
 	addi	a0, zero, 127
 	cincoffset	ca1, csp, 16
+	csetbounds	ca1, ca1, 512
 .LBB77_7:
-	mv	a2, a3
-	beq	a3, a0, .LBB77_9
-	addi	a3, a2, 1
-	slli	a4, a3, 2
+	mv	a3, a2
+	beq	a2, a0, .LBB77_9
+	addi	a2, a3, 1
+	slli	a4, a2, 2
 	cincoffset	ca4, ca1, a4
 	clw	a4, 0(ca4)
 	beqz	a4, .LBB77_7
 .LBB77_9:
 	addi	a0, zero, 126
-	sltu	a0, a0, a2
+	sltu	a0, a0, a3
 	j	.LBB77_11
 .LBB77_10:
 	mv	a0, zero
@@ -1122,7 +1127,7 @@ main:
 .Lfunc_end78:
 	.size	main, .Lfunc_end78-main
 
-	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project 7db8166e318b1545c939e478a83c2ba14973df19)"
+	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 7db8166e318b1545c939e478a83c2ba14973df19)"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
 	.addrsig_sym vector_memcpy_32mf2

@@ -35,7 +35,10 @@
     #define ENABLE_MASKED 0
     #define ENABLE_STRIDED 0
     #define ENABLE_FAULTONLYFIRST 0
+    
+    // This *should* work but LLVM complains about "invalid operand for instruction"
     #define ENABLE_ASM_WHOLEREG 0
+    
     #define ENABLE_SEG 0
     #define ENABLE_FRAC 1
     #else
@@ -364,26 +367,35 @@ void vector_memcpy_32m1_wholereg(size_t n, const int32_t* __restrict__ in, int32
     for (; n > 0; n -= copied_per_iter) {
         copied_per_iter = vsetvl_e32m1(n);
 
-        vint32m1_t data;
-
         if (copied_per_iter == vlmax) {
             // wholereg loads do not have intrinsics, use inline assembly instead
             // By creating the `data' variable beforehand, we can have the compiler
             // allocate registers for us.
+            vint32m1_t data;
+            #if __has_feature(capabilities)
+            asm volatile(
+                "vl1r.v %0, (%1)" 
+                : "=vr"(data) // output, '=' -> overwrite old value, 'v' -> vector, 'r' -> register
+                : "C"(in)     // input, 'r' -> register
+            );
+            asm volatile(
+                "vs1r.v %0, (%1)" 
+                :: "vr"(data), "C"(out)
+            );
+            #else
             asm volatile(
                 "vl1r.v %0, (%1)" 
                 : "=vr"(data) // output, '=' -> overwrite old value, 'v' -> vector, 'r' -> register
                 : "r"(in)     // input, 'r' -> register
             );
             asm volatile(
-                "vs1r.v %1, (%0)" 
-                : "+r"(out)   // output, '+' -> don't overwrite
-                : "vr"(data)
+                "vs1r.v %0, (%1)" 
+                :: "vr"(data), "r"(out)
             );
+            #endif
 
         } else {
-            data = vle32_v_i32m1(in, copied_per_iter);
-            vse32_v_i32m1(out, data, copied_per_iter);
+            VEC_INTRIN(vse32_v_i32m1)(out, VEC_INTRIN(vle32_v_i32m1)(in, copied_per_iter), copied_per_iter);
         }
 
         in += copied_per_iter;
