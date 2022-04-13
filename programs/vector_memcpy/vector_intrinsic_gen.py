@@ -126,6 +126,21 @@ void {PREFIX}{name}(void* ptr, ptrdiff_t stride, int fake_data, size_t vlen) {{
 }}
 '''
 
+def generate_fof_load(vtype: VType, data_type: str, name: str, instr: str):
+    return f'''
+int {PREFIX}{name}(const void* ptr, size_t* new_vlen, size_t vlen) {{
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "{instr} v{pick_vector_reg(vtype)}, (%1)\\n\\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}}
+'''
+
 PREAMBLE=f"""#ifndef CHERI_VECTOR_WRAPPERS
 #define CHERI_VECTOR_WRAPPERS
 #include <stdint.h>
@@ -139,8 +154,10 @@ PREAMBLE=f"""#ifndef CHERI_VECTOR_WRAPPERS
 // Define VEC_INTRIN(i) which calls the CHERI version if available
 #if __has_feature(capabilities)
 #define VEC_INTRIN(i) {PREFIX} ## i
+#define VEC_TYPE(T) int
 #else
 #define VEC_INTRIN(i) i
+#define VEC_TYPE(T) T
 #endif // __has_feature(capabilities)
 
 // Only generate CHERI versions if we're in CHERI
@@ -186,8 +203,26 @@ def generate_strided_intrinsics() -> str:
 
     return intrinsics
 
+def generate_fof_intrinsics() -> str:
+    intrinsics = ""
+    for vtype in VType.iterate():
+        vtype_fof_uload = f"vle{vtype.sew.value}ff_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_fof_iload = f"vle{vtype.sew.value}ff_v_i{vtype.sew.value}{vtype.lmul.get_code()}"
+        
+        vtype_fof_load_instr = f"vle{vtype.sew.value}ff.v"
+
+        intrinsics += generate_fof_load(vtype, vtype.get_unsigned_type(), vtype_fof_uload, vtype_fof_load_instr)
+        intrinsics += generate_fof_load(vtype, vtype.get_signed_type(), vtype_fof_iload, vtype_fof_load_instr)
+
+    return intrinsics
+
 def generate_intrinsics() -> str:
-    return PREAMBLE + generate_unit_intrinsics() + generate_strided_intrinsics() + POSTAMBLE
+    return (PREAMBLE + 
+        generate_unit_intrinsics() +
+        generate_strided_intrinsics() +
+        generate_fof_intrinsics() +
+        POSTAMBLE
+    )
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("vector_intrinsic_gen", description="Generator for CHERI-compatible vector intrinsics")

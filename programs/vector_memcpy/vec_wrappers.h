@@ -11,8 +11,10 @@
 // Define VEC_INTRIN(i) which calls the CHERI version if available
 #if __has_feature(capabilities)
 #define VEC_INTRIN(i) cheri_ ## i
+#define VEC_TYPE(T) int
 #else
 #define VEC_INTRIN(i) i
+#define VEC_TYPE(T) T
 #endif // __has_feature(capabilities)
 
 // Only generate CHERI versions if we're in CHERI
@@ -1312,6 +1314,438 @@ void cheri_vsse32_v_i32m8(void* ptr, ptrdiff_t stride, int fake_data, size_t vle
         : "C"(ptr), "r"(stride) // input vector register specified directly - passing vectors thru the stack doesn't work with CHERI
         : "memory"
     );
+}
+
+int cheri_vle8ff_v_u8mf8(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_i8mf8(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_u8mf4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_i8mf4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_u16mf4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_i16mf4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_u8mf2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_i8mf2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_u16mf2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_i16mf2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_u32mf2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_i32mf2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_u8m1(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_i8m1(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_u16m1(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_i16m1(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_u32m1(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_i32m1(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v1, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_u8m2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v2, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_i8m2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v2, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_u16m2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v2, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_i16m2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v2, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_u32m2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v2, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_i32m2(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v2, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_u8m4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v4, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_i8m4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v4, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_u16m4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v4, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_i16m4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v4, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_u32m4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v4, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_i32m4(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v4, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_u8m8(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v8, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle8ff_v_i8m8(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle8ff.v v8, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_u16m8(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v8, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle16ff_v_i16m8(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle16ff.v v8, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_u32m8(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v8, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
+}
+
+int cheri_vle32ff_v_i32m8(const void* ptr, size_t* new_vlen, size_t vlen) {
+    // do the fof load and then read VL into *new_vlen
+    size_t new_vlen_val;
+    asm volatile(
+        "vle32ff.v v8, (%1)\n\tcsrr %0, vl"
+        : "=r"(new_vlen_val)
+        : "C"(ptr)
+    );
+    *new_vlen = new_vlen_val;
+    return 0;
 }
 #endif // __has_feature(capabilities)
 #endif // CHERI_VECTOR_WRAPPERS

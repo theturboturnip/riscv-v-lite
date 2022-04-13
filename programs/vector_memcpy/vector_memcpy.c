@@ -33,10 +33,11 @@
     #define ENABLE_FRAC 1
     #define ENABLE_STRIDED 1
     // These haven't been ported to use CHERI-compatible VEC_INTRIN() wrappers
-    #define ENABLE_INDEXED 0
-    #define ENABLE_MASKED 0
-    #define ENABLE_SEG 0
-    #define ENABLE_FAULTONLYFIRST 0
+    #define ENABLE_INDEXED 0 // INDEXED needs non-hardcoded vector registers for loading the indices
+    #define ENABLE_MASKED 0 // MASKED needs non-hardcoded vector registers for setting up the mask?
+    #define ENABLE_SEG 0 // SEG needs non-hardcoded vector registers for individual stores
+    // This doesn't quite work yet - it relies on making up an address out of thin air, which CHERI doesn't support :D
+    #define ENABLE_FAULTONLYFIRST 1
     // This *should* work but LLVM complains about "invalid operand for instruction"
     #define ENABLE_ASM_WHOLEREG 0
     #else
@@ -439,10 +440,10 @@ void vector_memcpy_32m8_faultonlyfirst(size_t n, const int32_t* __restrict__ in,
         // it should not, given our test cases
         // but if it does, end early (this should trigger an error)
         size_t new_vl = 0;
-        vint32m8_t data = vle32ff_v_i32m8(in, &new_vl, copied_per_iter);
+        VEC_TYPE(vint32m8_t) data = VEC_INTRIN(vle32ff_v_i32m8)(in, &new_vl, copied_per_iter);
         if (new_vl != copied_per_iter) 
             return;
-        vse32_v_i32m8(out, data, copied_per_iter);
+        VEC_INTRIN(vse32_v_i32m8)(out, data, copied_per_iter);
 
         in += copied_per_iter;
         out += copied_per_iter;
@@ -619,7 +620,7 @@ int vector_unit_faultonlyfirst_test_under_fault(void) {
         // reset the length
         size_t fof_length = vsetvlmax_e32m1();
         // do a load, see how the length changes
-        vint32m1_t data = vle32ff_v_i32m1(in, &fof_length, vlmax);
+        VEC_INTRIN(vle32ff_v_i32m1)(in, &fof_length, vlmax);
         if (fof_length != expected_num_copied)
             return 0;
     }
