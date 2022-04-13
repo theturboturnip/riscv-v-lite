@@ -34,7 +34,7 @@ const_assert!(size_of::<uVLEN>() % size_of::<uELEN>() == 0);
 
 /// Trait for possible XLEN values
 /// We need to be able to turn it into u64s (used for talking to memory subsystem), and getting it from a u32 (the type used for Vlen)
-pub trait PossibleXlen: Into<u64> + From<u32> {}
+pub trait PossibleXlen: Into<u64> + From<u32> + PartialEq {}
 impl PossibleXlen for u64 {}
 impl PossibleXlen for u32 {}
 

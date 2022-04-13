@@ -82,8 +82,11 @@ impl Rv64imvXCheriProcessor {
         (p, mods)
     }
 
-    fn zicsr_conn<'a,'b>(&'a mut self) -> Zicsr64Conn<'b> where 'a: 'b {
-        let csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider<u64>];
+    fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Rv64v) -> Zicsr64Conn<'b> where 'a: 'b {
+        let csr_providers = vec![
+            &mut self.csrs as &mut dyn CSRProvider<u64>,
+            rvv as &mut dyn CSRProvider<u64>,
+        ];
         Zicsr64Conn {
             sreg: &mut self.sreg,
             csr_providers
@@ -160,7 +163,7 @@ impl Rv64imvXCheriProcessor {
         }
         if let Some(zicsr) = mods.zicsr.as_mut() {
             if zicsr.will_handle(opcode, inst) {
-                let requested_pc = zicsr.execute(opcode, inst, inst_bits, self.zicsr_conn())?;
+                let requested_pc = zicsr.execute(opcode, inst, inst_bits, self.zicsr_conn(&mut mods.rvv))?;
                 if let Some(requested_pc) = requested_pc {
                     next_pcc.set_address_unchecked(requested_pc);
                 }

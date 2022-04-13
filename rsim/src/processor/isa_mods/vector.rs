@@ -868,7 +868,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
     }
 }
 
-impl<uXLEN: PossibleXlen> CSRProvider<u32> for Rvv<uXLEN> {
+impl<uXLEN: PossibleXlen> CSRProvider<uXLEN> for Rvv<uXLEN> {
     fn has_csr(&self, csr: u32) -> bool {
         match csr {
             // Should be implemented, aren't yet
@@ -880,14 +880,14 @@ impl<uXLEN: PossibleXlen> CSRProvider<u32> for Rvv<uXLEN> {
         }
     }
 
-    fn csr_atomic_read_write(&mut self, csr: u32, _need_read: bool, _write_val: u32) -> Result<Option<u32>> {
+    fn csr_atomic_read_write(&mut self, csr: u32, _need_read: bool, _write_val: uXLEN) -> Result<Option<uXLEN>> {
         match csr {
             0xC20 | 0xC21 | 0xC22 => bail!("CSR 0x{:04x} is read-only, cannot atomic read/write", csr),
             _ => todo!()
         }
     }
 
-    fn csr_atomic_read_set(&mut self, csr: u32, set_bits: Option<u32>) -> Result<u32> {
+    fn csr_atomic_read_set(&mut self, csr: u32, set_bits: Option<uXLEN>) -> Result<uXLEN> {
         if set_bits != None {
             match csr {
                 0xC20 | 0xC21 | 0xC22 => bail!("CSR 0x{:04x} is read-only, cannot atomic set", csr),
@@ -895,15 +895,15 @@ impl<uXLEN: PossibleXlen> CSRProvider<u32> for Rvv<uXLEN> {
             }
         } else {
             match csr {
-                0xC20 => Ok(self.vl),
-                0xC21 => Ok(self.vtype.encode()),
-                0xC22 => Ok((VLEN/8) as u32),
+                0xC20 => Ok(self.vl.into()),
+                0xC21 => Ok(self.vtype.encode().into()),
+                0xC22 => Ok(((VLEN/8) as u32).into()),
 
                 _ => todo!()
             }
         }
     }
-    fn csr_atomic_read_clear(&mut self, _csr: u32, _clear_bits: Option<u32>) -> Result<u32> {
+    fn csr_atomic_read_clear(&mut self, _csr: u32, _clear_bits: Option<uXLEN>) -> Result<uXLEN> {
         todo!()
     }
 }
