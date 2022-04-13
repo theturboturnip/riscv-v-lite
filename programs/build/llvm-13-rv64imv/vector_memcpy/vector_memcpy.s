@@ -146,8 +146,8 @@ vector_memcpy_8strided:
 .LBB3_3:
 	sub	a0, a0, a5
 	slli	a3, a5, 2
-	add	a1, a1, a3
 	add	a2, a2, a3
+	add	a1, a1, a3
 	beqz	a0, .LBB3_7
 .LBB3_4:
 	slli	a4, a0, 2
@@ -185,8 +185,8 @@ vector_memcpy_16strided:
 .LBB4_3:
 	sub	a0, a0, a5
 	slli	a4, a5, 2
-	add	a1, a1, a4
 	add	a2, a2, a4
+	add	a1, a1, a4
 	beqz	a0, .LBB4_9
 .LBB4_4:
 	addi	a5, a0, -1
@@ -228,8 +228,8 @@ vector_memcpy_32strided:
 .LBB5_3:
 	sub	a0, a0, a5
 	slli	a3, a5, 2
-	add	a1, a1, a3
 	add	a2, a2, a3
+	add	a1, a1, a3
 	beqz	a0, .LBB5_8
 .LBB5_4:
 	vsetvli	a5, a0, e32, m1, ta, mu
@@ -833,7 +833,7 @@ main:
 .Lfunc_end17:
 	.size	main, .Lfunc_end17-main
 
-	.ident	"Ubuntu clang version 13.0.1-++20220120110844+75e33f71c2da-1~exp1~20220120230854.66"
+	.ident	"Ubuntu clang version 13.0.1-++20220120110924+75e33f71c2da-1~exp1~20220120231001.58"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
 	.addrsig_sym vector_memcpy_indexed

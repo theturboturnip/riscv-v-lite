@@ -830,21 +830,1050 @@ cheri_vse32_v_i32m8:
 .Lfunc_end71:
 	.size	cheri_vse32_v_i32m8, .Lfunc_end71-cheri_vse32_v_i32m8
 
+	.globl	cheri_vlse8_v_u8mf8
+	.p2align	2
+	.type	cheri_vlse8_v_u8mf8,@function
+cheri_vlse8_v_u8mf8:
+	#APP
+	vlse8.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end72:
+	.size	cheri_vlse8_v_u8mf8, .Lfunc_end72-cheri_vlse8_v_u8mf8
+
+	.globl	cheri_vsse8_v_u8mf8
+	.p2align	2
+	.type	cheri_vsse8_v_u8mf8,@function
+cheri_vsse8_v_u8mf8:
+	#APP
+	vsse8.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end73:
+	.size	cheri_vsse8_v_u8mf8, .Lfunc_end73-cheri_vsse8_v_u8mf8
+
+	.globl	cheri_vlse8_v_i8mf8
+	.p2align	2
+	.type	cheri_vlse8_v_i8mf8,@function
+cheri_vlse8_v_i8mf8:
+	#APP
+	vlse8.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end74:
+	.size	cheri_vlse8_v_i8mf8, .Lfunc_end74-cheri_vlse8_v_i8mf8
+
+	.globl	cheri_vsse8_v_i8mf8
+	.p2align	2
+	.type	cheri_vsse8_v_i8mf8,@function
+cheri_vsse8_v_i8mf8:
+	#APP
+	vsse8.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end75:
+	.size	cheri_vsse8_v_i8mf8, .Lfunc_end75-cheri_vsse8_v_i8mf8
+
+	.globl	cheri_vlse8_v_u8mf4
+	.p2align	2
+	.type	cheri_vlse8_v_u8mf4,@function
+cheri_vlse8_v_u8mf4:
+	#APP
+	vlse8.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end76:
+	.size	cheri_vlse8_v_u8mf4, .Lfunc_end76-cheri_vlse8_v_u8mf4
+
+	.globl	cheri_vsse8_v_u8mf4
+	.p2align	2
+	.type	cheri_vsse8_v_u8mf4,@function
+cheri_vsse8_v_u8mf4:
+	#APP
+	vsse8.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end77:
+	.size	cheri_vsse8_v_u8mf4, .Lfunc_end77-cheri_vsse8_v_u8mf4
+
+	.globl	cheri_vlse8_v_i8mf4
+	.p2align	2
+	.type	cheri_vlse8_v_i8mf4,@function
+cheri_vlse8_v_i8mf4:
+	#APP
+	vlse8.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end78:
+	.size	cheri_vlse8_v_i8mf4, .Lfunc_end78-cheri_vlse8_v_i8mf4
+
+	.globl	cheri_vsse8_v_i8mf4
+	.p2align	2
+	.type	cheri_vsse8_v_i8mf4,@function
+cheri_vsse8_v_i8mf4:
+	#APP
+	vsse8.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end79:
+	.size	cheri_vsse8_v_i8mf4, .Lfunc_end79-cheri_vsse8_v_i8mf4
+
+	.globl	cheri_vlse16_v_u16mf4
+	.p2align	2
+	.type	cheri_vlse16_v_u16mf4,@function
+cheri_vlse16_v_u16mf4:
+	#APP
+	vlse16.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end80:
+	.size	cheri_vlse16_v_u16mf4, .Lfunc_end80-cheri_vlse16_v_u16mf4
+
+	.globl	cheri_vsse16_v_u16mf4
+	.p2align	2
+	.type	cheri_vsse16_v_u16mf4,@function
+cheri_vsse16_v_u16mf4:
+	#APP
+	vsse16.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end81:
+	.size	cheri_vsse16_v_u16mf4, .Lfunc_end81-cheri_vsse16_v_u16mf4
+
+	.globl	cheri_vlse16_v_i16mf4
+	.p2align	2
+	.type	cheri_vlse16_v_i16mf4,@function
+cheri_vlse16_v_i16mf4:
+	#APP
+	vlse16.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end82:
+	.size	cheri_vlse16_v_i16mf4, .Lfunc_end82-cheri_vlse16_v_i16mf4
+
+	.globl	cheri_vsse16_v_i16mf4
+	.p2align	2
+	.type	cheri_vsse16_v_i16mf4,@function
+cheri_vsse16_v_i16mf4:
+	#APP
+	vsse16.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end83:
+	.size	cheri_vsse16_v_i16mf4, .Lfunc_end83-cheri_vsse16_v_i16mf4
+
+	.globl	cheri_vlse8_v_u8mf2
+	.p2align	2
+	.type	cheri_vlse8_v_u8mf2,@function
+cheri_vlse8_v_u8mf2:
+	#APP
+	vlse8.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end84:
+	.size	cheri_vlse8_v_u8mf2, .Lfunc_end84-cheri_vlse8_v_u8mf2
+
+	.globl	cheri_vsse8_v_u8mf2
+	.p2align	2
+	.type	cheri_vsse8_v_u8mf2,@function
+cheri_vsse8_v_u8mf2:
+	#APP
+	vsse8.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end85:
+	.size	cheri_vsse8_v_u8mf2, .Lfunc_end85-cheri_vsse8_v_u8mf2
+
+	.globl	cheri_vlse8_v_i8mf2
+	.p2align	2
+	.type	cheri_vlse8_v_i8mf2,@function
+cheri_vlse8_v_i8mf2:
+	#APP
+	vlse8.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end86:
+	.size	cheri_vlse8_v_i8mf2, .Lfunc_end86-cheri_vlse8_v_i8mf2
+
+	.globl	cheri_vsse8_v_i8mf2
+	.p2align	2
+	.type	cheri_vsse8_v_i8mf2,@function
+cheri_vsse8_v_i8mf2:
+	#APP
+	vsse8.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end87:
+	.size	cheri_vsse8_v_i8mf2, .Lfunc_end87-cheri_vsse8_v_i8mf2
+
+	.globl	cheri_vlse16_v_u16mf2
+	.p2align	2
+	.type	cheri_vlse16_v_u16mf2,@function
+cheri_vlse16_v_u16mf2:
+	#APP
+	vlse16.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end88:
+	.size	cheri_vlse16_v_u16mf2, .Lfunc_end88-cheri_vlse16_v_u16mf2
+
+	.globl	cheri_vsse16_v_u16mf2
+	.p2align	2
+	.type	cheri_vsse16_v_u16mf2,@function
+cheri_vsse16_v_u16mf2:
+	#APP
+	vsse16.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end89:
+	.size	cheri_vsse16_v_u16mf2, .Lfunc_end89-cheri_vsse16_v_u16mf2
+
+	.globl	cheri_vlse16_v_i16mf2
+	.p2align	2
+	.type	cheri_vlse16_v_i16mf2,@function
+cheri_vlse16_v_i16mf2:
+	#APP
+	vlse16.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end90:
+	.size	cheri_vlse16_v_i16mf2, .Lfunc_end90-cheri_vlse16_v_i16mf2
+
+	.globl	cheri_vsse16_v_i16mf2
+	.p2align	2
+	.type	cheri_vsse16_v_i16mf2,@function
+cheri_vsse16_v_i16mf2:
+	#APP
+	vsse16.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end91:
+	.size	cheri_vsse16_v_i16mf2, .Lfunc_end91-cheri_vsse16_v_i16mf2
+
+	.globl	cheri_vlse32_v_u32mf2
+	.p2align	2
+	.type	cheri_vlse32_v_u32mf2,@function
+cheri_vlse32_v_u32mf2:
+	#APP
+	vlse32.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end92:
+	.size	cheri_vlse32_v_u32mf2, .Lfunc_end92-cheri_vlse32_v_u32mf2
+
+	.globl	cheri_vsse32_v_u32mf2
+	.p2align	2
+	.type	cheri_vsse32_v_u32mf2,@function
+cheri_vsse32_v_u32mf2:
+	#APP
+	vsse32.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end93:
+	.size	cheri_vsse32_v_u32mf2, .Lfunc_end93-cheri_vsse32_v_u32mf2
+
+	.globl	cheri_vlse32_v_i32mf2
+	.p2align	2
+	.type	cheri_vlse32_v_i32mf2,@function
+cheri_vlse32_v_i32mf2:
+	#APP
+	vlse32.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end94:
+	.size	cheri_vlse32_v_i32mf2, .Lfunc_end94-cheri_vlse32_v_i32mf2
+
+	.globl	cheri_vsse32_v_i32mf2
+	.p2align	2
+	.type	cheri_vsse32_v_i32mf2,@function
+cheri_vsse32_v_i32mf2:
+	#APP
+	vsse32.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end95:
+	.size	cheri_vsse32_v_i32mf2, .Lfunc_end95-cheri_vsse32_v_i32mf2
+
+	.globl	cheri_vlse8_v_u8m1
+	.p2align	2
+	.type	cheri_vlse8_v_u8m1,@function
+cheri_vlse8_v_u8m1:
+	#APP
+	vlse8.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end96:
+	.size	cheri_vlse8_v_u8m1, .Lfunc_end96-cheri_vlse8_v_u8m1
+
+	.globl	cheri_vsse8_v_u8m1
+	.p2align	2
+	.type	cheri_vsse8_v_u8m1,@function
+cheri_vsse8_v_u8m1:
+	#APP
+	vsse8.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end97:
+	.size	cheri_vsse8_v_u8m1, .Lfunc_end97-cheri_vsse8_v_u8m1
+
+	.globl	cheri_vlse8_v_i8m1
+	.p2align	2
+	.type	cheri_vlse8_v_i8m1,@function
+cheri_vlse8_v_i8m1:
+	#APP
+	vlse8.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end98:
+	.size	cheri_vlse8_v_i8m1, .Lfunc_end98-cheri_vlse8_v_i8m1
+
+	.globl	cheri_vsse8_v_i8m1
+	.p2align	2
+	.type	cheri_vsse8_v_i8m1,@function
+cheri_vsse8_v_i8m1:
+	#APP
+	vsse8.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end99:
+	.size	cheri_vsse8_v_i8m1, .Lfunc_end99-cheri_vsse8_v_i8m1
+
+	.globl	cheri_vlse16_v_u16m1
+	.p2align	2
+	.type	cheri_vlse16_v_u16m1,@function
+cheri_vlse16_v_u16m1:
+	#APP
+	vlse16.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end100:
+	.size	cheri_vlse16_v_u16m1, .Lfunc_end100-cheri_vlse16_v_u16m1
+
+	.globl	cheri_vsse16_v_u16m1
+	.p2align	2
+	.type	cheri_vsse16_v_u16m1,@function
+cheri_vsse16_v_u16m1:
+	#APP
+	vsse16.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end101:
+	.size	cheri_vsse16_v_u16m1, .Lfunc_end101-cheri_vsse16_v_u16m1
+
+	.globl	cheri_vlse16_v_i16m1
+	.p2align	2
+	.type	cheri_vlse16_v_i16m1,@function
+cheri_vlse16_v_i16m1:
+	#APP
+	vlse16.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end102:
+	.size	cheri_vlse16_v_i16m1, .Lfunc_end102-cheri_vlse16_v_i16m1
+
+	.globl	cheri_vsse16_v_i16m1
+	.p2align	2
+	.type	cheri_vsse16_v_i16m1,@function
+cheri_vsse16_v_i16m1:
+	#APP
+	vsse16.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end103:
+	.size	cheri_vsse16_v_i16m1, .Lfunc_end103-cheri_vsse16_v_i16m1
+
+	.globl	cheri_vlse32_v_u32m1
+	.p2align	2
+	.type	cheri_vlse32_v_u32m1,@function
+cheri_vlse32_v_u32m1:
+	#APP
+	vlse32.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end104:
+	.size	cheri_vlse32_v_u32m1, .Lfunc_end104-cheri_vlse32_v_u32m1
+
+	.globl	cheri_vsse32_v_u32m1
+	.p2align	2
+	.type	cheri_vsse32_v_u32m1,@function
+cheri_vsse32_v_u32m1:
+	#APP
+	vsse32.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end105:
+	.size	cheri_vsse32_v_u32m1, .Lfunc_end105-cheri_vsse32_v_u32m1
+
+	.globl	cheri_vlse32_v_i32m1
+	.p2align	2
+	.type	cheri_vlse32_v_i32m1,@function
+cheri_vlse32_v_i32m1:
+	#APP
+	vlse32.v	v1, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end106:
+	.size	cheri_vlse32_v_i32m1, .Lfunc_end106-cheri_vlse32_v_i32m1
+
+	.globl	cheri_vsse32_v_i32m1
+	.p2align	2
+	.type	cheri_vsse32_v_i32m1,@function
+cheri_vsse32_v_i32m1:
+	#APP
+	vsse32.v	v1, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end107:
+	.size	cheri_vsse32_v_i32m1, .Lfunc_end107-cheri_vsse32_v_i32m1
+
+	.globl	cheri_vlse8_v_u8m2
+	.p2align	2
+	.type	cheri_vlse8_v_u8m2,@function
+cheri_vlse8_v_u8m2:
+	#APP
+	vlse8.v	v2, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end108:
+	.size	cheri_vlse8_v_u8m2, .Lfunc_end108-cheri_vlse8_v_u8m2
+
+	.globl	cheri_vsse8_v_u8m2
+	.p2align	2
+	.type	cheri_vsse8_v_u8m2,@function
+cheri_vsse8_v_u8m2:
+	#APP
+	vsse8.v	v2, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end109:
+	.size	cheri_vsse8_v_u8m2, .Lfunc_end109-cheri_vsse8_v_u8m2
+
+	.globl	cheri_vlse8_v_i8m2
+	.p2align	2
+	.type	cheri_vlse8_v_i8m2,@function
+cheri_vlse8_v_i8m2:
+	#APP
+	vlse8.v	v2, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end110:
+	.size	cheri_vlse8_v_i8m2, .Lfunc_end110-cheri_vlse8_v_i8m2
+
+	.globl	cheri_vsse8_v_i8m2
+	.p2align	2
+	.type	cheri_vsse8_v_i8m2,@function
+cheri_vsse8_v_i8m2:
+	#APP
+	vsse8.v	v2, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end111:
+	.size	cheri_vsse8_v_i8m2, .Lfunc_end111-cheri_vsse8_v_i8m2
+
+	.globl	cheri_vlse16_v_u16m2
+	.p2align	2
+	.type	cheri_vlse16_v_u16m2,@function
+cheri_vlse16_v_u16m2:
+	#APP
+	vlse16.v	v2, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end112:
+	.size	cheri_vlse16_v_u16m2, .Lfunc_end112-cheri_vlse16_v_u16m2
+
+	.globl	cheri_vsse16_v_u16m2
+	.p2align	2
+	.type	cheri_vsse16_v_u16m2,@function
+cheri_vsse16_v_u16m2:
+	#APP
+	vsse16.v	v2, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end113:
+	.size	cheri_vsse16_v_u16m2, .Lfunc_end113-cheri_vsse16_v_u16m2
+
+	.globl	cheri_vlse16_v_i16m2
+	.p2align	2
+	.type	cheri_vlse16_v_i16m2,@function
+cheri_vlse16_v_i16m2:
+	#APP
+	vlse16.v	v2, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end114:
+	.size	cheri_vlse16_v_i16m2, .Lfunc_end114-cheri_vlse16_v_i16m2
+
+	.globl	cheri_vsse16_v_i16m2
+	.p2align	2
+	.type	cheri_vsse16_v_i16m2,@function
+cheri_vsse16_v_i16m2:
+	#APP
+	vsse16.v	v2, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end115:
+	.size	cheri_vsse16_v_i16m2, .Lfunc_end115-cheri_vsse16_v_i16m2
+
+	.globl	cheri_vlse32_v_u32m2
+	.p2align	2
+	.type	cheri_vlse32_v_u32m2,@function
+cheri_vlse32_v_u32m2:
+	#APP
+	vlse32.v	v2, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end116:
+	.size	cheri_vlse32_v_u32m2, .Lfunc_end116-cheri_vlse32_v_u32m2
+
+	.globl	cheri_vsse32_v_u32m2
+	.p2align	2
+	.type	cheri_vsse32_v_u32m2,@function
+cheri_vsse32_v_u32m2:
+	#APP
+	vsse32.v	v2, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end117:
+	.size	cheri_vsse32_v_u32m2, .Lfunc_end117-cheri_vsse32_v_u32m2
+
+	.globl	cheri_vlse32_v_i32m2
+	.p2align	2
+	.type	cheri_vlse32_v_i32m2,@function
+cheri_vlse32_v_i32m2:
+	#APP
+	vlse32.v	v2, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end118:
+	.size	cheri_vlse32_v_i32m2, .Lfunc_end118-cheri_vlse32_v_i32m2
+
+	.globl	cheri_vsse32_v_i32m2
+	.p2align	2
+	.type	cheri_vsse32_v_i32m2,@function
+cheri_vsse32_v_i32m2:
+	#APP
+	vsse32.v	v2, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end119:
+	.size	cheri_vsse32_v_i32m2, .Lfunc_end119-cheri_vsse32_v_i32m2
+
+	.globl	cheri_vlse8_v_u8m4
+	.p2align	2
+	.type	cheri_vlse8_v_u8m4,@function
+cheri_vlse8_v_u8m4:
+	#APP
+	vlse8.v	v4, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end120:
+	.size	cheri_vlse8_v_u8m4, .Lfunc_end120-cheri_vlse8_v_u8m4
+
+	.globl	cheri_vsse8_v_u8m4
+	.p2align	2
+	.type	cheri_vsse8_v_u8m4,@function
+cheri_vsse8_v_u8m4:
+	#APP
+	vsse8.v	v4, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end121:
+	.size	cheri_vsse8_v_u8m4, .Lfunc_end121-cheri_vsse8_v_u8m4
+
+	.globl	cheri_vlse8_v_i8m4
+	.p2align	2
+	.type	cheri_vlse8_v_i8m4,@function
+cheri_vlse8_v_i8m4:
+	#APP
+	vlse8.v	v4, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end122:
+	.size	cheri_vlse8_v_i8m4, .Lfunc_end122-cheri_vlse8_v_i8m4
+
+	.globl	cheri_vsse8_v_i8m4
+	.p2align	2
+	.type	cheri_vsse8_v_i8m4,@function
+cheri_vsse8_v_i8m4:
+	#APP
+	vsse8.v	v4, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end123:
+	.size	cheri_vsse8_v_i8m4, .Lfunc_end123-cheri_vsse8_v_i8m4
+
+	.globl	cheri_vlse16_v_u16m4
+	.p2align	2
+	.type	cheri_vlse16_v_u16m4,@function
+cheri_vlse16_v_u16m4:
+	#APP
+	vlse16.v	v4, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end124:
+	.size	cheri_vlse16_v_u16m4, .Lfunc_end124-cheri_vlse16_v_u16m4
+
+	.globl	cheri_vsse16_v_u16m4
+	.p2align	2
+	.type	cheri_vsse16_v_u16m4,@function
+cheri_vsse16_v_u16m4:
+	#APP
+	vsse16.v	v4, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end125:
+	.size	cheri_vsse16_v_u16m4, .Lfunc_end125-cheri_vsse16_v_u16m4
+
+	.globl	cheri_vlse16_v_i16m4
+	.p2align	2
+	.type	cheri_vlse16_v_i16m4,@function
+cheri_vlse16_v_i16m4:
+	#APP
+	vlse16.v	v4, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end126:
+	.size	cheri_vlse16_v_i16m4, .Lfunc_end126-cheri_vlse16_v_i16m4
+
+	.globl	cheri_vsse16_v_i16m4
+	.p2align	2
+	.type	cheri_vsse16_v_i16m4,@function
+cheri_vsse16_v_i16m4:
+	#APP
+	vsse16.v	v4, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end127:
+	.size	cheri_vsse16_v_i16m4, .Lfunc_end127-cheri_vsse16_v_i16m4
+
+	.globl	cheri_vlse32_v_u32m4
+	.p2align	2
+	.type	cheri_vlse32_v_u32m4,@function
+cheri_vlse32_v_u32m4:
+	#APP
+	vlse32.v	v4, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end128:
+	.size	cheri_vlse32_v_u32m4, .Lfunc_end128-cheri_vlse32_v_u32m4
+
+	.globl	cheri_vsse32_v_u32m4
+	.p2align	2
+	.type	cheri_vsse32_v_u32m4,@function
+cheri_vsse32_v_u32m4:
+	#APP
+	vsse32.v	v4, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end129:
+	.size	cheri_vsse32_v_u32m4, .Lfunc_end129-cheri_vsse32_v_u32m4
+
+	.globl	cheri_vlse32_v_i32m4
+	.p2align	2
+	.type	cheri_vlse32_v_i32m4,@function
+cheri_vlse32_v_i32m4:
+	#APP
+	vlse32.v	v4, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end130:
+	.size	cheri_vlse32_v_i32m4, .Lfunc_end130-cheri_vlse32_v_i32m4
+
+	.globl	cheri_vsse32_v_i32m4
+	.p2align	2
+	.type	cheri_vsse32_v_i32m4,@function
+cheri_vsse32_v_i32m4:
+	#APP
+	vsse32.v	v4, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end131:
+	.size	cheri_vsse32_v_i32m4, .Lfunc_end131-cheri_vsse32_v_i32m4
+
+	.globl	cheri_vlse8_v_u8m8
+	.p2align	2
+	.type	cheri_vlse8_v_u8m8,@function
+cheri_vlse8_v_u8m8:
+	#APP
+	vlse8.v	v8, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end132:
+	.size	cheri_vlse8_v_u8m8, .Lfunc_end132-cheri_vlse8_v_u8m8
+
+	.globl	cheri_vsse8_v_u8m8
+	.p2align	2
+	.type	cheri_vsse8_v_u8m8,@function
+cheri_vsse8_v_u8m8:
+	#APP
+	vsse8.v	v8, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end133:
+	.size	cheri_vsse8_v_u8m8, .Lfunc_end133-cheri_vsse8_v_u8m8
+
+	.globl	cheri_vlse8_v_i8m8
+	.p2align	2
+	.type	cheri_vlse8_v_i8m8,@function
+cheri_vlse8_v_i8m8:
+	#APP
+	vlse8.v	v8, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end134:
+	.size	cheri_vlse8_v_i8m8, .Lfunc_end134-cheri_vlse8_v_i8m8
+
+	.globl	cheri_vsse8_v_i8m8
+	.p2align	2
+	.type	cheri_vsse8_v_i8m8,@function
+cheri_vsse8_v_i8m8:
+	#APP
+	vsse8.v	v8, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end135:
+	.size	cheri_vsse8_v_i8m8, .Lfunc_end135-cheri_vsse8_v_i8m8
+
+	.globl	cheri_vlse16_v_u16m8
+	.p2align	2
+	.type	cheri_vlse16_v_u16m8,@function
+cheri_vlse16_v_u16m8:
+	#APP
+	vlse16.v	v8, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end136:
+	.size	cheri_vlse16_v_u16m8, .Lfunc_end136-cheri_vlse16_v_u16m8
+
+	.globl	cheri_vsse16_v_u16m8
+	.p2align	2
+	.type	cheri_vsse16_v_u16m8,@function
+cheri_vsse16_v_u16m8:
+	#APP
+	vsse16.v	v8, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end137:
+	.size	cheri_vsse16_v_u16m8, .Lfunc_end137-cheri_vsse16_v_u16m8
+
+	.globl	cheri_vlse16_v_i16m8
+	.p2align	2
+	.type	cheri_vlse16_v_i16m8,@function
+cheri_vlse16_v_i16m8:
+	#APP
+	vlse16.v	v8, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end138:
+	.size	cheri_vlse16_v_i16m8, .Lfunc_end138-cheri_vlse16_v_i16m8
+
+	.globl	cheri_vsse16_v_i16m8
+	.p2align	2
+	.type	cheri_vsse16_v_i16m8,@function
+cheri_vsse16_v_i16m8:
+	#APP
+	vsse16.v	v8, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end139:
+	.size	cheri_vsse16_v_i16m8, .Lfunc_end139-cheri_vsse16_v_i16m8
+
+	.globl	cheri_vlse32_v_u32m8
+	.p2align	2
+	.type	cheri_vlse32_v_u32m8,@function
+cheri_vlse32_v_u32m8:
+	#APP
+	vlse32.v	v8, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end140:
+	.size	cheri_vlse32_v_u32m8, .Lfunc_end140-cheri_vlse32_v_u32m8
+
+	.globl	cheri_vsse32_v_u32m8
+	.p2align	2
+	.type	cheri_vsse32_v_u32m8,@function
+cheri_vsse32_v_u32m8:
+	#APP
+	vsse32.v	v8, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end141:
+	.size	cheri_vsse32_v_u32m8, .Lfunc_end141-cheri_vsse32_v_u32m8
+
+	.globl	cheri_vlse32_v_i32m8
+	.p2align	2
+	.type	cheri_vlse32_v_i32m8,@function
+cheri_vlse32_v_i32m8:
+	#APP
+	vlse32.v	v8, (ca0), a1
+	#NO_APP
+	mv	a0, zero
+	cret
+.Lfunc_end142:
+	.size	cheri_vlse32_v_i32m8, .Lfunc_end142-cheri_vlse32_v_i32m8
+
+	.globl	cheri_vsse32_v_i32m8
+	.p2align	2
+	.type	cheri_vsse32_v_i32m8,@function
+cheri_vsse32_v_i32m8:
+	#APP
+	vsse32.v	v8, (ca0), a1
+	#NO_APP
+	cret
+.Lfunc_end143:
+	.size	cheri_vsse32_v_i32m8, .Lfunc_end143-cheri_vsse32_v_i32m8
+
 	.globl	memset
 	.p2align	2
 	.type	memset,@function
 memset:
-	beqz	a2, .LBB72_3
+	beqz	a2, .LBB144_3
 	mv	a3, zero
-.LBB72_2:
+.LBB144_2:
 	cincoffset	ca4, ca0, a3
 	addi	a3, a3, 1
 	csb	a1, 0(ca4)
-	bne	a2, a3, .LBB72_2
-.LBB72_3:
+	bne	a2, a3, .LBB144_2
+.LBB144_3:
 	cret
-.Lfunc_end72:
-	.size	memset, .Lfunc_end72-memset
+.Lfunc_end144:
+	.size	memset, .Lfunc_end144-memset
+
+	.globl	vector_memcpy_8strided
+	.p2align	2
+	.type	vector_memcpy_8strided,@function
+vector_memcpy_8strided:
+	cincoffset	csp, csp, -128
+	csc	cra, 112(csp)
+	csc	cs0, 96(csp)
+	csc	cs1, 80(csp)
+	csc	cs2, 64(csp)
+	csc	cs3, 48(csp)
+	csc	cs4, 32(csp)
+	csc	cs5, 16(csp)
+	csc	cs6, 0(csp)
+	beqz	a0, .LBB145_7
+	cmove	cs3, ca2
+	cmove	cs6, ca1
+	mv	s2, a0
+	addi	s4, zero, 16
+	j	.LBB145_4
+.LBB145_2:
+	cmove	ca0, cs6
+	ccall	cheri_vle8_v_i8m1
+	cmove	ca0, cs3
+	mv	a1, zero
+	ccall	cheri_vse8_v_i8m1
+	srli	s5, s5, 2
+.LBB145_3:
+	sub	s2, s2, s5
+	slli	a0, s5, 2
+	cincoffset	cs3, cs3, a0
+	cincoffset	cs6, cs6, a0
+	beqz	s2, .LBB145_7
+.LBB145_4:
+	slli	a0, s2, 2
+	vsetvli	s5, a0, e8, m1, ta, mu
+	bgeu	s5, s2, .LBB145_2
+	mv	s1, zero
+.LBB145_6:
+	cincoffset	cs0, cs3, s1
+	cincoffset	ca0, cs6, s1
+	addi	a1, zero, 4
+	ccall	cheri_vlse8_v_i8m1
+	addi	a1, zero, 4
+	cmove	ca0, cs0
+	mv	a2, zero
+	ccall	cheri_vsse8_v_i8m1
+	addi	s1, s1, 1
+	bne	s1, s4, .LBB145_6
+	j	.LBB145_3
+.LBB145_7:
+	clc	cs6, 0(csp)
+	clc	cs5, 16(csp)
+	clc	cs4, 32(csp)
+	clc	cs3, 48(csp)
+	clc	cs2, 64(csp)
+	clc	cs1, 80(csp)
+	clc	cs0, 96(csp)
+	clc	cra, 112(csp)
+	cincoffset	csp, csp, 128
+	cret
+.Lfunc_end145:
+	.size	vector_memcpy_8strided, .Lfunc_end145-vector_memcpy_8strided
+
+	.globl	vector_memcpy_16strided
+	.p2align	2
+	.type	vector_memcpy_16strided,@function
+vector_memcpy_16strided:
+	cincoffset	csp, csp, -144
+	csc	cra, 128(csp)
+	csc	cs0, 112(csp)
+	csc	cs1, 96(csp)
+	csc	cs2, 80(csp)
+	csc	cs3, 64(csp)
+	csc	cs4, 48(csp)
+	csc	cs5, 32(csp)
+	csc	cs6, 16(csp)
+	csc	cs7, 0(csp)
+	beqz	a0, .LBB146_9
+	cmove	cs3, ca2
+	cmove	cs7, ca1
+	mv	s2, a0
+	mv	s6, zero
+	addi	s4, zero, 1
+	addi	s5, zero, 16
+	j	.LBB146_4
+.LBB146_2:
+	cmove	ca0, cs7
+	ccall	cheri_vle16_v_i16m1
+	cmove	ca0, cs3
+	mv	a1, zero
+	ccall	cheri_vse16_v_i16m1
+	srli	a0, s6, 1
+.LBB146_3:
+	sub	s2, s2, a0
+	slli	a0, a0, 2
+	cincoffset	cs3, cs3, a0
+	cincoffset	cs7, cs7, a0
+	beqz	s2, .LBB146_9
+.LBB146_4:
+	addi	a0, s2, -1
+	snez	a0, a0
+	sltu	a1, s4, s6
+	or	a0, a0, a1
+	beqz	a0, .LBB146_9
+	slli	a0, s2, 1
+	vsetvli	s6, a0, e16, m1, ta, mu
+	slli	a0, s6, 2
+	bgeu	a0, s2, .LBB146_2
+	mv	s1, zero
+.LBB146_7:
+	cincoffset	cs0, cs3, s1
+	cincoffset	ca0, cs7, s1
+	addi	a1, zero, 4
+	ccall	cheri_vlse16_v_i16m1
+	addi	a1, zero, 4
+	cmove	ca0, cs0
+	mv	a2, zero
+	ccall	cheri_vsse16_v_i16m1
+	addi	s1, s1, 2
+	bne	s1, s5, .LBB146_7
+	slli	a0, s6, 1
+	j	.LBB146_3
+.LBB146_9:
+	clc	cs7, 0(csp)
+	clc	cs6, 16(csp)
+	clc	cs5, 32(csp)
+	clc	cs4, 48(csp)
+	clc	cs3, 64(csp)
+	clc	cs2, 80(csp)
+	clc	cs1, 96(csp)
+	clc	cs0, 112(csp)
+	clc	cra, 128(csp)
+	cincoffset	csp, csp, 144
+	cret
+.Lfunc_end146:
+	.size	vector_memcpy_16strided, .Lfunc_end146-vector_memcpy_16strided
+
+	.globl	vector_memcpy_32strided
+	.p2align	2
+	.type	vector_memcpy_32strided,@function
+vector_memcpy_32strided:
+	cincoffset	csp, csp, -128
+	csc	cra, 112(csp)
+	csc	cs0, 96(csp)
+	csc	cs1, 80(csp)
+	csc	cs2, 64(csp)
+	csc	cs3, 48(csp)
+	csc	cs4, 32(csp)
+	csc	cs5, 16(csp)
+	csc	cs6, 0(csp)
+	beqz	a0, .LBB147_8
+	cmove	cs3, ca2
+	cmove	cs6, ca1
+	mv	s2, a0
+	addi	s4, zero, 4
+	j	.LBB147_4
+.LBB147_2:
+	cmove	ca0, cs6
+	ccall	cheri_vle32_v_i32m1
+	cmove	ca0, cs3
+	mv	a1, zero
+	ccall	cheri_vse32_v_i32m1
+.LBB147_3:
+	sub	s2, s2, s0
+	slli	a0, s0, 2
+	cincoffset	cs3, cs3, a0
+	cincoffset	cs6, cs6, a0
+	beqz	s2, .LBB147_8
+.LBB147_4:
+	vsetvli	s0, s2, e32, m1, ta, mu
+	slli	s5, s0, 2
+	bgeu	s5, s2, .LBB147_2
+	mv	s1, zero
+.LBB147_6:
+	slli	a0, s1, 2
+	cincoffset	cs0, cs3, a0
+	cincoffset	ca0, cs6, a0
+	addi	a1, zero, 4
+	ccall	cheri_vlse32_v_i32m1
+	addi	a1, zero, 4
+	cmove	ca0, cs0
+	mv	a2, zero
+	ccall	cheri_vsse32_v_i32m1
+	addi	s1, s1, 1
+	bne	s1, s4, .LBB147_6
+	mv	s0, s5
+	j	.LBB147_3
+.LBB147_8:
+	clc	cs6, 0(csp)
+	clc	cs5, 16(csp)
+	clc	cs4, 32(csp)
+	clc	cs3, 48(csp)
+	clc	cs2, 64(csp)
+	clc	cs1, 80(csp)
+	clc	cs0, 96(csp)
+	clc	cra, 112(csp)
+	cincoffset	csp, csp, 128
+	cret
+.Lfunc_end147:
+	.size	vector_memcpy_32strided, .Lfunc_end147-vector_memcpy_32strided
 
 	.globl	vector_memcpy_32mf2
 	.p2align	2
@@ -856,11 +1885,11 @@ vector_memcpy_32mf2:
 	csc	cs1, 32(csp)
 	csc	cs2, 16(csp)
 	csc	cs3, 0(csp)
-	beqz	a0, .LBB73_3
+	beqz	a0, .LBB148_3
 	cmove	cs2, ca2
 	cmove	cs1, ca1
 	mv	s0, a0
-.LBB73_2:
+.LBB148_2:
 	vsetvli	s3, s0, e32, mf2, ta, mu
 	cmove	ca0, cs1
 	ccall	cheri_vle32_v_i32mf2
@@ -871,8 +1900,8 @@ vector_memcpy_32mf2:
 	cincoffset	cs1, cs1, a0
 	sub	s0, s0, s3
 	cincoffset	cs2, cs2, a0
-	bnez	s0, .LBB73_2
-.LBB73_3:
+	bnez	s0, .LBB148_2
+.LBB148_3:
 	clc	cs3, 0(csp)
 	clc	cs2, 16(csp)
 	clc	cs1, 32(csp)
@@ -880,8 +1909,8 @@ vector_memcpy_32mf2:
 	clc	cra, 64(csp)
 	cincoffset	csp, csp, 80
 	cret
-.Lfunc_end73:
-	.size	vector_memcpy_32mf2, .Lfunc_end73-vector_memcpy_32mf2
+.Lfunc_end148:
+	.size	vector_memcpy_32mf2, .Lfunc_end148-vector_memcpy_32mf2
 
 	.globl	vector_memcpy_8m8
 	.p2align	2
@@ -894,10 +1923,10 @@ vector_memcpy_8m8:
 	csc	cs2, 16(csp)
 	csc	cs3, 0(csp)
 	slli	s0, a0, 2
-	beqz	s0, .LBB74_3
+	beqz	s0, .LBB149_3
 	cmove	cs2, ca2
 	cmove	cs1, ca1
-.LBB74_2:
+.LBB149_2:
 	vsetvli	s3, s0, e8, m8, ta, mu
 	cmove	ca0, cs1
 	ccall	cheri_vle8_v_i8m8
@@ -907,8 +1936,8 @@ vector_memcpy_8m8:
 	cincoffset	cs1, cs1, s3
 	sub	s0, s0, s3
 	cincoffset	cs2, cs2, s3
-	bnez	s0, .LBB74_2
-.LBB74_3:
+	bnez	s0, .LBB149_2
+.LBB149_3:
 	clc	cs3, 0(csp)
 	clc	cs2, 16(csp)
 	clc	cs1, 32(csp)
@@ -916,8 +1945,8 @@ vector_memcpy_8m8:
 	clc	cra, 64(csp)
 	cincoffset	csp, csp, 80
 	cret
-.Lfunc_end74:
-	.size	vector_memcpy_8m8, .Lfunc_end74-vector_memcpy_8m8
+.Lfunc_end149:
+	.size	vector_memcpy_8m8, .Lfunc_end149-vector_memcpy_8m8
 
 	.globl	vector_memcpy_16m8
 	.p2align	2
@@ -930,18 +1959,18 @@ vector_memcpy_16m8:
 	csc	cs2, 32(csp)
 	csc	cs3, 16(csp)
 	csc	cs4, 0(csp)
-	beqz	a0, .LBB75_4
+	beqz	a0, .LBB150_4
 	cmove	cs2, ca2
 	cmove	cs1, ca1
 	mv	s0, a0
 	mv	s4, zero
 	addi	s3, zero, 1
-.LBB75_2:
+.LBB150_2:
 	addi	a0, s0, -1
 	snez	a0, a0
 	sltu	a1, s3, s4
 	or	a0, a0, a1
-	beqz	a0, .LBB75_4
+	beqz	a0, .LBB150_4
 	slli	a0, s0, 1
 	vsetvli	s4, a0, e16, m8, ta, mu
 	cmove	ca0, cs1
@@ -954,8 +1983,8 @@ vector_memcpy_16m8:
 	cincoffset	cs1, cs1, a1
 	sub	s0, s0, a0
 	cincoffset	cs2, cs2, a1
-	bnez	s0, .LBB75_2
-.LBB75_4:
+	bnez	s0, .LBB150_2
+.LBB150_4:
 	clc	cs4, 0(csp)
 	clc	cs3, 16(csp)
 	clc	cs2, 32(csp)
@@ -964,8 +1993,8 @@ vector_memcpy_16m8:
 	clc	cra, 80(csp)
 	cincoffset	csp, csp, 96
 	cret
-.Lfunc_end75:
-	.size	vector_memcpy_16m8, .Lfunc_end75-vector_memcpy_16m8
+.Lfunc_end150:
+	.size	vector_memcpy_16m8, .Lfunc_end150-vector_memcpy_16m8
 
 	.globl	vector_memcpy_32m8
 	.p2align	2
@@ -977,11 +2006,11 @@ vector_memcpy_32m8:
 	csc	cs1, 32(csp)
 	csc	cs2, 16(csp)
 	csc	cs3, 0(csp)
-	beqz	a0, .LBB76_3
+	beqz	a0, .LBB151_3
 	cmove	cs2, ca2
 	cmove	cs1, ca1
 	mv	s0, a0
-.LBB76_2:
+.LBB151_2:
 	vsetvli	s3, s0, e32, m8, ta, mu
 	cmove	ca0, cs1
 	ccall	cheri_vle32_v_i32m8
@@ -992,8 +2021,8 @@ vector_memcpy_32m8:
 	cincoffset	cs1, cs1, a0
 	sub	s0, s0, s3
 	cincoffset	cs2, cs2, a0
-	bnez	s0, .LBB76_2
-.LBB76_3:
+	bnez	s0, .LBB151_2
+.LBB151_3:
 	clc	cs3, 0(csp)
 	clc	cs2, 16(csp)
 	clc	cs1, 32(csp)
@@ -1001,8 +2030,8 @@ vector_memcpy_32m8:
 	clc	cra, 64(csp)
 	cincoffset	csp, csp, 80
 	cret
-.Lfunc_end76:
-	.size	vector_memcpy_32m8, .Lfunc_end76-vector_memcpy_32m8
+.Lfunc_end151:
+	.size	vector_memcpy_32m8, .Lfunc_end151-vector_memcpy_32m8
 
 	.globl	vector_memcpy_harness
 	.p2align	2
@@ -1028,12 +2057,12 @@ vector_memcpy_harness:
 	ccall	memset
 	mv	a0, zero
 	addi	a1, zero, 128
-.LBB77_1:
+.LBB152_1:
 	slli	a2, a0, 2
 	cincoffset	ca2, cs1, a2
 	csw	a0, 0(ca2)
 	addi	a0, a0, 1
-	bne	a0, a1, .LBB77_1
+	bne	a0, a1, .LBB152_1
 	cincoffset	ca0, csp, 528
 	csetbounds	cs1, ca0, 512
 	cincoffset	ca0, csp, 16
@@ -1044,37 +2073,37 @@ vector_memcpy_harness:
 	cmove	ca2, cs0
 	cjalr	cs2
 	mv	a0, zero
-.LBB77_3:
+.LBB152_3:
 	slli	a1, a0, 2
 	cincoffset	ca2, cs1, a1
 	clw	a2, 0(ca2)
 	cincoffset	ca1, cs0, a1
 	clw	a1, 0(ca1)
-	bne	a2, a1, .LBB77_10
+	bne	a2, a1, .LBB152_10
 	addi	a0, a0, 1
-	bne	a0, s3, .LBB77_3
+	bne	a0, s3, .LBB152_3
 	clw	a1, 428(csp)
 	mv	a0, zero
-	bnez	a1, .LBB77_11
+	bnez	a1, .LBB152_11
 	addi	a2, zero, 103
 	addi	a0, zero, 127
 	cincoffset	ca1, csp, 16
 	csetbounds	ca1, ca1, 512
-.LBB77_7:
+.LBB152_7:
 	mv	a3, a2
-	beq	a2, a0, .LBB77_9
+	beq	a2, a0, .LBB152_9
 	addi	a2, a3, 1
 	slli	a4, a2, 2
 	cincoffset	ca4, ca1, a4
 	clw	a4, 0(ca4)
-	beqz	a4, .LBB77_7
-.LBB77_9:
+	beqz	a4, .LBB152_7
+.LBB152_9:
 	addi	a0, zero, 126
 	sltu	a0, a0, a3
-	j	.LBB77_11
-.LBB77_10:
+	j	.LBB152_11
+.LBB152_10:
 	mv	a0, zero
-.LBB77_11:
+.LBB152_11:
 	clc	cs3, 1040(csp)
 	clc	cs2, 1056(csp)
 	clc	cs1, 1072(csp)
@@ -1082,8 +2111,8 @@ vector_memcpy_harness:
 	clc	cra, 1104(csp)
 	cincoffset	csp, csp, 1120
 	cret
-.Lfunc_end77:
-	.size	vector_memcpy_harness, .Lfunc_end77-vector_memcpy_harness
+.Lfunc_end152:
+	.size	vector_memcpy_harness, .Lfunc_end152-vector_memcpy_harness
 
 	.globl	main
 	.p2align	2
@@ -1092,28 +2121,46 @@ main:
 	cincoffset	csp, csp, -32
 	csc	cra, 16(csp)
 	csc	cs0, 0(csp)
-.LBB78_1:
+.LBB153_1:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_8m8)
-	clc	ca0, %pcrel_lo(.LBB78_1)(ca0)
+	clc	ca0, %pcrel_lo(.LBB153_1)(ca0)
 	ccall	vector_memcpy_harness
 	mv	s0, a0
-.LBB78_2:
+.LBB153_2:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_16m8)
-	clc	ca0, %pcrel_lo(.LBB78_2)(ca0)
+	clc	ca0, %pcrel_lo(.LBB153_2)(ca0)
 	ccall	vector_memcpy_harness
 	slli	a0, a0, 1
 	or	s0, a0, s0
-.LBB78_3:
+.LBB153_3:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_32m8)
-	clc	ca0, %pcrel_lo(.LBB78_3)(ca0)
+	clc	ca0, %pcrel_lo(.LBB153_3)(ca0)
 	ccall	vector_memcpy_harness
 	slli	a0, a0, 2
 	or	s0, s0, a0
-.LBB78_4:
+.LBB153_4:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_32mf2)
-	clc	ca0, %pcrel_lo(.LBB78_4)(ca0)
+	clc	ca0, %pcrel_lo(.LBB153_4)(ca0)
 	ccall	vector_memcpy_harness
 	slli	a0, a0, 3
+	or	s0, s0, a0
+.LBB153_5:
+	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_8strided)
+	clc	ca0, %pcrel_lo(.LBB153_5)(ca0)
+	ccall	vector_memcpy_harness
+	slli	a0, a0, 4
+	or	s0, s0, a0
+.LBB153_6:
+	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_16strided)
+	clc	ca0, %pcrel_lo(.LBB153_6)(ca0)
+	ccall	vector_memcpy_harness
+	slli	a0, a0, 5
+	or	s0, s0, a0
+.LBB153_7:
+	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_32strided)
+	clc	ca0, %pcrel_lo(.LBB153_7)(ca0)
+	ccall	vector_memcpy_harness
+	slli	a0, a0, 6
 	or	a1, s0, a0
 	addi	a0, zero, 15
 	slli	a0, a0, 28
@@ -1124,12 +2171,15 @@ main:
 	clc	cra, 16(csp)
 	cincoffset	csp, csp, 32
 	cret
-.Lfunc_end78:
-	.size	main, .Lfunc_end78-main
+.Lfunc_end153:
+	.size	main, .Lfunc_end153-main
 
 	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 7db8166e318b1545c939e478a83c2ba14973df19)"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
+	.addrsig_sym vector_memcpy_8strided
+	.addrsig_sym vector_memcpy_16strided
+	.addrsig_sym vector_memcpy_32strided
 	.addrsig_sym vector_memcpy_32mf2
 	.addrsig_sym vector_memcpy_8m8
 	.addrsig_sym vector_memcpy_16m8

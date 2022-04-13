@@ -33,9 +33,9 @@
     // These haven't been ported to use CHERI-compatible VEC_INTRIN() wrappers
     #define ENABLE_INDEXED 0
     #define ENABLE_MASKED 0
-    #define ENABLE_STRIDED 0
+    #define ENABLE_STRIDED 1
     #define ENABLE_FAULTONLYFIRST 0
-    
+
     // This *should* work but LLVM complains about "invalid operand for instruction"
     #define ENABLE_ASM_WHOLEREG 0
     
@@ -195,8 +195,16 @@ void vector_memcpy_8strided(size_t n, const int32_t* __restrict__ in, int32_t* _
             //    and address offset = N - 1 elements
 
             for (size_t i = 0; i < STRIDE_FACTOR*4; i++) {
-                vint8m1_t data = vlse8_v_i8m1(((char*)in)+i, STRIDE_FACTOR, copied_per_iter);
-                vsse8_v_i8m1(((char*)out)+i, STRIDE_FACTOR, data, copied_per_iter);
+                VEC_INTRIN(vsse8_v_i8m1)(
+                    ((char*)out)+i,
+                    STRIDE_FACTOR,
+                    VEC_INTRIN(vlse8_v_i8m1)(
+                        ((char*)in)+i,
+                        STRIDE_FACTOR,
+                        copied_per_iter
+                    ),
+                    copied_per_iter
+                );
             }
 
             in += (copied_per_iter * STRIDE_FACTOR) / 4;
@@ -205,8 +213,7 @@ void vector_memcpy_8strided(size_t n, const int32_t* __restrict__ in, int32_t* _
         } else {
             // We don't have room to do STRIDE*elems,
             // pick up the rest with normal copies
-            vint8m1_t data = vle8_v_i8m1(in, copied_per_iter);
-            vse8_v_i8m1(out, data, copied_per_iter);
+            VEC_INTRIN(vse8_v_i8m1)(out, VEC_INTRIN(vle8_v_i8m1)(in, copied_per_iter), copied_per_iter);
 
             in += copied_per_iter / 4;
             out += copied_per_iter / 4;
@@ -231,8 +238,16 @@ void vector_memcpy_16strided(size_t n, const int32_t* __restrict__ in, int32_t* 
             //    and address offset = N - 1 elements
 
             for (size_t i = 0; i < STRIDE_FACTOR*2; i++) {
-                vint16m1_t data = vlse16_v_i16m1(((char*)in)+(i*2), STRIDE_FACTOR, copied_per_iter);
-                vsse16_v_i16m1(((char*)out)+(i*2), STRIDE_FACTOR, data, copied_per_iter);
+                VEC_INTRIN(vsse16_v_i16m1)(
+                    ((char*)out)+(i*2),
+                    STRIDE_FACTOR,
+                    VEC_INTRIN(vlse16_v_i16m1)(
+                        ((char*)in)+(i*2),
+                        STRIDE_FACTOR,
+                        copied_per_iter
+                    ),
+                    copied_per_iter
+                );
             }
 
             in += (copied_per_iter * STRIDE_FACTOR) / 2;
@@ -241,8 +256,7 @@ void vector_memcpy_16strided(size_t n, const int32_t* __restrict__ in, int32_t* 
         } else {
             // We don't have room to do STRIDE*elems,
             // pick up the rest with normal copies
-            vint16m1_t data = vle16_v_i16m1(in, copied_per_iter);
-            vse16_v_i16m1(out, data, copied_per_iter);
+            VEC_INTRIN(vse16_v_i16m1)(out, VEC_INTRIN(vle16_v_i16m1)(in, copied_per_iter), copied_per_iter);
 
             in += copied_per_iter / 2;
             out += copied_per_iter / 2;
@@ -267,8 +281,16 @@ void vector_memcpy_32strided(size_t n, const int32_t* __restrict__ in, int32_t* 
             //    and address offset = N - 1 elements
 
             for (size_t i = 0; i < STRIDE_FACTOR; i++) {
-                vint32m1_t data = vlse32_v_i32m1(in+i, STRIDE_FACTOR, copied_per_iter);
-                vsse32_v_i32m1(out+i, STRIDE_FACTOR, data, copied_per_iter);
+                VEC_INTRIN(vsse32_v_i32m1)(
+                    out+i,
+                    STRIDE_FACTOR,
+                    VEC_INTRIN(vlse32_v_i32m1)(
+                        in+i,
+                        STRIDE_FACTOR,
+                        copied_per_iter
+                    ),
+                    copied_per_iter
+                );
             }
 
             in += copied_per_iter * STRIDE_FACTOR;
@@ -277,8 +299,7 @@ void vector_memcpy_32strided(size_t n, const int32_t* __restrict__ in, int32_t* 
         } else {
             // We don't have room to do STRIDE*elems,
             // pick up the rest with normal copies
-            vint32m1_t data = vle32_v_i32m1(in, copied_per_iter);
-            vse32_v_i32m1(out, data, copied_per_iter);
+            VEC_INTRIN(vse32_v_i32m1)(out, VEC_INTRIN(vle32_v_i32m1)(in, copied_per_iter), copied_per_iter);
 
             in += copied_per_iter;
             out += copied_per_iter;
