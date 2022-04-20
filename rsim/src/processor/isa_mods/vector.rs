@@ -4,7 +4,6 @@ use std::ops::Range;
 use std::marker::PhantomData;
 use crate::processor::isa_mods::*;
 use crate::processor::exceptions::IllegalInstructionException::*;
-use crate::processor::exceptions::CapabilityException;
 use super::csrs::CSRProvider;
 use std::cmp::min;
 use anyhow::{Context, Result};
@@ -198,15 +197,16 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                 };
                 Some(addr_range)
             },
-            WholeRegister{nf, ..} => {
-                let vl = (nf as u32) * ((VLEN/8) as u32);
+            WholeRegister{eew, ..} => {
+                // This accounts for the number of registers
+                let vl = op.evl();
                 let index_range = Range::<u64> {
-                    start: self.vstart as u64,
+                    start: 0,
                     end: (vl as u64)
                 };
                 let addr_range = Range::<u64> {
-                    start: base_addr + index_range.start,
-                    end: base_addr + index_range.end,
+                    start: base_addr + index_range.start * eew.width_in_bytes(),
+                    end: base_addr + index_range.end * eew.width_in_bytes(),
                 };
                 Some(addr_range)
             
@@ -249,181 +249,105 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
         Ok(false)
     }
 
-    /// Execute a decoded memory access, assuming all access checks have already been performed.
-    fn exec_load_store(&mut self, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
-        use MemOpDir::*;
+    /// Converts a decoded memory operation to the list of accesses it performs.
+    fn get_load_store_accesses(&mut self, rd: u8, addr_p: (u64, Provenance), rs2: u8, vm: bool, op: DecodedMemOp) -> Result<Vec<(VectorElem, u64)>> {
+        let mut map = vec![];
 
-        let (base_addr, provenance) = conn.get_addr_provenance(rs1)?;
+        let (base_addr, _) = addr_p;
 
         use DecodedMemOp::*;
         match op {
-            Strided{dir: Load, stride, evl, nf, eew, emul} => {
-                let elems_per_group = val_times_lmul_over_sew(VLEN as u32, eew, emul);
-                // i = element index in logical vector (which includes groups)
+            Strided{stride, evl, nf, eew, emul, ..} => {
                 // For each segment
-                for i in self.vstart..evl {
-                    let seg_addr = base_addr + (i as u64 * stride);
-                    let mut field_addr = seg_addr;
-                    // For each field
-                    for i_field in 0..nf {
-                        // If we aren't masked out...
-                        if !self.idx_masked_out(vm, i as usize) {
-                            // ... load from memory into register
-                            let addr_p = (field_addr, provenance);
-                            self.load_to_vreg(conn, eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
-                        }
-                        // Either way increment the address
-                        field_addr += eew.width_in_bytes();
-                    }
-                }
-            }
-            Strided{dir: Store, stride, evl, nf, eew, emul} => {
-                let elems_per_group = val_times_lmul_over_sew(VLEN as u32, eew, emul);
-                // i = element index in logical vector (which includes groups)
-                // For each segment
-                for i in self.vstart..evl {
-                    let seg_addr = base_addr + (i as u64 * stride);
-                    let mut field_addr = seg_addr;
-                    // For each field
-                    for i_field in 0..nf {
-                        // If we aren't masked out...
-                        if !self.idx_masked_out(vm, i as usize) {
-                            // ... store from register into memory
-                            let addr_p = (field_addr, provenance);
-                            self.store_to_mem(conn, eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
-                        }
-                        // Either way increment the address
-                        field_addr += eew.width_in_bytes();
-                    }
-                }
-            }
-            Indexed{dir: Load, ordered: _, index_ew, evl, nf, eew, ..} => {
-                if index_ew != Sew::e32 {
-                    bail!("Indexed Load with index width != 32 not supported yet")
-                }
-                if nf > 1 {
-                    bail!("Indexed Load with NFIELDS != 1 ({}) not supported yet", nf);
-                }
-
-                // i = element index in logical vector (which includes groups)
-                for i in self.vstart..evl {
-                    // Get our index
-                    let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
-                    let addr = base_addr + (idx as u64);
+                for i_segment in self.vstart..evl {
+                    let seg_addr = base_addr + (i_segment as u64 * stride);
 
                     // If we aren't masked out...
-                    if !self.idx_masked_out(vm, i as usize) {
-                        // ... load from memory(idx) into register(i)
-                        let addr_p = (addr, provenance);
-                        self.load_to_vreg(conn, eew, addr_p, rd, i)?;
-                    }
-                }
-            }
-            Indexed{dir: Store, ordered: _, index_ew, evl, nf, eew, ..} => {
-                if index_ew != Sew::e32 {
-                    bail!("Indexed Store with index width != 32 not supported yet")
-                }
-                if nf > 1 {
-                    bail!("Indexed Store with NFIELDS != 1 ({}) not supported yet", nf);
-                }
-
-                // i = element index in logical vector (which includes groups)
-                for i in self.vstart..evl {
-                    // Get our index
-                    let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
-                    let addr = base_addr + (idx as u64);
-
-                    // If we aren't masked out...
-                    if !self.idx_masked_out(vm, i as usize) {
-                        // ... store from register(i) to memory(idx)
-                        let addr_p = (addr, provenance);
-                        self.store_to_mem(conn, eew, addr_p, rd, i)?;
+                    if !self.seg_masked_out(vm, i_segment as usize) {
+                        // For each field
+                        let mut field_addr = seg_addr;
+                        for i_field in 0..nf {
+                            // ... perform the access
+                            let vec_elem = VectorElem::check_with_lmul(
+                                rd + (i_field * emul.num_registers_consumed()),
+                                eew, emul,
+                                i_segment
+                            );
+                            map.push((vec_elem, field_addr));
+                            // and increment the address
+                            field_addr += eew.width_in_bytes();
+                        }
                     }
                 }
             }
             FaultOnlyFirst{evl, nf, eew, emul} => {
-                let elems_per_group = val_times_lmul_over_sew(VLEN as u32, eew, emul);
-                let stride = eew.width_in_bytes();
-                // i = element index in logical vector (which includes groups)
-                let mut addr = base_addr;
+                // We don't handle the exceptions here
+                // This just lists the accesses that will be attempted
+                // This is exactly the same code as for Strided, but it calculates the stride
+                let stride = eew.width_in_bytes() * (nf as u64);
+
                 // For each segment
-                'top_loop: for i in self.vstart..evl {
-                    // For each field
-                    for i_field in 0..nf {
-                        // If we aren't masked out...
-                        if !self.idx_masked_out(vm, i as usize) {
-                            // ... load from memory into register
-                            let addr_p = (addr, provenance);
-                            let load_fault: Result<()> = 
-                                self.load_to_vreg(conn, eew, addr_p, rd, i + (i_field as u32 * elems_per_group));
-                            
-                            if i == 0 {
-                                // Any potentially faulted load should fault as normal if i == 0
-                                load_fault?;
-                            } else if load_fault.is_err() {
-                                use crate::processor::exceptions::MemoryException;
-                                // There was *some* error from the load, check if it was a memory fault
-                                let load_err = load_fault.unwrap_err();
-                                // Only shrink the vlen if it's a MemError related to an invalid address
-                                let mut error_reduces_vlen = match load_err.downcast_ref::<MemoryException>() {
-                                    Some(MemoryException::AddressUnmapped{..}) => true,
-                                    _ => false
-                                };
-                                match load_err.downcast_ref::<CapabilityException>() {
-                                    // Capability exceptions also trigger FoF?
-                                    Some(_) => { error_reduces_vlen = true; },
-                                    _ => {}
-                                };
-                                if error_reduces_vlen {
-                                    // "vector length vl is reduced to the index of the 
-                                    // element that would have raised an exception"
-                                    self.vl = i;
-                                    // error received, finish instruction
-                                    break 'top_loop;
-                                } else {
-                                    // Re-raise error
-                                    return Err(load_err)
-                                }
-                            }
+                for i_segment in self.vstart..evl {
+                    let seg_addr = base_addr + (i_segment as u64 * stride);
+
+                    // If we aren't masked out...
+                    if !self.seg_masked_out(vm, i_segment as usize) {
+                        // For each field
+                        let mut field_addr = seg_addr;
+                        for i_field in 0..nf {
+                            // ... perform the access
+                            let vec_elem = VectorElem::check_with_lmul(
+                                rd + (i_field * emul.num_registers_consumed()),
+                                eew, emul,
+                                i_segment
+                            );
+                            map.push((vec_elem, field_addr));
+                            // and increment the address
+                            field_addr += eew.width_in_bytes();
                         }
-                        // Either way increment the address
-                        addr += stride;
                     }
                 }
             }
-            WholeRegister{dir: Load, nf, emul: _} => {
-                let mut addr = base_addr;
+            Indexed{index_ew, evl, nf, eew, emul, ..} => {
+                // i = element index in logical vector (which includes groups)
+                for i_segment in self.vstart..evl {
+                    // Get our index
+                    let seg_idx = self.load_vreg_elem(index_ew, rs2, i_segment)?;
+                    let seg_addr = base_addr + (seg_idx as u64);
 
-                let eew = Sew::e8;
-                let vl = (nf as u32) * ((VLEN/8) as u32);
-                // vstart is ignored, except for the vstart >= evl case above
-                // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
+                    // If we aren't masked out...
+                    if !self.seg_masked_out(vm, seg_idx as usize) {
+                        // For each field
+                        let mut field_addr = seg_addr;
+                        for i_field in 0..nf {
+                            // ... perform the access
+                            let vec_elem = VectorElem::check_with_lmul(
+                                rd + (i_field * emul.num_registers_consumed()),
+                                eew, emul,
+                                i_segment
+                            );
+                            map.push((vec_elem, field_addr));
+                            // and increment the address
+                            field_addr += eew.width_in_bytes();
+                        }
+                    }
+                }
+            }
+            WholeRegister{num_regs, eew, ..} => {
+                if vm == false {
+                    // There are no masked variants of this instruction
+                    bail!("WholeRegister operations cannot be masked")
+                }
+
+                let mut addr = base_addr;
+                let vl = op.evl();
                 for i in 0..vl {
-                    // We can't be masked out.
-                    // Load from memory into register
-                    // dbg!("ld", i, addr);
-                    let addr_p = (addr, provenance);
-                    self.load_to_vreg(conn, eew, addr_p, rd, i)?;
+                    let vec_elem = VectorElem::check_with_num_regs(rd, eew, num_regs, i as u32);
+                    map.push((vec_elem, addr));
                     addr += eew.width_in_bytes();
                 }
             }
-            WholeRegister{dir: Store, nf, emul: _} => {
-                let mut addr = base_addr;
-
-                let eew = Sew::e8;
-                let vl = (nf as u32) * ((VLEN/8) as u32);
-                // vstart is ignored, except for the vstart >= evl case above
-                // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
-                for i in 0..vl {
-                    // We can't be masked out.
-                    // Store from register into memory
-                    // dbg!("st", i, addr);
-                    let addr_p = (addr, provenance);
-                    self.store_to_mem(conn, eew, addr_p, rd, i)?;
-                    addr += eew.width_in_bytes();
-                }
-            }
-            ByteMask{dir: Load, evl} => {
+            ByteMask{evl, ..} => {
                 if vm == false {
                     // vlm, vsm cannot be masked out
                     bail!("ByteMask operations cannot be masked")
@@ -431,22 +355,77 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
 
                 let mut addr = base_addr;
                 for i in self.vstart..evl {
-                    let addr_p = (addr, provenance);
-                    self.load_to_vreg(conn, Sew::e8, addr_p, rd, i)?;
+                    let vec_elem = VectorElem::check_with_lmul(
+                        rd,
+                        Sew::e8, Lmul::e1,
+                        i
+                    );
+                    map.push((vec_elem, addr));
                     addr += 1;
                 }
             }
-            ByteMask{dir: Store, evl} => {
-                if vm == false {
-                    // As above, vlm, vsm cannot be masked out
-                    bail!("ByteMask operations cannot be masked")
-                }
+        };
 
-                let mut addr = base_addr;
-                for i in self.vstart..evl {
+        Ok(map)
+    }
+
+    /// Execute a decoded memory access, assuming all access checks have already been performed.
+    fn exec_load_store(&mut self, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
+        // Determine which accesses we need to do
+        let addr_p = conn.get_addr_provenance(rs1)?;
+        let accesses = self.get_load_store_accesses(rd, addr_p, rs2, vm, op)?;
+        let (_, provenance) = addr_p;
+
+        use DecodedMemOp::*;
+        match op {
+            Strided{dir, ..} | Indexed{dir, ..} | WholeRegister{dir, ..} | ByteMask{dir, ..} => {
+                // For each access...
+                for (VectorElem{ base_reg, eew, elem_within_group, ..}, addr) in accesses {
                     let addr_p = (addr, provenance);
-                    self.store_to_mem(conn, Sew::e8, addr_p, rd, i)?;
-                    addr += 1;
+                    // Perform the access!
+                    match dir {
+                        MemOpDir::Load => self.load_to_vreg(conn, eew, addr_p, base_reg, elem_within_group)?,
+                        MemOpDir::Store => self.store_to_mem(conn, eew, addr_p, base_reg, elem_within_group)?
+                    }
+                }
+            }
+            FaultOnlyFirst{..} => {
+                // For each access...
+                for (VectorElem{ base_reg, eew, elem_within_group, ..}, addr) in accesses {
+                    let addr_p = (addr, provenance);
+                    // Perform the access
+                    let load_fault: Result<()> = 
+                        self.load_to_vreg(conn, eew, addr_p, base_reg, elem_within_group);
+                    
+                    // Check for faults
+                    if elem_within_group == 0 {
+                        // Any potentially faulted load should fault as normal if i == 0
+                        load_fault?;
+                    } else if load_fault.is_err() {
+                        use crate::processor::exceptions::{MemoryException, CapabilityException};
+                        // There was *some* error from the load, check if it was a memory fault
+                        let load_err = load_fault.unwrap_err();
+                        // Only shrink the vlen if it's a MemoryException related to an invalid address...
+                        let mut error_reduces_vlen = match load_err.downcast_ref::<MemoryException>() {
+                            Some(MemoryException::AddressUnmapped{..}) => true,
+                            _ => false
+                        };
+                        // .. or a CapabilityException
+                        match load_err.downcast_ref::<CapabilityException>() {
+                            Some(_) => { error_reduces_vlen = true; },
+                            _ => {}
+                        };
+                        if error_reduces_vlen {
+                            // "vector length vl is reduced to the index of the 
+                            // element that would have raised an exception"
+                            self.vl = elem_within_group;
+                            // exception received, finish instruction
+                            break;
+                        } else {
+                            // Re-raise exception
+                            return Err(load_err)
+                        }
+                    }
                 }
             }
         };
@@ -537,7 +516,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     }
 
     /// Returns true if the mask is enabled and element `i` has been masked *out*, e.g. that it should not be touched.
-    fn idx_masked_out(&self, vm: bool, i: usize) -> bool {
+    fn seg_masked_out(&self, vm: bool, i: usize) -> bool {
         // vm == 1 for mask disabled, 0 for mask enabled
         (!vm) && (bits!(self.vreg[0], i:i) == 0)
     }
@@ -652,7 +631,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                 // vmerge or vmv
                                 // if masked, vmerge, else vmv
                                 for i in self.vstart..self.vl {
-                                    let val = if self.idx_masked_out(vm, i as usize) {
+                                    let val = if self.seg_masked_out(vm, i as usize) {
                                         // if masked out, this must be vmerge, write new value in
                                         self.load_vreg_elem(Sew::e32, rs2, i)?
                                     } else {
@@ -721,11 +700,9 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                     bail!("Masked instruction cannot load into v0");
                 }
                 // Check for no-op
-                if let Some(evl) = op.try_get_evl() {
-                    if evl <= self.vstart {
-                        println!("EVL {} <= vstart {} => vector {:?} is no-op", evl, self.vstart, op.dir());
-                        return Ok(None)
-                    }
+                if op.evl() <= self.vstart {
+                    println!("EVL {} <= vstart {} => vector {:?} is no-op", op.evl(), self.vstart, op.dir());
+                    return Ok(None)
                 }
 
                 let addr_provenance = conn.get_addr_provenance(rs1)?;

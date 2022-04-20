@@ -143,12 +143,14 @@ pub enum DecodedMemOp {
         ordered: bool,
         /// The width of the indices. Indices are byte offsets.
         index_ew: Sew,
+        /// The effective LMUL for the indices.
+        index_emul: Lmul,
         
         /// The direction, i.e. load or store
         dir: MemOpDir,
         /// The width of the elements being accessed from memory
         eew: Sew,
-        /// The effective LMUL of the operation. See [DecodedMemOp::Strided::emul].
+        /// The effective LMUL of the elements being accessed from memory. See [DecodedMemOp::Strided::emul].
         emul: Lmul,
         /// The effective vector length - always equal to the current vl
         evl: u32,
@@ -160,10 +162,12 @@ pub enum DecodedMemOp {
         /// The direction, i.e. load or store
         dir: MemOpDir,
         /// The number of registers to load or store.
+        /// Encoded the same way as `nf` for other instructions.
         /// Must be power-of-2
-        nf: u8,
-        /// TODO REMOVE
-        emul: Lmul,
+        num_regs: u8,
+        /// The width of the elements being accessed.
+        /// This doesn't impact the result, but Load variants of this instruction exist for each type
+        eew: Sew,
     },
     /// Moves the contents of a mask register to/from a contiguous range of memory.
     /// 
@@ -226,14 +230,14 @@ impl DecodedMemOp {
             FaultOnlyFirst{..} => MemOpDir::Load,
         }
     }
-    pub fn try_get_evl(&self) -> Option<u32> {
+    pub fn evl(&self) -> u32 {
         use DecodedMemOp::*;
         match *self {
-            Strided{evl, ..} => Some(evl),
-            Indexed{evl, ..} => Some(evl),
-            WholeRegister{..} => None,
-            ByteMask{evl, ..} => Some(evl),
-            FaultOnlyFirst{evl, ..} => Some(evl),
+            Strided{evl, ..} => evl,
+            Indexed{evl, ..} => evl,
+            WholeRegister{num_regs, eew, ..} => num_regs as u32 * (VLEN as u32/8)/(eew.width_in_bytes() as u32),
+            ByteMask{evl, ..} => evl,
+            FaultOnlyFirst{evl, ..} => evl,
         }
     }
 
@@ -366,7 +370,7 @@ impl DecodedMemOp {
                             },
                             WholeRegister => if nf_pow2 {
                                 DecodedMemOp::WholeRegister{
-                                    dir, emul, nf,
+                                    dir, eew, num_regs: nf,
                                 }
                             } else {
                                 bail!("WholeRegister operation with non-power2 nf {} impossible", nf);
@@ -402,8 +406,11 @@ impl DecodedMemOp {
                                 dir, eew, emul, nf, evl: current_vl,
                             },
                             WholeRegister => if nf_pow2 {
+                                if eew != Sew::e8 {
+                                    bail!("WholeRegister operation with EEW {:?} != e8 is impossible", eew);
+                                }
                                 DecodedMemOp::WholeRegister{
-                                    dir, emul, nf,
+                                    dir, eew, num_regs: nf,
                                 }
                             } else {
                                 bail!("WholeRegister operation with non-power2 nf {} impossible", nf);
@@ -422,8 +429,10 @@ impl DecodedMemOp {
                     stride, dir, eew, emul, nf, evl: current_vl,
                 },
                 RvvMopType::Indexed{ordered} => DecodedMemOp::Indexed{
-                    ordered, index_ew: eew, eew: current_vtype.vsew,
-                    dir, emul, evl: current_vl, nf,
+                    ordered,
+                    index_ew: eew, index_emul: emul,
+                    eew: current_vtype.vsew, emul: current_vtype.vlmul,
+                    dir, evl: current_vl, nf,
                 }
             };
             return Ok(decoded_mop);

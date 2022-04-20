@@ -249,6 +249,18 @@ pub enum Lmul {
     e4,
     e8
 }
+impl Lmul {
+    /// Returns the number of vector registers a group actually consumes with this Lmul.
+    pub fn num_registers_consumed(&self) -> u8 {
+        use Lmul::*;
+        match self {
+            eEighth | eQuarter | eHalf | e1 => 1,
+            e2 => 2,
+            e4 => 4,
+            e8 => 8
+        }
+    }
+}
 
 /// Function that evaluates (X * LMUL) / SEW from their enum values
 /// 
@@ -286,5 +298,29 @@ pub fn val_times_lmul_over_sew(x: u32, s: Sew, l: Lmul) -> u32 {
         Sew::e16 => 16,
         Sew::e32 => 32,
         Sew::e64 => 64,
+    }
+}
+
+/// A struct describing an element of a vector register group
+pub struct VectorElem {
+    /// The first register of the group.
+    /// Should be a multiple of emul.num_registers_consumed()
+    pub base_reg: u8,
+    /// The element width,
+    pub eew: Sew,
+    /// The index of the element within the group
+    pub elem_within_group: u32
+}
+impl VectorElem {
+    pub fn check_with_lmul(base_reg: u8, eew: Sew, emul: Lmul, elem_within_group: u32) -> VectorElem {
+        return Self::check_with_num_regs(base_reg, eew, emul.num_registers_consumed(), elem_within_group);
+    }
+    pub fn check_with_num_regs(base_reg: u8, eew: Sew, num_regs: u8, elem_within_group: u32) -> VectorElem {
+        // Sanity check - make sure all accesses are contained within the group
+        let referenced_reg_in_group = elem_within_group * (eew.width_in_bytes() as u32) / (VLEN as u32/8);
+        assert!(referenced_reg_in_group < num_regs as u32);
+        return VectorElem {
+            base_reg, eew, elem_within_group
+        };
     }
 }
