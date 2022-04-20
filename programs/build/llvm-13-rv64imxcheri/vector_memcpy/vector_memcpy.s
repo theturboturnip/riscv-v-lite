@@ -2207,8 +2207,8 @@ vector_memcpy_8strided:
 .LBB181_3:
 	sub	s2, s2, s5
 	slli	a0, s5, 2
-	cincoffset	cs3, cs3, a0
 	cincoffset	cs6, cs6, a0
+	cincoffset	cs3, cs3, a0
 	beqz	s2, .LBB181_7
 .LBB181_4:
 	slli	a0, s2, 2
@@ -2273,8 +2273,8 @@ vector_memcpy_16strided:
 .LBB182_3:
 	sub	s2, s2, a0
 	slli	a0, a0, 2
-	cincoffset	cs3, cs3, a0
 	cincoffset	cs7, cs7, a0
+	cincoffset	cs3, cs3, a0
 	beqz	s2, .LBB182_9
 .LBB182_4:
 	addi	a0, s2, -1
@@ -2290,9 +2290,9 @@ vector_memcpy_16strided:
 .LBB182_7:
 	cincoffset	cs0, cs3, s1
 	cincoffset	ca0, cs7, s1
-	addi	a1, zero, 4
+	addi	a1, zero, 8
 	ccall	cheri_vlse16_v_i16m1
-	addi	a1, zero, 4
+	addi	a1, zero, 8
 	cmove	ca0, cs0
 	mv	a2, zero
 	ccall	cheri_vsse16_v_i16m1
@@ -2343,8 +2343,8 @@ vector_memcpy_32strided:
 .LBB183_3:
 	sub	s2, s2, s0
 	slli	a0, s0, 2
-	cincoffset	cs3, cs3, a0
 	cincoffset	cs6, cs6, a0
+	cincoffset	cs3, cs3, a0
 	beqz	s2, .LBB183_8
 .LBB183_4:
 	vsetvli	s0, s2, e32, m1, ta, mu
@@ -2355,9 +2355,9 @@ vector_memcpy_32strided:
 	slli	a0, s1, 2
 	cincoffset	cs0, cs3, a0
 	cincoffset	ca0, cs6, a0
-	addi	a1, zero, 4
+	addi	a1, zero, 16
 	ccall	cheri_vlse32_v_i32m1
-	addi	a1, zero, 4
+	addi	a1, zero, 16
 	cmove	ca0, cs0
 	mv	a2, zero
 	ccall	cheri_vsse32_v_i32m1
@@ -2537,61 +2537,6 @@ vector_memcpy_32m8:
 .Lfunc_end187:
 	.size	vector_memcpy_32m8, .Lfunc_end187-vector_memcpy_32m8
 
-	.globl	vector_memcpy_32m8_faultonlyfirst
-	.p2align	2
-	.type	vector_memcpy_32m8_faultonlyfirst,@function
-vector_memcpy_32m8_faultonlyfirst:
-	cincoffset	csp, csp, -128
-	csc	cra, 112(csp)
-	csc	cs0, 96(csp)
-	csc	cs1, 80(csp)
-	csc	cs2, 64(csp)
-	csc	cs3, 48(csp)
-	csc	cs4, 32(csp)
-	csc	cs5, 16(csp)
-	beqz	a0, .LBB188_5
-	cmove	cs2, ca2
-	cmove	cs4, ca1
-	mv	s0, a0
-	cincoffset	ca0, csp, 8
-	csetbounds	cs3, ca0, 8
-	j	.LBB188_3
-.LBB188_2:
-	xor	a0, s5, s1
-	seqz	a0, a0
-	sub	s0, s0, s1
-	xori	a0, a0, 1
-	seqz	a1, s0
-	or	a0, a0, a1
-	bnez	a0, .LBB188_5
-.LBB188_3:
-	vsetvli	s1, s0, e32, m8, ta, mu
-	csd	zero, 8(csp)
-	cmove	ca0, cs4
-	cmove	ca1, cs3
-	ccall	cheri_vle32ff_v_i32m8
-	cld	s5, 8(csp)
-	bne	s5, s1, .LBB188_2
-	cmove	ca0, cs2
-	mv	a1, zero
-	ccall	cheri_vse32_v_i32m8
-	slli	a0, s1, 2
-	cincoffset	cs4, cs4, a0
-	cincoffset	cs2, cs2, a0
-	j	.LBB188_2
-.LBB188_5:
-	clc	cs5, 16(csp)
-	clc	cs4, 32(csp)
-	clc	cs3, 48(csp)
-	clc	cs2, 64(csp)
-	clc	cs1, 80(csp)
-	clc	cs0, 96(csp)
-	clc	cra, 112(csp)
-	cincoffset	csp, csp, 128
-	cret
-.Lfunc_end188:
-	.size	vector_memcpy_32m8_faultonlyfirst, .Lfunc_end188-vector_memcpy_32m8_faultonlyfirst
-
 	.globl	vector_memcpy_harness
 	.p2align	2
 	.type	vector_memcpy_harness,@function
@@ -2616,12 +2561,12 @@ vector_memcpy_harness:
 	ccall	memset
 	mv	a0, zero
 	addi	a1, zero, 128
-.LBB189_1:
+.LBB188_1:
 	slli	a2, a0, 2
 	cincoffset	ca2, cs1, a2
 	csw	a0, 0(ca2)
 	addi	a0, a0, 1
-	bne	a0, a1, .LBB189_1
+	bne	a0, a1, .LBB188_1
 	cincoffset	ca0, csp, 528
 	csetbounds	cs1, ca0, 512
 	cincoffset	ca0, csp, 16
@@ -2632,37 +2577,37 @@ vector_memcpy_harness:
 	cmove	ca2, cs0
 	cjalr	cs2
 	mv	a0, zero
-.LBB189_3:
+.LBB188_3:
 	slli	a1, a0, 2
 	cincoffset	ca2, cs1, a1
 	clw	a2, 0(ca2)
 	cincoffset	ca1, cs0, a1
 	clw	a1, 0(ca1)
-	bne	a2, a1, .LBB189_10
+	bne	a2, a1, .LBB188_10
 	addi	a0, a0, 1
-	bne	a0, s3, .LBB189_3
+	bne	a0, s3, .LBB188_3
 	clw	a1, 428(csp)
 	mv	a0, zero
-	bnez	a1, .LBB189_11
+	bnez	a1, .LBB188_11
 	addi	a2, zero, 103
 	addi	a0, zero, 127
 	cincoffset	ca1, csp, 16
 	csetbounds	ca1, ca1, 512
-.LBB189_7:
+.LBB188_7:
 	mv	a3, a2
-	beq	a2, a0, .LBB189_9
+	beq	a2, a0, .LBB188_9
 	addi	a2, a3, 1
 	slli	a4, a2, 2
 	cincoffset	ca4, ca1, a4
 	clw	a4, 0(ca4)
-	beqz	a4, .LBB189_7
-.LBB189_9:
+	beqz	a4, .LBB188_7
+.LBB188_9:
 	addi	a0, zero, 126
 	sltu	a0, a0, a3
-	j	.LBB189_11
-.LBB189_10:
+	j	.LBB188_11
+.LBB188_10:
 	mv	a0, zero
-.LBB189_11:
+.LBB188_11:
 	clc	cs3, 1040(csp)
 	clc	cs2, 1056(csp)
 	clc	cs1, 1072(csp)
@@ -2670,80 +2615,8 @@ vector_memcpy_harness:
 	clc	cra, 1104(csp)
 	cincoffset	csp, csp, 1120
 	cret
-.Lfunc_end189:
-	.size	vector_memcpy_harness, .Lfunc_end189-vector_memcpy_harness
-
-	.globl	vector_unit_faultonlyfirst_test_under_fault
-	.p2align	2
-	.type	vector_unit_faultonlyfirst_test_under_fault,@function
-vector_unit_faultonlyfirst_test_under_fault:
-	cincoffset	csp, csp, -128
-	csc	cra, 112(csp)
-	csc	cs0, 96(csp)
-	csc	cs1, 80(csp)
-	csc	cs2, 64(csp)
-	csc	cs3, 48(csp)
-	csc	cs4, 32(csp)
-	csc	cs5, 16(csp)
-	vsetvli	s5, zero, e32, m1, ta, mu
-	beqz	s5, .LBB190_3
-	mv	a0, zero
-	neg	a1, s5
-	lui	a2, 37
-.LBB190_2:
-	add	a3, a1, a0
-	slli	a3, a3, 2
-	add	a3, a3, a2
-	cincoffset	ca3, cnull, a3
-	csw	a0, 0(ca3)
-	addi	a0, a0, 1
-	add	a3, a1, a0
-	bnez	a3, .LBB190_2
-.LBB190_3:
-	seqz	s2, s5
-	beqz	s5, .LBB190_8
-	vsetvli	a0, zero, e32, m1, ta, mu
-	csd	a0, 8(csp)
-	cincoffset	ca0, csp, 8
-	csetbounds	cs4, ca0, 8
-	lui	s3, 37
-	addiw	a0, s3, -4
-	cincoffset	ca0, cnull, a0
-	cmove	ca1, cs4
-	ccall	cheri_vle32ff_v_i32m1
-	cld	a0, 8(csp)
-	addi	s1, zero, 1
-	bne	a0, s1, .LBB190_8
-.LBB190_5:
-	mv	s0, s1
-	beq	s1, s5, .LBB190_7
-	addi	s1, s0, 1
-	not	a0, s0
-	slli	a0, a0, 2
-	add	a0, a0, s3
-	cincoffset	ca0, cnull, a0
-	vsetvli	a1, zero, e32, m1, ta, mu
-	csd	a1, 8(csp)
-	cmove	ca1, cs4
-	ccall	cheri_vle32ff_v_i32m1
-	cld	a0, 8(csp)
-	beq	s1, a0, .LBB190_5
-.LBB190_7:
-	sltu	a0, s0, s5
-	xori	s2, a0, 1
-.LBB190_8:
-	mv	a0, s2
-	clc	cs5, 16(csp)
-	clc	cs4, 32(csp)
-	clc	cs3, 48(csp)
-	clc	cs2, 64(csp)
-	clc	cs1, 80(csp)
-	clc	cs0, 96(csp)
-	clc	cra, 112(csp)
-	cincoffset	csp, csp, 128
-	cret
-.Lfunc_end190:
-	.size	vector_unit_faultonlyfirst_test_under_fault, .Lfunc_end190-vector_unit_faultonlyfirst_test_under_fault
+.Lfunc_end188:
+	.size	vector_memcpy_harness, .Lfunc_end188-vector_memcpy_harness
 
 	.globl	main
 	.p2align	2
@@ -2752,55 +2625,46 @@ main:
 	cincoffset	csp, csp, -32
 	csc	cra, 16(csp)
 	csc	cs0, 0(csp)
-.LBB191_1:
+.LBB189_1:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_8m8)
-	clc	ca0, %pcrel_lo(.LBB191_1)(ca0)
+	clc	ca0, %pcrel_lo(.LBB189_1)(ca0)
 	ccall	vector_memcpy_harness
 	mv	s0, a0
-.LBB191_2:
+.LBB189_2:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_16m8)
-	clc	ca0, %pcrel_lo(.LBB191_2)(ca0)
+	clc	ca0, %pcrel_lo(.LBB189_2)(ca0)
 	ccall	vector_memcpy_harness
 	slli	a0, a0, 1
 	or	s0, a0, s0
-.LBB191_3:
+.LBB189_3:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_32m8)
-	clc	ca0, %pcrel_lo(.LBB191_3)(ca0)
+	clc	ca0, %pcrel_lo(.LBB189_3)(ca0)
 	ccall	vector_memcpy_harness
 	slli	a0, a0, 2
 	or	s0, s0, a0
-.LBB191_4:
+.LBB189_4:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_32mf2)
-	clc	ca0, %pcrel_lo(.LBB191_4)(ca0)
+	clc	ca0, %pcrel_lo(.LBB189_4)(ca0)
 	ccall	vector_memcpy_harness
 	slli	a0, a0, 3
 	or	s0, s0, a0
-.LBB191_5:
+.LBB189_5:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_8strided)
-	clc	ca0, %pcrel_lo(.LBB191_5)(ca0)
+	clc	ca0, %pcrel_lo(.LBB189_5)(ca0)
 	ccall	vector_memcpy_harness
 	slli	a0, a0, 4
 	or	s0, s0, a0
-.LBB191_6:
+.LBB189_6:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_16strided)
-	clc	ca0, %pcrel_lo(.LBB191_6)(ca0)
+	clc	ca0, %pcrel_lo(.LBB189_6)(ca0)
 	ccall	vector_memcpy_harness
 	slli	a0, a0, 5
 	or	s0, s0, a0
-.LBB191_7:
+.LBB189_7:
 	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_32strided)
-	clc	ca0, %pcrel_lo(.LBB191_7)(ca0)
+	clc	ca0, %pcrel_lo(.LBB189_7)(ca0)
 	ccall	vector_memcpy_harness
 	slli	a0, a0, 6
-	or	s0, s0, a0
-.LBB191_8:
-	auipcc	ca0, %captab_pcrel_hi(vector_memcpy_32m8_faultonlyfirst)
-	clc	ca0, %pcrel_lo(.LBB191_8)(ca0)
-	ccall	vector_memcpy_harness
-	slli	a0, a0, 11
-	or	s0, s0, a0
-	ccall	vector_unit_faultonlyfirst_test_under_fault
-	slli	a0, a0, 12
 	or	a1, s0, a0
 	addi	a0, zero, 15
 	slli	a0, a0, 28
@@ -2811,8 +2675,8 @@ main:
 	clc	cra, 16(csp)
 	cincoffset	csp, csp, 32
 	cret
-.Lfunc_end191:
-	.size	main, .Lfunc_end191-main
+.Lfunc_end189:
+	.size	main, .Lfunc_end189-main
 
 	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 7db8166e318b1545c939e478a83c2ba14973df19)"
 	.section	".note.GNU-stack","",@progbits
@@ -2824,4 +2688,3 @@ main:
 	.addrsig_sym vector_memcpy_8m8
 	.addrsig_sym vector_memcpy_16m8
 	.addrsig_sym vector_memcpy_32m8
-	.addrsig_sym vector_memcpy_32m8_faultonlyfirst

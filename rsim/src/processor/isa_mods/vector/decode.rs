@@ -82,9 +82,7 @@ pub enum DecodedMemOp {
     /// Element 2 of the segment maps to vector register *group* 2,
     /// i.e. v4 and v5, rather than v2.
     Strided{
-        /// The stride.
-        /// AFAIK this should be specified in bytes, but right now it's used in terms of element width.
-        /// TODO make this bytes everywhere
+        /// The stride, specified in bytes
         /// TODO make this signed everywhere
         stride: u64, 
         
@@ -143,8 +141,7 @@ pub enum DecodedMemOp {
     Indexed{
         /// Whether elements must be accessed in the order specified by the index vector.
         ordered: bool,
-        /// The width of the indices. Indices should byte offsets, but right now the emulator treats them in terms of element width.
-        /// TODO make indices byte offsets everywhere
+        /// The width of the indices. Indices are byte offsets.
         index_ew: Sew,
         
         /// The direction, i.e. load or store
@@ -227,17 +224,6 @@ impl DecodedMemOp {
             WholeRegister{dir, ..} => dir,
             ByteMask{dir, ..} => dir,
             FaultOnlyFirst{..} => MemOpDir::Load,
-        }
-    }
-    pub fn access_params(&self) -> (Lmul, Sew) {
-        use DecodedMemOp::*;
-        match *self {
-            Strided{emul, eew, ..} => (emul, eew),
-            Indexed{emul, eew, ..} => (emul, eew),
-            // For WholeRegister, just use any old eew
-            WholeRegister{emul, ..} => (emul, Sew::e8),
-            ByteMask{..} => (Lmul::e1, Sew::e8),
-            FaultOnlyFirst{emul, eew, ..} => (emul, eew),
         }
     }
     pub fn try_get_evl(&self) -> Option<u32> {
@@ -372,7 +358,10 @@ impl DecodedMemOp {
 
                         match lumop {
                             Load => DecodedMemOp::Strided{
-                                stride: 1,
+                                // Unit-stride = segments are packed together
+                                // => each segment is (element_width * fields_per_segment) bytes apart
+                                // => eew * nf
+                                stride: eew.width_in_bytes() * (nf as u64),
                                 dir, eew, emul, nf, evl: current_vl,
                             },
                             WholeRegister => if nf_pow2 {
@@ -406,7 +395,10 @@ impl DecodedMemOp {
         
                         match sumop {
                             Store => DecodedMemOp::Strided{
-                                stride: 1,
+                                // Unit-stride = segments are packed together
+                                // => each segment is (element_width * fields_per_segment) bytes apart
+                                // => eew * nf
+                                stride: eew.width_in_bytes() * (nf as u64),
                                 dir, eew, emul, nf, evl: current_vl,
                             },
                             WholeRegister => if nf_pow2 {

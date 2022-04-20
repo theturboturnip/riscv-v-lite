@@ -40,7 +40,8 @@ vector_memcpy_indexed:
 	beqz	a0, .LBB1_3
 	mv	a1, zero
 .LBB1_2:
-	xori	a2, a1, 1
+	slli	a2, a1, 2
+	xori	a2, a2, 4
 	sw	a2, 0(s1)
 	addi	a1, a1, 1
 	addi	s1, s1, 4
@@ -146,8 +147,8 @@ vector_memcpy_8strided:
 .LBB3_3:
 	sub	a0, a0, a5
 	slli	a3, a5, 2
-	add	a2, a2, a3
 	add	a1, a1, a3
+	add	a2, a2, a3
 	beqz	a0, .LBB3_7
 .LBB3_4:
 	slli	a4, a0, 2
@@ -175,7 +176,7 @@ vector_memcpy_16strided:
 	beqz	a0, .LBB4_9
 	mv	a3, zero
 	addi	a6, zero, 1
-	addi	t0, zero, 4
+	addi	t0, zero, 8
 	addi	a7, zero, 16
 	j	.LBB4_4
 .LBB4_2:
@@ -185,8 +186,8 @@ vector_memcpy_16strided:
 .LBB4_3:
 	sub	a0, a0, a5
 	slli	a4, a5, 2
-	add	a2, a2, a4
 	add	a1, a1, a4
+	add	a2, a2, a4
 	beqz	a0, .LBB4_9
 .LBB4_4:
 	addi	a5, a0, -1
@@ -219,32 +220,31 @@ vector_memcpy_16strided:
 	.type	vector_memcpy_32strided,@function
 vector_memcpy_32strided:
 	beqz	a0, .LBB5_8
-	addi	t0, zero, 4
 	addi	a7, zero, 16
 	j	.LBB5_4
 .LBB5_2:
 	vle32.v	v25, (a1)
 	vse32.v	v25, (a2)
 .LBB5_3:
-	sub	a0, a0, a5
-	slli	a3, a5, 2
-	add	a2, a2, a3
+	sub	a0, a0, a4
+	slli	a3, a4, 2
 	add	a1, a1, a3
+	add	a2, a2, a3
 	beqz	a0, .LBB5_8
 .LBB5_4:
-	vsetvli	a5, a0, e32, m1, ta, mu
-	slli	a6, a5, 2
+	vsetvli	a4, a0, e32, m1, ta, mu
+	slli	a6, a4, 2
 	bgeu	a6, a0, .LBB5_2
-	mv	a4, zero
+	mv	a5, zero
 .LBB5_6:
-	add	a3, a1, a4
-	vsetvli	zero, a5, e32, m1, ta, mu
-	vlse32.v	v25, (a3), t0
-	add	a3, a2, a4
-	addi	a4, a4, 4
-	vsse32.v	v25, (a3), t0
-	bne	a4, a7, .LBB5_6
-	mv	a5, a6
+	add	a3, a1, a5
+	vsetvli	zero, a4, e32, m1, ta, mu
+	vlse32.v	v25, (a3), a7
+	add	a3, a2, a5
+	addi	a5, a5, 4
+	vsse32.v	v25, (a3), a7
+	bne	a5, a7, .LBB5_6
+	mv	a4, a6
 	j	.LBB5_3
 .LBB5_8:
 	ret

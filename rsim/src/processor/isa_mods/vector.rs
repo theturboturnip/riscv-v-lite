@@ -171,9 +171,6 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     fn fast_check_load_store(&mut self, addr_provenance: (u64, Provenance), vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<bool> {
         let (base_addr, provenance) = addr_provenance;
 
-        let (_, op_eew) = op.access_params();
-        let addr_base_step = op_eew.width_in_bytes();
-
         use DecodedMemOp::*;
         let mut is_fault_only_first = false;
         // Try to calculate an address range that totally encompases the access.
@@ -184,20 +181,20 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     end: (evl as u64) * (nf as u64)
                 };
                 let addr_range = Range::<u64> {
-                    start: base_addr + index_range.start * addr_base_step * stride,
-                    end: base_addr + index_range.end * addr_base_step * stride,
+                    start: base_addr + index_range.start * stride,
+                    end: base_addr + index_range.end * stride,
                 };
                 Some(addr_range)
             },
-            FaultOnlyFirst{evl, nf, ..} => {
+            FaultOnlyFirst{evl, nf, eew, ..} => {
                 is_fault_only_first = true;
                 let index_range = Range::<u64> {
                     start: self.vstart as u64,
                     end: (evl as u64) * (nf as u64)
                 };
                 let addr_range = Range::<u64> {
-                    start: base_addr + index_range.start * addr_base_step,
-                    end: base_addr + index_range.end * addr_base_step,
+                    start: base_addr + index_range.start * eew.width_in_bytes(),
+                    end: base_addr + index_range.end * eew.width_in_bytes(),
                 };
                 Some(addr_range)
             },
@@ -208,8 +205,8 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     end: (vl as u64)
                 };
                 let addr_range = Range::<u64> {
-                    start: base_addr + index_range.start * 1,
-                    end: base_addr + index_range.end * 1,
+                    start: base_addr + index_range.start,
+                    end: base_addr + index_range.end,
                 };
                 Some(addr_range)
             
@@ -220,8 +217,8 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     end: (evl as u64)
                 };
                 let addr_range = Range::<u64> {
-                    start: base_addr + index_range.start * 1,
-                    end: base_addr + index_range.end * 1,
+                    start: base_addr + index_range.start,
+                    end: base_addr + index_range.end,
                 };
                 Some(addr_range)
             }
@@ -261,47 +258,42 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
         use DecodedMemOp::*;
         match op {
             Strided{dir: Load, stride, evl, nf, eew, emul} => {
-                let addr_base_step = eew.width_in_bytes();
                 let elems_per_group = val_times_lmul_over_sew(VLEN as u32, eew, emul);
                 // i = element index in logical vector (which includes groups)
-                let mut addr = base_addr;
                 // For each segment
                 for i in self.vstart..evl {
+                    let seg_addr = base_addr + (i as u64 * stride);
+                    let mut field_addr = seg_addr;
                     // For each field
                     for i_field in 0..nf {
                         // If we aren't masked out...
                         if !self.idx_masked_out(vm, i as usize) {
                             // ... load from memory into register
-                            let addr_p = (addr, provenance);
+                            let addr_p = (field_addr, provenance);
                             self.load_to_vreg(conn, eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
                         }
                         // Either way increment the address
-                        // TODO this is very wrong?
-                        // There aren't strides between segment fields
-                        addr += addr_base_step * stride;
+                        field_addr += eew.width_in_bytes();
                     }
                 }
             }
             Strided{dir: Store, stride, evl, nf, eew, emul} => {
-                let addr_base_step = eew.width_in_bytes();
                 let elems_per_group = val_times_lmul_over_sew(VLEN as u32, eew, emul);
-
                 // i = element index in logical vector (which includes groups)
-                let mut addr = base_addr;
                 // For each segment
                 for i in self.vstart..evl {
+                    let seg_addr = base_addr + (i as u64 * stride);
+                    let mut field_addr = seg_addr;
                     // For each field
                     for i_field in 0..nf {
                         // If we aren't masked out...
                         if !self.idx_masked_out(vm, i as usize) {
                             // ... store from register into memory
-                            let addr_p = (addr, provenance);
+                            let addr_p = (field_addr, provenance);
                             self.store_to_mem(conn, eew, addr_p, rd, i + (i_field as u32 * elems_per_group))?;
                         }
                         // Either way increment the address
-                        // TODO this is very wrong?
-                        // There aren't strides between segment fields
-                        addr += addr_base_step * stride;
+                        field_addr += eew.width_in_bytes();
                     }
                 }
             }
@@ -313,13 +305,11 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     bail!("Indexed Load with NFIELDS != 1 ({}) not supported yet", nf);
                 }
 
-                let addr_base_step = eew.width_in_bytes();
-
                 // i = element index in logical vector (which includes groups)
                 for i in self.vstart..evl {
                     // Get our index
                     let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
-                    let addr = base_addr + addr_base_step * (idx as u64);
+                    let addr = base_addr + (idx as u64);
 
                     // If we aren't masked out...
                     if !self.idx_masked_out(vm, i as usize) {
@@ -337,13 +327,11 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     bail!("Indexed Store with NFIELDS != 1 ({}) not supported yet", nf);
                 }
 
-                let addr_base_step = eew.width_in_bytes();
-
                 // i = element index in logical vector (which includes groups)
                 for i in self.vstart..evl {
                     // Get our index
                     let idx = self.load_vreg_elem(Sew::e32, rs2, i)?;
-                    let addr = base_addr + addr_base_step * (idx as u64);
+                    let addr = base_addr + (idx as u64);
 
                     // If we aren't masked out...
                     if !self.idx_masked_out(vm, i as usize) {
@@ -354,13 +342,8 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                 }
             }
             FaultOnlyFirst{evl, nf, eew, emul} => {
-                // FaultOnlyFirst loads can be strided 
-                // (https://github.com/riscv/riscv-opcodes/blob/master/opcodes-rvv, non-zero NF is allowed)
-
-                let addr_base_step = eew.width_in_bytes();
                 let elems_per_group = val_times_lmul_over_sew(VLEN as u32, eew, emul);
-
-                let stride = 1;
+                let stride = eew.width_in_bytes();
                 // i = element index in logical vector (which includes groups)
                 let mut addr = base_addr;
                 // For each segment
@@ -404,7 +387,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                             }
                         }
                         // Either way increment the address
-                        addr += addr_base_step * stride;
+                        addr += stride;
                     }
                 }
             }
@@ -413,7 +396,6 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
 
                 let eew = Sew::e8;
                 let vl = (nf as u32) * ((VLEN/8) as u32);
-                let addr_base_step = 1;
                 // vstart is ignored, except for the vstart >= evl case above
                 // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
                 for i in 0..vl {
@@ -422,8 +404,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     // dbg!("ld", i, addr);
                     let addr_p = (addr, provenance);
                     self.load_to_vreg(conn, eew, addr_p, rd, i)?;
-
-                    addr += addr_base_step;
+                    addr += eew.width_in_bytes();
                 }
             }
             WholeRegister{dir: Store, nf, emul: _} => {
@@ -431,7 +412,6 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
 
                 let eew = Sew::e8;
                 let vl = (nf as u32) * ((VLEN/8) as u32);
-                let addr_base_step = 1;
                 // vstart is ignored, except for the vstart >= evl case above
                 // NFIELDS doesn't behave as normal here - it's integrated into EVL at decode stage
                 for i in 0..vl {
@@ -440,8 +420,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     // dbg!("st", i, addr);
                     let addr_p = (addr, provenance);
                     self.store_to_mem(conn, eew, addr_p, rd, i)?;
-
-                    addr += addr_base_step;
+                    addr += eew.width_in_bytes();
                 }
             }
             ByteMask{dir: Load, evl} => {

@@ -37,7 +37,7 @@
     #define ENABLE_MASKED 0 // MASKED needs non-hardcoded vector registers for setting up the mask?
     #define ENABLE_SEG 0 // SEG needs non-hardcoded vector registers for individual stores
     // This doesn't quite work yet - it relies on making up an address out of thin air, which CHERI doesn't support :D
-    #define ENABLE_FAULTONLYFIRST 1
+    #define ENABLE_FAULTONLYFIRST 0
     // This *should* work but LLVM complains about "invalid operand for instruction"
     #define ENABLE_ASM_WHOLEREG 0
     #else
@@ -69,13 +69,16 @@ void* memset(void* dest, int ch, size_t count) {
 
 #if ENABLE_INDEXED
 void vector_memcpy_indexed(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
+    const size_t ELEM_WIDTH = 4;
+
     // Generate indices
     uint32_t indices[128] = {0};
     size_t vlmax = vsetvlmax_e32m4();
 
     for (size_t i = 0; i < vlmax; i++) {
         // Use xor to generate a shuffled index pattern
-        indices[i] = ((uint32_t)i) ^ 1;
+        // The index values are in terms of bytes
+        indices[i] = (((uint32_t)i) ^ 1) * ELEM_WIDTH;
     }
 
     vuint32m4_t indices_v = vle32_v_u32m4(&indices[0], vlmax);
@@ -180,6 +183,7 @@ void vector_memcpy_masked_bytemaskload(size_t n, const int32_t* __restrict__ in,
 #if ENABLE_STRIDED
 void vector_memcpy_8strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     const size_t STRIDE_FACTOR = 4;
+    const size_t ELEM_WIDTH = 1;
     size_t copied_per_iter = 0;
     for (; n > 0; ) {
         copied_per_iter = vsetvl_e8m1(n*4);
@@ -196,10 +200,10 @@ void vector_memcpy_8strided(size_t n, const int32_t* __restrict__ in, int32_t* _
             for (size_t i = 0; i < STRIDE_FACTOR*4; i++) {
                 VEC_INTRIN(vsse8_v_i8m1)(
                     ((char*)out)+i,
-                    STRIDE_FACTOR,
+                    STRIDE_FACTOR*ELEM_WIDTH,
                     VEC_INTRIN(vlse8_v_i8m1)(
                         ((char*)in)+i,
-                        STRIDE_FACTOR,
+                        STRIDE_FACTOR*ELEM_WIDTH,
                         copied_per_iter
                     ),
                     copied_per_iter
@@ -223,6 +227,7 @@ void vector_memcpy_8strided(size_t n, const int32_t* __restrict__ in, int32_t* _
 
 void vector_memcpy_16strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     const size_t STRIDE_FACTOR = 4;
+    const size_t ELEM_WIDTH = 2;
     size_t copied_per_iter = 0;
     for (; n > 0 && !(n == 1 && copied_per_iter < 2); ) {
         copied_per_iter = vsetvl_e16m1(n*2);
@@ -239,10 +244,10 @@ void vector_memcpy_16strided(size_t n, const int32_t* __restrict__ in, int32_t* 
             for (size_t i = 0; i < STRIDE_FACTOR*2; i++) {
                 VEC_INTRIN(vsse16_v_i16m1)(
                     ((char*)out)+(i*2),
-                    STRIDE_FACTOR,
+                    STRIDE_FACTOR*ELEM_WIDTH,
                     VEC_INTRIN(vlse16_v_i16m1)(
                         ((char*)in)+(i*2),
-                        STRIDE_FACTOR,
+                        STRIDE_FACTOR*ELEM_WIDTH,
                         copied_per_iter
                     ),
                     copied_per_iter
@@ -266,6 +271,7 @@ void vector_memcpy_16strided(size_t n, const int32_t* __restrict__ in, int32_t* 
 
 void vector_memcpy_32strided(size_t n, const int32_t* __restrict__ in, int32_t* __restrict__ out) {
     const size_t STRIDE_FACTOR = 4;
+    const size_t ELEM_WIDTH = 4;
     size_t copied_per_iter = 0;
     for (; n > 0; ) {
         copied_per_iter = vsetvl_e32m1(n);
@@ -282,10 +288,10 @@ void vector_memcpy_32strided(size_t n, const int32_t* __restrict__ in, int32_t* 
             for (size_t i = 0; i < STRIDE_FACTOR; i++) {
                 VEC_INTRIN(vsse32_v_i32m1)(
                     out+i,
-                    STRIDE_FACTOR,
+                    STRIDE_FACTOR*ELEM_WIDTH,
                     VEC_INTRIN(vlse32_v_i32m1)(
                         in+i,
-                        STRIDE_FACTOR,
+                        STRIDE_FACTOR*ELEM_WIDTH,
                         copied_per_iter
                     ),
                     copied_per_iter

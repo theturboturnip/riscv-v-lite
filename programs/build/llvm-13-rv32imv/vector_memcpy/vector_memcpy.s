@@ -29,22 +29,24 @@ vector_memcpy_indexed:
 	sw	s2, 528(sp)
 	sw	s3, 524(sp)
 	mv	s2, a2
-	mv	s3, a1
+	mv	s1, a1
 	mv	s0, a0
 	addi	a0, sp, 12
 	addi	a2, zero, 512
-	addi	s1, sp, 12
+	addi	s3, sp, 12
 	mv	a1, zero
 	call	memset@plt
 	vsetvli	a0, zero, e32, m4, ta, mu
 	beqz	a0, .LBB1_3
 	mv	a1, zero
+	mv	a2, a0
 .LBB1_2:
-	xori	a2, a1, 1
-	sw	a2, 0(s1)
-	addi	a1, a1, 1
-	addi	s1, s1, 4
-	bne	a0, a1, .LBB1_2
+	xori	a3, a1, 4
+	add	a4, s3, a1
+	sw	a3, 0(a4)
+	addi	a2, a2, -1
+	addi	a1, a1, 4
+	bnez	a2, .LBB1_2
 .LBB1_3:
 	addi	a1, sp, 12
 	vle32.v	v28, (a1)
@@ -58,18 +60,18 @@ vector_memcpy_indexed:
 	addi	sp, sp, 544
 	ret
 .LBB1_5:
-	vle32.v	v8, (s3)
+	vle32.v	v8, (s1)
 	vse32.v	v8, (s2)
 .LBB1_6:
 	slli	a2, a1, 2
-	add	s3, s3, a2
+	add	s1, s1, a2
 	sub	s0, s0, a1
 	add	s2, s2, a2
 	beqz	s0, .LBB1_4
 .LBB1_7:
 	vsetvli	a1, s0, e32, m4, ta, mu
 	bne	a1, a0, .LBB1_5
-	vloxei32.v	v8, (s3), v28
+	vloxei32.v	v8, (s1), v28
 	vsoxei32.v	v8, (s2), v28
 	j	.LBB1_6
 .Lfunc_end1:
@@ -148,8 +150,8 @@ vector_memcpy_8strided:
 .LBB3_3:
 	sub	a0, a0, a7
 	slli	a3, a7, 2
-	add	a2, a2, a3
 	add	a1, a1, a3
+	add	a2, a2, a3
 	beqz	a0, .LBB3_7
 .LBB3_4:
 	slli	a3, a0, 2
@@ -178,7 +180,7 @@ vector_memcpy_16strided:
 	beqz	a0, .LBB4_9
 	mv	a3, zero
 	addi	a6, zero, 1
-	addi	t1, zero, 4
+	addi	t1, zero, 8
 	addi	t0, zero, 16
 	j	.LBB4_4
 .LBB4_2:
@@ -188,8 +190,8 @@ vector_memcpy_16strided:
 .LBB4_3:
 	sub	a0, a0, a5
 	slli	a4, a5, 2
-	add	a2, a2, a4
 	add	a1, a1, a4
+	add	a2, a2, a4
 	beqz	a0, .LBB4_9
 .LBB4_4:
 	addi	a5, a0, -1
@@ -222,32 +224,31 @@ vector_memcpy_16strided:
 	.type	vector_memcpy_32strided,@function
 vector_memcpy_32strided:
 	beqz	a0, .LBB5_8
-	addi	t0, zero, 4
 	addi	a7, zero, 16
 	j	.LBB5_4
 .LBB5_2:
 	vle32.v	v25, (a1)
 	vse32.v	v25, (a2)
 .LBB5_3:
-	sub	a0, a0, a5
-	slli	a3, a5, 2
-	add	a2, a2, a3
+	sub	a0, a0, a4
+	slli	a3, a4, 2
 	add	a1, a1, a3
+	add	a2, a2, a3
 	beqz	a0, .LBB5_8
 .LBB5_4:
-	vsetvli	a5, a0, e32, m1, ta, mu
-	slli	a6, a5, 2
+	vsetvli	a4, a0, e32, m1, ta, mu
+	slli	a6, a4, 2
 	bgeu	a6, a0, .LBB5_2
-	mv	a4, zero
+	mv	a5, zero
 .LBB5_6:
-	add	a3, a1, a4
-	vsetvli	zero, a5, e32, m1, ta, mu
-	vlse32.v	v25, (a3), t0
-	add	a3, a2, a4
-	addi	a4, a4, 4
-	vsse32.v	v25, (a3), t0
-	bne	a4, a7, .LBB5_6
-	mv	a5, a6
+	add	a3, a1, a5
+	vsetvli	zero, a4, e32, m1, ta, mu
+	vlse32.v	v25, (a3), a7
+	add	a3, a2, a5
+	addi	a5, a5, 4
+	vsse32.v	v25, (a3), a7
+	bne	a5, a7, .LBB5_6
+	mv	a4, a6
 	j	.LBB5_3
 .LBB5_8:
 	ret
