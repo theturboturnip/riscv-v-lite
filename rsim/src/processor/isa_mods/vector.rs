@@ -172,12 +172,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
         let (base_addr, provenance) = addr_provenance;
 
         let (_, op_eew) = op.access_params();
-        let addr_base_step = match op_eew {
-            Sew::e8 => 1,
-            Sew::e16 => 2,
-            Sew::e32 => 4,
-            Sew::e64 => bail!("unsupported {:?} in vector load/store", op_eew),
-        };
+        let addr_base_step = op_eew.width_in_bytes();
 
         use DecodedMemOp::*;
         let mut is_fault_only_first = false;
@@ -261,22 +256,13 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     fn exec_load_store(&mut self, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
         use MemOpDir::*;
 
-        let (op_emul, op_eew) = op.access_params();
-
         let (base_addr, provenance) = conn.get_addr_provenance(rs1)?;
-
-        let addr_base_step = match op_eew {
-            Sew::e8 => 1,
-            Sew::e16 => 2,
-            Sew::e32 => 4,
-            Sew::e64 => bail!("unsupported {:?} in vector load/store", op_eew),
-        };
-
-        let elems_per_group = val_times_lmul_over_sew(VLEN as u32, op_eew, op_emul);
 
         use DecodedMemOp::*;
         match op {
-            Strided{dir: Load, stride, evl, nf, eew, ..} => {
+            Strided{dir: Load, stride, evl, nf, eew, emul} => {
+                let addr_base_step = eew.width_in_bytes();
+                let elems_per_group = val_times_lmul_over_sew(VLEN as u32, eew, emul);
                 // i = element index in logical vector (which includes groups)
                 let mut addr = base_addr;
                 // For each segment
@@ -296,7 +282,10 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     }
                 }
             }
-            Strided{dir: Store, stride, evl, nf, eew, ..} => {
+            Strided{dir: Store, stride, evl, nf, eew, emul} => {
+                let addr_base_step = eew.width_in_bytes();
+                let elems_per_group = val_times_lmul_over_sew(VLEN as u32, eew, emul);
+
                 // i = element index in logical vector (which includes groups)
                 let mut addr = base_addr;
                 // For each segment
@@ -324,6 +313,8 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     bail!("Indexed Load with NFIELDS != 1 ({}) not supported yet", nf);
                 }
 
+                let addr_base_step = eew.width_in_bytes();
+
                 // i = element index in logical vector (which includes groups)
                 for i in self.vstart..evl {
                     // Get our index
@@ -346,6 +337,8 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     bail!("Indexed Store with NFIELDS != 1 ({}) not supported yet", nf);
                 }
 
+                let addr_base_step = eew.width_in_bytes();
+
                 // i = element index in logical vector (which includes groups)
                 for i in self.vstart..evl {
                     // Get our index
@@ -360,9 +353,12 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     }
                 }
             }
-            FaultOnlyFirst{evl, nf, eew, ..} => {
+            FaultOnlyFirst{evl, nf, eew, emul} => {
                 // FaultOnlyFirst loads can be strided 
                 // (https://github.com/riscv/riscv-opcodes/blob/master/opcodes-rvv, non-zero NF is allowed)
+
+                let addr_base_step = eew.width_in_bytes();
+                let elems_per_group = val_times_lmul_over_sew(VLEN as u32, eew, emul);
 
                 let stride = 1;
                 // i = element index in logical vector (which includes groups)
@@ -458,9 +454,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                 for i in self.vstart..evl {
                     let addr_p = (addr, provenance);
                     self.load_to_vreg(conn, Sew::e8, addr_p, rd, i)?;
-
-                    // Increment the address
-                    addr += addr_base_step;
+                    addr += 1;
                 }
             }
             ByteMask{dir: Store, evl} => {
@@ -473,9 +467,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                 for i in self.vstart..evl {
                     let addr_p = (addr, provenance);
                     self.store_to_mem(conn, Sew::e8, addr_p, rd, i)?;
-
-                    // Increment the address
-                    addr += addr_base_step;
+                    addr += 1;
                 }
             }
         };

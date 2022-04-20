@@ -215,6 +215,16 @@ pub enum Sew {
     e32,
     e64
 }
+impl Sew {
+    pub fn width_in_bytes(&self) -> u64 {
+        match self {
+            Sew::e8 => 1,
+            Sew::e16 => 2,
+            Sew::e32 => 4,
+            Sew::e64 => 8,
+        }
+    }
+}
 
 /// Length-Mul enum
 /// 
