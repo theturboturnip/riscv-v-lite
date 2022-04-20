@@ -50,40 +50,171 @@ pub enum MemOpDir {
 /// Indexed access, and the special cases of unit-stride access (e.g. whole-register, bytemasked, fault-only-first).
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 pub enum DecodedMemOp {
+    /// Moves elements of [nf] vector register groups to/from contiguous segments of memory,
+    /// where each segment is separated by a stride.
+    /// 
+    /// - The start of each segment is separated by [stride] bytes.
+    /// - Each segment is `nf * eew` bits long, i.e. [nf] elements long.
+    /// - Each element in the i-th segment maps to the i-th element of a vector register group.
+    /// - This instruction doesn't do anything if the stored `vstart >= vl`.
+    /// 
+    /// In the simplest case, `nf = 1`.
+    /// For example: `stride = 8`, `eew = 32 bits = 4 bytes`
+    /// ```text
+    /// base addr + (i * 8) <=> v0[i]
+    /// ```
+    /// 
+    /// Increasing [nf] makes it more complicated.
+    /// For example if `nf = 3`, `stride = 8`, `eew = 32 bits = 4 bytes`:
+    /// ```text
+    /// base addr + (i * 8) + (0 * 4) <=> v0[i]
+    /// base addr + (i * 8) + (1 * 4) <=> v1[i]
+    /// base addr + (i * 8) + (2 * 4) <=> v2[i]
+    /// ```
+    /// 
+    /// In the most complicated case, [EMUL] may also be > 1.
+    /// If `EMUL = 2`, `nf = 3`, `stride = 8`, `eew = 32 bits = 4 bytes`:
+    /// ```text
+    /// base addr + (i * 8) + (0 * 4) <=> (v0..v1)[i]
+    /// base addr + (i * 8) + (1 * 4) <=> (v2..v3)[i]
+    /// base addr + (i * 8) + (2 * 4) <=> (v4..v5)[i]
+    /// ```
+    /// Element 2 of the segment maps to vector register *group* 2,
+    /// i.e. v4 and v5, rather than v2.
     Strided{
+        /// The stride.
+        /// AFAIK this should be specified in bytes, but right now it's used in terms of element width.
+        /// TODO make this bytes everywhere
         stride: u64, 
         
+        /// The direction, i.e. load or store
         dir: MemOpDir,
-        emul: Lmul,
+        /// The effective element width - this is encoded in the instruction instead of copying from vtype
         eew: Sew,
+        /// The effective LMUL of the operation, e.g. the size of the vector register group.
+        /// Computed as (EEW/vtype.SEW)*vtype.LMUL
+        /// 
+        /// AFAIK this is to keep the Effective Vector Length (EVL) the same based on the element width.
+        /// For example, if you set `vtype = (SEW = 32, LMUL = 1) and vl = 4` to prepare for 32-bit arithmetic,
+        /// and then load 4x 64-bit elements (EEW = 64), the effective LMUL of the load will double to make room.
+        emul: Lmul,
+        /// The effective vector length - always equal to the current vl
+        evl: u32,
+        /// Number of Fields for segmented access
         nf: u8,
-        evl: u32
     },
+    /// Moves elements of [nf] vector register groups to/from contiguous segments of memory,
+    /// where each segment is offset by an index taken from another vector.
+    /// 
+    /// - The start of each segment is defined by `base address + index_vector[i]`.
+    /// - Each segment is `nf * eew` bits long, i.e. [nf] elements long.
+    /// - Each element in the i-th segment maps to the i-th element of a vector register group.
+    /// - Accesses within each segment are not ordered relative to each other.
+    /// - If the ordered variant of this instruction is used, then the segments must be accessed in the order specified by the index vector.
+    /// - This instruction doesn't do anything if the stored `vstart >= vl`.
+    /// 
+    /// The EEW and EMUL for the elements themselves are equal to the SEW, LMUL stored in `vtype`.
+    /// The EEW and EMUL for the indices are defined in the instruction.
+    /// 
+    /// In the simplest case, `nf = 1`.
+    /// For example:
+    /// ```text
+    /// base addr + index_vector[i] <=> v0[i]
+    /// ```
+    /// 
+    /// Increasing [nf] makes it more complicated.
+    /// For example if `nf = 3`, `element width = 32 bits = 4 bytes`:
+    /// ```text
+    /// base addr + index_vector[i] + (0 * 4) <=> v0[i]
+    /// base addr + index_vector[i] + (1 * 4) <=> v1[i]
+    /// base addr + index_vector[i] + (2 * 4) <=> v2[i]
+    /// ```
+    /// 
+    /// In the most complicated case, [EMUL] may also be > 1.
+    /// If `EMUL = 2`, `nf = 3`, `element width = 32 bits = 4 bytes`:
+    /// ```text
+    /// base addr + index_vector[i] + (0 * 4) <=> (v0..v1)[i]
+    /// base addr + index_vector[i] + (1 * 4) <=> (v2..v3)[i]
+    /// base addr + index_vector[i] + (2 * 4) <=> (v4..v5)[i]
+    /// ```
+    /// Element 2 of the segment maps to vector register *group* 2,
+    /// i.e. v4 and v5, rather than v2.
     Indexed{
+        /// Whether elements must be accessed in the order specified by the index vector.
         ordered: bool,
+        /// The width of the indices. Indices should byte offsets, but right now the emulator treats them in terms of element width.
+        /// TODO make indices byte offsets everywhere
         index_ew: Sew,
         
+        /// The direction, i.e. load or store
         dir: MemOpDir,
-        emul: Lmul,
+        /// The width of the elements being accessed from memory
         eew: Sew,
+        /// The effective LMUL of the operation. See [DecodedMemOp::Strided::emul].
+        emul: Lmul,
+        /// The effective vector length - always equal to the current vl
+        evl: u32,
+        /// Number of Fields for segmented access
         nf: u8,
-        evl: u32
     },
+    /// Moves the contents of [nf] vector registers to/from a contiguous range in memory.
     WholeRegister{
+        /// The direction, i.e. load or store
         dir: MemOpDir,
-        emul: Lmul,
+        /// The number of registers to load or store.
+        /// Must be power-of-2
         nf: u8,
+        /// TODO REMOVE
+        emul: Lmul,
     },
+    /// Moves the contents of a mask register to/from a contiguous range of memory.
+    /// 
+    /// This instruction transfers at least `vl` bits into the mask register,
+    /// one bit for each element that could be used in subsequent vector instructions.
+    /// 
+    /// It is therefore equivalent to a unit-stride load where
+    /// - EVL = `ceil(vl/8)`
+    /// - EEW = 8-bits
+    /// - EMUL = 1 (The maximum LMUL is 8, thus `vl/8` bytes must be able to fit into a single vector register)
+    /// - the tail-agnostic setting is always on
     ByteMask{
+        /// The direction, i.e. load or store
         dir: MemOpDir,
-        emul: Lmul,
+        /// The number of bytes to load, i.e. `ceil(vl/8)`
         evl: u32
     },
+    /// Loads elements from contiguous segments in memory into [nf] vector register groups.
+    /// If an exception is encountered while loading elements from segment 0, it is trapped as usual.
+    /// However, an exception encountered after that point is ignored, and `vl` is set to the current segment instead.
+    /// 
+    /// - The start of the range is defined by `base address`.
+    /// - Each segment is `nf * eew` bits long, i.e. [nf] elements long.
+    /// - Each element in the i-th segment maps to the i-th element of a vector register group.
+    /// - Accesses within each segment are not ordered relative to each other.
+    /// - This instruction doesn't do anything if the stored `vstart >= vl`.
+    /// 
+    /// The mappings of address to element are the same as for [DecodedMemOp::Strided], where the stride = the element width.
+    /// 
+    /// ```text
+    /// These accesses can trap an exception
+    /// base addr + (0 * 8) + (0 * 4) <=> (v0..v1)[0]
+    /// base addr + (0 * 8) + (1 * 4) <=> (v2..v3)[0]
+    /// base addr + (0 * 8) + (2 * 4) <=> (v4..v5)[0]
+    /// 
+    /// These accesses set vl = i on an exception, where i != 0
+    /// base addr + (i * 8) + (0 * 4) <=> (v0..v1)[i]
+    /// base addr + (i * 8) + (1 * 4) <=> (v2..v3)[i]
+    /// base addr + (i * 8) + (2 * 4) <=> (v4..v5)[i]
+    /// ```
     FaultOnlyFirst{
-        emul: Lmul,
+        /// The width of the elements being accessed from memory
         eew: Sew,
+        /// The effective LMUL of the operation. See [DecodedMemOp::Strided::emul].
+        emul: Lmul,
+        /// The effective vector length - always equal to the current vl
+        evl: u32,
+        /// Number of Fields for segmented access
         nf: u8,
-        evl: u32
     },
 }
 impl DecodedMemOp {
@@ -104,7 +235,7 @@ impl DecodedMemOp {
             Indexed{emul, eew, ..} => (emul, eew),
             // For WholeRegister, just use any old eew
             WholeRegister{emul, ..} => (emul, Sew::e8),
-            ByteMask{emul, ..} => (emul, Sew::e8),
+            ByteMask{..} => (Lmul::e1, Sew::e8),
             FaultOnlyFirst{emul, eew, ..} => (emul, eew),
         }
     }
@@ -252,7 +383,7 @@ impl DecodedMemOp {
                             },
                             ByteMaskLoad => if eew == Sew::e8 {
                                 DecodedMemOp::ByteMask {
-                                    dir, emul, evl: bytemask_vl,
+                                    dir, evl: bytemask_vl,
                                 }
                             } else {
                                 bail!("Can't have ByteMaskLoad with non-byte EEW")
@@ -286,7 +417,7 @@ impl DecodedMemOp {
                             },
                             ByteMaskStore => if eew == Sew::e8 {
                                 DecodedMemOp::ByteMask {
-                                    dir, emul, evl: bytemask_vl,
+                                    dir, evl: bytemask_vl,
                                 }
                             } else {
                                 bail!("Can't have ByteMaskStore with non-byte EEW")

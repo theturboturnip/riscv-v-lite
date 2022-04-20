@@ -216,7 +216,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     return conn.check_addr_range_against_provenance(addr_range, provenance, dir);
                 }
             }
-            ByteMask{dir, evl, emul: _} => {
+            ByteMask{dir, evl} => {
                 if vm {
                     let index_range = Range::<u64> {
                         start: self.vstart as u64,
@@ -340,7 +340,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     addr += addr_base_step;
                 }
             }
-            ByteMask{dir, evl, emul: _} => {
+            ByteMask{dir, evl} => {
                 if vm == false {
                     // vlm, vsm cannot be masked out
                     bail!("ByteMask operations cannot be masked")
@@ -541,7 +541,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     addr += addr_base_step;
                 }
             }
-            ByteMask{dir: Load, evl, emul: _} => {
+            ByteMask{dir: Load, evl} => {
                 if vm == false {
                     // vlm, vsm cannot be masked out
                     bail!("ByteMask operations cannot be masked")
@@ -556,7 +556,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     addr += addr_base_step;
                 }
             }
-            ByteMask{dir: Store, evl, emul: _} => {
+            ByteMask{dir: Store, evl} => {
                 if vm == false {
                     // As above, vlm, vsm cannot be masked out
                     bail!("ByteMask operations cannot be masked")
