@@ -85,6 +85,7 @@ pub enum DecodedMemOp {
         /// The stride.
         /// AFAIK this should be specified in bytes, but right now it's used in terms of element width.
         /// TODO make this bytes everywhere
+        /// TODO make this signed everywhere
         stride: u64, 
         
         /// The direction, i.e. load or store
