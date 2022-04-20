@@ -4,6 +4,7 @@ use std::ops::Range;
 use std::marker::PhantomData;
 use crate::processor::isa_mods::*;
 use crate::processor::exceptions::IllegalInstructionException::*;
+use crate::processor::exceptions::CapabilityException;
 use super::csrs::CSRProvider;
 use std::cmp::min;
 use anyhow::{Context, Result};
@@ -302,9 +303,14 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                                 // There was *some* error from the load, check if it was a memory fault
                                 let load_err = load_fault.unwrap_err();
                                 // Only shrink the vlen if it's a MemError related to an invalid address
-                                let error_reduces_vlen = match load_err.downcast_ref::<MemoryException>() {
+                                let mut error_reduces_vlen = match load_err.downcast_ref::<MemoryException>() {
                                     Some(MemoryException::AddressUnmapped{..}) => true,
                                     _ => false
+                                };
+                                match load_err.downcast_ref::<CapabilityException>() {
+                                    // Capability exceptions also trigger FoF?
+                                    Some(_) => { error_reduces_vlen = true; },
+                                    _ => {}
                                 };
                                 if error_reduces_vlen {
                                     // "vector length vl is reduced to the index of the 
@@ -484,9 +490,14 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                                 // There was *some* error from the load, check if it was a memory fault
                                 let load_err = load_fault.unwrap_err();
                                 // Only shrink the vlen if it's a MemError related to an invalid address
-                                let error_reduces_vlen = match load_err.downcast_ref::<MemoryException>() {
+                                let mut error_reduces_vlen = match load_err.downcast_ref::<MemoryException>() {
                                     Some(MemoryException::AddressUnmapped{..}) => true,
                                     _ => false
+                                };
+                                match load_err.downcast_ref::<CapabilityException>() {
+                                    // Capability exceptions also trigger FoF?
+                                    Some(_) => { error_reduces_vlen = true; },
+                                    _ => {}
                                 };
                                 if error_reduces_vlen {
                                     // "vector length vl is reduced to the index of the 
