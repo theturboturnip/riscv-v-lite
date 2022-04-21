@@ -708,23 +708,21 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                 let addr_provenance = conn.get_addr_provenance(rs1)?;
 
                 // Pre-check capability access
-                // returns Ok(true) if the load/store will not raise capability exceptions
-                // returns Ok(false) if the load/store may raise capability exceptions
-                // returns Err() if the load/store will definitely raise a capability exception
-                let had_successful_fast_path = self.fast_check_load_store(addr_provenance, vm, op, conn)?;
-                // NOTE the above only functions for capability checking.
-                // The fast path can't necessarily check for i.e. page faults
-
-                if had_successful_fast_path {
-                    // There was a fast path, and because it didn't return an Err that fast path didn't find any errors
-                    self.exec_load_store(rd, rs1, rs2, vm, op, conn)
-                        .context("Executing pre-checked vector access - shouldn't throw CapabilityExceptions under any circumstances")?;
-                } else {
-                    // There was no fast path
-                    self.exec_load_store(rd, rs1, rs2, vm, op, conn)
-                        .context("Executing not-checked vector access")?;
+                let fast_check_result = self.fast_check_load_store(addr_provenance, vm, op, conn);
+                match fast_check_result {
+                    // There was a fast path that didn't raise an exception
+                    Ok(true) => {
+                        self.exec_load_store(rd, rs1, rs2, vm, op, conn)
+                            .context("Executing pre-checked vector access - shouldn't throw CapabilityExceptions under any circumstances")?;
+                    },
+                    // There was a fast path that raised an exception, re-raise it
+                    Err(e) => return Err(e),
+                    // There was no fast path, or it was uncertain if a CapabilityException would actually be raised
+                    Ok(false) => {
+                        self.exec_load_store(rd, rs1, rs2, vm, op, conn)
+                            .context("Executing not-pre-checked vector access - may throw CapabilityException")?;
+                    },
                 }
-                
             }
 
             _ => bail!("Unexpected opcode/InstructionBits pair at vector unit")
