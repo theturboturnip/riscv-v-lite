@@ -5,12 +5,12 @@ use anyhow::Result;
 use super::types::*;
 use super::decode::MemOpDir;
 use crate::processor::elements::cheri::{CheriRV64RegisterFile,CheriAggregateMemory,Cc128,CompressedCapability};
-use crate::processor::elements::{registers::RegisterFile,memory::Memory32};
+use crate::processor::elements::{registers::RegisterFile,memory::Memory};
 
 /// References to all scalar resources touched by the vector unit.
 pub struct Rv32vConn<'a> {
     pub sreg: &'a mut dyn RegisterFile<u32>,
-    pub memory: &'a mut dyn Memory32,
+    pub memory: &'a mut dyn Memory,
 }
 
 pub struct Rv64vCheriConn<'a> {

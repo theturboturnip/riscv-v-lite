@@ -28,8 +28,8 @@ pub trait MemoryOf<TData, TAddr=u64> where TData: Sized {
     fn read(&mut self, addr: TAddr) -> MemoryResult<TData>;
     fn write(&mut self, addr: TAddr, val: TData) -> MemoryResult<()>;
 }
-/// Public trait which supplies {load,store}_u{8,16,32} functions.
-pub trait Memory32<TAddr=u64>: MemoryOf<u8, TAddr> + MemoryOf<u16, TAddr> + MemoryOf<u32, TAddr> {
+/// Public trait which supplies {load,store}_u{8,16,32,64} functions.
+pub trait Memory<TAddr=u64>: MemoryOf<u8, TAddr> + MemoryOf<u16, TAddr> + MemoryOf<u32, TAddr> + MemoryOf<u64, TAddr> {
     /// The mapped address range for this Memory.
     /// All addresses passed to read,write must be within this range.
     /// Guaranteed to be at least 4 bytes in size, both ends will be 4-byte aligned.
@@ -43,6 +43,9 @@ pub trait Memory32<TAddr=u64>: MemoryOf<u8, TAddr> + MemoryOf<u16, TAddr> + Memo
     fn load_u32(&mut self, addr: TAddr) -> MemoryResult<u32> {
         <Self as MemoryOf<u32, TAddr>>::read(self, addr)
     }
+    fn load_u64(&mut self, addr: TAddr) -> MemoryResult<u64> {
+        <Self as MemoryOf<u64, TAddr>>::read(self, addr)
+    }
     fn store_u8(&mut self, addr: TAddr, val: u8) -> MemoryResult<()> {
         <Self as MemoryOf<u8, TAddr>>::write(self, addr, val)
     }
@@ -51,12 +54,6 @@ pub trait Memory32<TAddr=u64>: MemoryOf<u8, TAddr> + MemoryOf<u16, TAddr> + Memo
     }
     fn store_u32(&mut self, addr: TAddr, val: u32) -> MemoryResult<()> {
         <Self as MemoryOf<u32, TAddr>>::write(self, addr, val)
-    }
-}
-/// Public trait which supplies {load,store}_u{8,16,32,64} functions.
-pub trait Memory64<TAddr=u64>: Memory32<TAddr> + MemoryOf<u64, TAddr> {
-    fn load_u64(&mut self, addr: TAddr) -> MemoryResult<u64> {
-        <Self as MemoryOf<u64, TAddr>>::read(self, addr)
     }
     fn store_u64(&mut self, addr: TAddr, val: u64) -> MemoryResult<()> {
         <Self as MemoryOf<u64, TAddr>>::write(self, addr, val)
@@ -120,12 +117,11 @@ impl MemoryOf<u64> for IOMemory {
         })
     }
 }
-impl Memory32 for IOMemory {
+impl Memory for IOMemory {
     fn range(&self) -> Range<usize> {
         self.range.clone()
     }
 }
-impl Memory64 for IOMemory {}
 
 /// Array-backed memory
 /// 
@@ -299,26 +295,22 @@ impl MemoryOf<u8> for MemoryBacking {
         Ok(())
     }
 }
-impl Memory32 for MemoryBacking {
+impl Memory for MemoryBacking {
     fn range(&self) -> Range<usize> {
         self.range.clone()
     }
 }
-impl Memory64 for MemoryBacking {}
 
 /// Struct that combines a set of array-backed memory mappings.
 /// The mapped address ranges may not overlap.
-///
-/// `T` should be `dyn Memory64` or `dyn Memory32`.
-/// Because T is stored in a Box<>, it doesn't need to be Sized
-pub struct AggregateMemory<T: Memory32 + ?Sized> {
-    mappings: Vec<Box<T>>, // Guaranteed to not have overlapping ranges, have at least one mapping
+pub struct AggregateMemory {
+    mappings: Vec<Box<dyn Memory>>, // Guaranteed to not have overlapping ranges, have at least one mapping
     full_range: Range<usize> // Guaranteed to not be empty, be 4-byte-aligned
 }
-impl<T: Memory32 + ?Sized> AggregateMemory<T> {
+impl AggregateMemory {
     /// Take a set of mappings, verify they do not overlap, and turn them into an `AggregateMemory`.
     /// Panics if any mappings overlap.
-    pub fn from_mappings(mappings: Vec<Box<T>>) -> Self {
+    pub fn from_mappings(mappings: Vec<Box<dyn Memory>>) -> Self {
         assert!(mappings.len() >= 1);
         let mut full_range = mappings[0].range().clone();
 
@@ -358,9 +350,9 @@ impl<T: Memory32 + ?Sized> AggregateMemory<T> {
         }
     }
 }
-/// Foreach TData, where MemoryBacking implements MemoryOf<TData>, re-implement it for AggregateMemory
-/// TData = u8,u16,u32, potentially u64
-impl<T: Memory32 + ?Sized,TData> MemoryOf<TData> for AggregateMemory<T> where T: MemoryOf<TData> {
+/// Foreach TData, where Memory implements MemoryOf<TData>, re-implement it for AggregateMemory
+/// TData = u8,u16,u32,u64
+impl<TData> MemoryOf<TData> for AggregateMemory where dyn Memory: MemoryOf<TData> {
     fn read(&mut self, addr: u64) -> MemoryResult<TData> {
         // Find a mapping which handles this address
         for mapping in self.mappings.iter_mut() {
@@ -384,14 +376,13 @@ impl<T: Memory32 + ?Sized,TData> MemoryOf<TData> for AggregateMemory<T> where T:
         bail!(MemoryException::AddressUnmapped{addr: addr as usize})
     }
 }
-impl<T: Memory32 + ?Sized> Memory32 for AggregateMemory<T> {
+impl Memory for AggregateMemory {
     fn range(&self) -> Range<usize> {
         self.full_range.clone()
     }
 }
-impl Memory64 for AggregateMemory<dyn Memory64> {}
 /// For convenience, allow a single MemoryBacking to be converted directly to an AggregateMemory
-impl From<MemoryBacking> for AggregateMemory<dyn Memory32> {
+impl From<MemoryBacking> for AggregateMemory {
     fn from(backing: MemoryBacking) -> Self {
         AggregateMemory {
             full_range: backing.range.clone(),
@@ -399,13 +390,3 @@ impl From<MemoryBacking> for AggregateMemory<dyn Memory32> {
         }
     }
 }
-impl From<MemoryBacking> for AggregateMemory<dyn Memory64> {
-    fn from(backing: MemoryBacking) -> Self {
-        AggregateMemory {
-            full_range: backing.range.clone(),
-            mappings: vec![Box::new(backing)]
-        }
-    }
-}
-pub type AggregateMemory32 = AggregateMemory<dyn Memory32>;
-pub type AggregateMemory64 = AggregateMemory<dyn Memory64>;

@@ -5,7 +5,7 @@ use anyhow::{Context,Result};
 use crate::processor::exceptions::{IllegalInstructionException,MemoryException};
 use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
-use crate::processor::elements::memory::{AggregateMemory32,Memory32};
+use crate::processor::elements::memory::{AggregateMemory,Memory};
 use crate::processor::elements::registers::{RvRegisterFile32,RegisterTracking};
 use crate::processor::isa_mods::{IsaMod, Rv32im, Rv32imConn, Rv32v, Rv32vConn, Zicsr32, Zicsr32Conn, CSRProvider};
 
@@ -13,7 +13,7 @@ use crate::processor::isa_mods::{IsaMod, Rv32im, Rv32imConn, Rv32v, Rv32vConn, Z
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
 pub struct Processor32 {
     pub running: bool,
-    pub memory: AggregateMemory32,
+    pub memory: AggregateMemory,
     pc: u32,
     sreg: RvRegisterFile32,
     csrs: ProcessorCSRs32,
@@ -41,7 +41,7 @@ impl Processor32 {
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(mem: AggregateMemory32) -> (Processor32, ProcessorModules32) {
+    pub fn new(mem: AggregateMemory) -> (Processor32, ProcessorModules32) {
         let mut p = Processor32 {
             running: false,
             memory: mem,

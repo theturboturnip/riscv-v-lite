@@ -50,11 +50,11 @@ impl MemoryOf<bool> for TagMemory {
 /// Wrapper for AggregateMemory64 that keeps tags, supports MemoryOf<SafeTaggedCap> for reading/writing capabilities.
 /// All other Memory variants clear associated tag bits on write.
 pub struct CheriAggregateMemory {
-    base_mem: AggregateMemory64,
+    base_mem: AggregateMemory,
     tag_mem: TagMemory
 }
 impl CheriAggregateMemory {
-    pub fn from_base(base_mem: AggregateMemory64) -> CheriAggregateMemory {
+    pub fn from_base(base_mem: AggregateMemory) -> CheriAggregateMemory {
         CheriAggregateMemory {
             base_mem,
             tag_mem: TagMemory::new()
@@ -130,7 +130,7 @@ impl CheriAggregateMemory {
 }
 /// Implement MemoryOf<TData> addressed by Cc128Cap, which does all necessary validity checks,
 /// for every TData in {u8,u16,u32,u64}
-impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMemory64: MemoryOf<TData, u64> {
+impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMemory: MemoryOf<TData, u64> {
     fn read(&mut self, cap: Cc128Cap) -> MemoryResult<TData> {
         self.check_capability::<TData>(cap, Cc128::PERM_LOAD)?;
 
@@ -153,13 +153,12 @@ impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMe
         Ok(())
     } 
 }
-/// Now we've defined MemoryOf<u8,u16,u32>, combine them into a single Memory trait
-impl Memory32<Cc128Cap> for CheriAggregateMemory {
+/// Now we've defined MemoryOf<u8,u16,u32,u64>, combine them into a single Memory trait
+impl Memory<Cc128Cap> for CheriAggregateMemory {
     fn range(&self) -> Range<usize> {
         self.base_mem.range().clone()
     }
 }
-impl Memory64<Cc128Cap> for CheriAggregateMemory {}
 /// Impl a capability-aware view of memory for CHERI instructions
 /// e.g. a CHERI Load instruction, which is allowed to load capabilities, would use this version.
 impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
@@ -232,9 +231,8 @@ impl<'a, TData> MemoryOf<TData> for IntegerModeCheriAggregateMemory<'a> where Ch
         self.base_mem.write(self.base_cap, val)
     }
 }
-impl<'a> Memory32 for IntegerModeCheriAggregateMemory<'a> {
+impl<'a> Memory for IntegerModeCheriAggregateMemory<'a> {
     fn range(&self) -> Range<usize> {
         self.base_mem.range()
     }
 }
-impl<'a> Memory64 for IntegerModeCheriAggregateMemory<'a> {}

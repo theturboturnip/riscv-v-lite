@@ -4,7 +4,7 @@ use clap::{Arg, App};
 use anyhow::{Result,bail};
 
 use rsim::models::{Processor,Processor32,Rv64imProcessor,Rv64imvXCheriProcessor};
-use rsim::memory::{CheriAggregateMemory,AggregateMemory64,AggregateMemory32,MemoryBacking,IOMemory};
+use rsim::memory::{CheriAggregateMemory,AggregateMemory,MemoryBacking,IOMemory};
 use rsim::{Cc128,CompressedCapability,CheriRVFuncs};
 
 use object::read::{Object,ObjectSection,ObjectSegment};
@@ -51,7 +51,7 @@ fn load_cheri_elf(elf_path: &str) -> Result<(u64, CheriAggregateMemory)> {
         code_data.extend_from_slice(segment.data()?);
     }
 
-    let agg_mem = AggregateMemory64::from_mappings(vec![
+    let agg_mem = AggregateMemory::from_mappings(vec![
         // Allocate 4KB for the program
         // Load in the code+data sections
         Box::new(MemoryBacking::from_vec(code_data, 0x0..0x2000)),
@@ -188,7 +188,7 @@ fn main() -> Result<()> {
             match sub_matches.value_of("riscv_profile") {
                 Some("rv32imv") => {
                     // Create the memory map
-                    let mem = AggregateMemory32::from_mappings(vec![
+                    let mem = AggregateMemory::from_mappings(vec![
                         // Allocate 4KB for the program
                         Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
                         // Allocate ~96KB for RAM
@@ -202,7 +202,7 @@ fn main() -> Result<()> {
                 },
                 Some("rv64im") => {
                     // Create the memory map
-                    let mem = AggregateMemory64::from_mappings(vec![
+                    let mem = AggregateMemory::from_mappings(vec![
                         // Allocate 4KB for the program
                         Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
                         // Allocate ~96KB for RAM

@@ -5,7 +5,7 @@ use anyhow::{Context,Result};
 use crate::processor::exceptions::{IllegalInstructionException,MemoryException};
 use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
-use crate::processor::elements::memory::{AggregateMemory64,Memory32};
+use crate::processor::elements::memory::{AggregateMemory,Memory};
 use crate::processor::elements::registers::{RvRegisterFile64,RegisterTracking};
 use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Zicsr64, Zicsr64Conn, CSRProvider};
 
@@ -13,7 +13,7 @@ use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Zicsr64, Zicsr64Con
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
 pub struct Rv64imProcessor {
     pub running: bool,
-    pub memory: AggregateMemory64,
+    pub memory: AggregateMemory,
     pc: u64,
     sreg: RvRegisterFile64,
     csrs: Rv64imProcessorCSRs,
@@ -40,7 +40,7 @@ impl Rv64imProcessor {
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(mem: AggregateMemory64) -> (Rv64imProcessor, Rv64imProcessorModules) {
+    pub fn new(mem: AggregateMemory) -> (Rv64imProcessor, Rv64imProcessorModules) {
         let mut p = Rv64imProcessor {
             running: false,
             memory: mem,
