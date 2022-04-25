@@ -6,7 +6,7 @@ use crate::processor::exceptions::{IllegalInstructionException,MemoryException};
 use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::memory::{AggregateMemory,Memory};
-use crate::processor::elements::registers::{RvRegisterFile32,RegisterTracking};
+use crate::processor::elements::registers::{RvRegisterFile,RegisterTracking};
 use crate::processor::isa_mods::{IsaMod, Rv32im, Rv32imConn, Rv32v, Rv32vConn, Zicsr32, Zicsr32Conn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
@@ -15,7 +15,7 @@ pub struct Processor32 {
     pub running: bool,
     pub memory: AggregateMemory,
     pc: u32,
-    sreg: RvRegisterFile32,
+    sreg: RvRegisterFile<u32>,
     csrs: ProcessorCSRs32,
 }
 
@@ -46,7 +46,7 @@ impl Processor32 {
             running: false,
             memory: mem,
             pc: 0,
-            sreg: RvRegisterFile32::default(),
+            sreg: RvRegisterFile::<u32>::default(),
             csrs: ProcessorCSRs32{}
         };
         let mut mods = ProcessorModules32 {

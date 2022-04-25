@@ -31,13 +31,6 @@ pub type uVLEN = u128;
 pub const VLEN: usize = size_of::<uVLEN>() * 8; // ELEN * 4
 const_assert!(size_of::<uVLEN>() % size_of::<uELEN>() == 0);
 
-
-/// Trait for possible XLEN values
-/// We need to be able to turn it into u64s (used for talking to memory subsystem), and getting it from a u32 (the type used for Vlen)
-pub trait PossibleXlen: Into<u64> + From<u32> + PartialEq {}
-impl PossibleXlen for u64 {}
-impl PossibleXlen for u32 {}
-
 /// Vector type information
 /// 
 /// Records the current vector state the program has requested, including element width.

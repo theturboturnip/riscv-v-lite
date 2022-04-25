@@ -1,4 +1,4 @@
-use num_traits::Num;
+use crate::processor::isa_mods::PossibleXlen;
 use thiserror::Error;
 
 pub trait RegisterFile<TData> {
@@ -28,17 +28,11 @@ pub enum RegisterFileError {
     InvalidIndex(u8),
 }
 
-/// Internal trait, used to implement RvRegisterFile as a generic over u32 and u64
-/// TODO - should not be pub, but has to be: RvRegisterFile32 exposes RvRegisterFile<T> as public, which requires RegisterNumT to be public as well.
-pub trait RegisterNumT: Num + std::fmt::LowerHex + Copy {}
-impl RegisterNumT for u32 {}
-impl RegisterNumT for u64 {}
-
-pub struct RvRegisterFile<T: RegisterNumT> {
+pub struct RvRegisterFile<T: PossibleXlen> {
     regs: [T; 31],
     tracking: Option<Vec<RegisterAction<T>>>
 }
-impl<T> RvRegisterFile<T> where T: RegisterNumT {
+impl<T> RvRegisterFile<T> where T: PossibleXlen {
     pub fn dump(&self) {
         const REGISTER_NAMES: [&str; 32] = [
             "zero", "ra", "sp", "gp",
@@ -63,7 +57,7 @@ impl<T> RvRegisterFile<T> where T: RegisterNumT {
         self.tracking = None;
     }
 }
-impl<T> RegisterFile<T> for RvRegisterFile<T> where T: RegisterNumT {    
+impl<T> RegisterFile<T> for RvRegisterFile<T> where T: PossibleXlen {    
     fn read(&mut self, idx: u8) -> Result<T, RegisterFileError> {
         let val = match idx {
             0    => Ok(T::zero()),
@@ -94,7 +88,7 @@ impl<T> RegisterFile<T> for RvRegisterFile<T> where T: RegisterNumT {
         Ok(())
     }
 }
-impl<T> RegisterTracking<T> for RvRegisterFile<T> where T: RegisterNumT {
+impl<T> RegisterTracking<T> for RvRegisterFile<T> where T: PossibleXlen {
     fn start_tracking(&mut self) -> Result<(), RegisterFileError> {
         if self.tracking.is_some() {
             Err(RegisterFileError::AlreadyTracking)
@@ -111,7 +105,7 @@ impl<T> RegisterTracking<T> for RvRegisterFile<T> where T: RegisterNumT {
         }
     }
 }
-impl<T> Default for RvRegisterFile<T> where T: RegisterNumT {
+impl<T> Default for RvRegisterFile<T> where T: PossibleXlen {
     fn default() -> Self {
         RvRegisterFile {
             regs: [T::zero(); 31],
@@ -119,6 +113,3 @@ impl<T> Default for RvRegisterFile<T> where T: RegisterNumT {
         }
     }
 }
-
-pub type RvRegisterFile32 = RvRegisterFile<u32>;
-pub type RvRegisterFile64 = RvRegisterFile<u64>;

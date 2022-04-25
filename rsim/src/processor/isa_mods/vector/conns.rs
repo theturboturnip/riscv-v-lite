@@ -1,3 +1,4 @@
+use crate::processor::isa_mods::PossibleXlen;
 use std::ops::Range;
 use std::convert::{TryInto};
 use anyhow::Result;

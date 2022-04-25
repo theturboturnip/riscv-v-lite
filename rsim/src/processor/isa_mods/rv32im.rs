@@ -1,14 +1,6 @@
-use crate::processor::elements::memory::Memory;
-use crate::processor::elements::registers::RegisterFile;
 use crate::processor::isa_mods::*;
 
 use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
-
-pub struct Rv32imConn<'a> {
-    pub pc: u32,
-    pub sreg: &'a mut dyn RegisterFile<u32>,
-    pub memory: &'a mut dyn Memory,
-}
 
 pub struct Rv32im {}
 impl IsaMod<Rv32imConn<'_>> for Rv32im {
