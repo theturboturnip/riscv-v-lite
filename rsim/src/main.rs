@@ -3,7 +3,7 @@ use clap::{Arg, App};
 
 use anyhow::{Result,bail};
 
-use rsim::models::{Processor,Processor32,Rv64imProcessor,Rv64imvXCheriProcessor};
+use rsim::models::{Processor,Processor32,Rv64imvProcessor,Rv64imvXCheriProcessor};
 use rsim::memory::{CheriAggregateMemory,AggregateMemory,MemoryBacking,IOMemory};
 use rsim::{Cc128,CompressedCapability,CheriRVFuncs};
 
@@ -170,7 +170,7 @@ fn main() -> Result<()> {
             .arg(Arg::with_name("riscv_profile")
                 .required(true)
                 .index(1)
-                .possible_values(&["rv32imv", "rv64im", "rv64imvxcheri"])
+                .possible_values(&["rv32imv", "rv64imv", "rv64imvxcheri"])
             )
             .arg(
                 Arg::with_name("memory_bin")
@@ -200,7 +200,7 @@ fn main() -> Result<()> {
                     let (processor, mods) = Processor32::new(mem);
                     run_binary_in_processor(Box::new(processor), mods)
                 },
-                Some("rv64im") => {
+                Some("rv64imv") => {
                     // Create the memory map
                     let mem = AggregateMemory::from_mappings(vec![
                         // Allocate 4KB for the program
@@ -211,7 +211,7 @@ fn main() -> Result<()> {
                         Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
                     ]);
 
-                    let (processor, mods) = Rv64imProcessor::new(mem);
+                    let (processor, mods) = Rv64imvProcessor::new(mem);
                     run_binary_in_processor(Box::new(processor), mods)
                 },
                 Some("rv64imvxcheri") => {

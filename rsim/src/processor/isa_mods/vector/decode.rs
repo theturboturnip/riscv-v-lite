@@ -1,3 +1,4 @@
+use crate::processor::isa_mods::PossibleXlen;
 use super::types::*;
 use super::conns::VecMemInterface;
 use crate::processor::decode::{Opcode,InstructionBits};

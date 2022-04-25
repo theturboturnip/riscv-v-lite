@@ -9,10 +9,12 @@ use crate::processor::elements::cheri::{CheriRV64RegisterFile,CheriAggregateMemo
 use crate::processor::elements::{registers::RegisterFile,memory::Memory};
 
 /// References to all scalar resources touched by the vector unit.
-pub struct Rv32vConn<'a> {
-    pub sreg: &'a mut dyn RegisterFile<u32>,
+pub struct RvvConn<'a, uXLEN: PossibleXlen> {
+    pub sreg: &'a mut dyn RegisterFile<uXLEN>,
     pub memory: &'a mut dyn Memory,
 }
+pub type Rv32vConn<'a> = RvvConn<'a, u32>;
+pub type Rv64vConn<'a> = RvvConn<'a, u64>;
 
 pub struct Rv64vCheriConn<'a> {
     pub sreg: &'a mut CheriRV64RegisterFile,
@@ -48,15 +50,15 @@ pub trait VecMemInterface<uXLEN> where uXLEN: PossibleXlen {
     /// Use an address, provenance pair to write a vector element to memory
     fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()>;
 }
-impl<'a> VecMemInterface<u32> for Rv32vConn<'a> {
-    fn sreg_read_xlen(&mut self, reg: u8) -> Result<u32> {
+impl<'a, uXLEN: PossibleXlen> VecMemInterface<uXLEN> for RvvConn<'a, uXLEN> {
+    fn sreg_read_xlen(&mut self, reg: u8) -> Result<uXLEN> {
         Ok(self.sreg.read(reg)?)
     }
-    fn sreg_write_xlen(&mut self, reg: u8, val: u32) -> Result<()> {
+    fn sreg_write_xlen(&mut self, reg: u8, val: uXLEN) -> Result<()> {
         Ok(self.sreg.write(reg, val)?)
     }
     fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)> {
-        Ok((self.sreg.read(reg)? as u64, Provenance{ reg }))
+        Ok((self.sreg.read(reg)?.into(), Provenance{ reg }))
     }
     fn check_addr_range_against_provenance(&mut self, _addr_range: Range<u64>, _prov: Provenance, _dir: MemOpDir) -> Result<()> {
         // Nothing to check

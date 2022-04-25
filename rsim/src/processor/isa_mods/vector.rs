@@ -16,7 +16,7 @@ use types::*;
 
 mod conns;
 use conns::*;
-pub use conns::{Rv32vConn,Rv64vCheriConn};
+pub use conns::{Rv32vConn,Rv64vConn,Rv64vCheriConn};
 
 mod decode;
 use decode::*;
