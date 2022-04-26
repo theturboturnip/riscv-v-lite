@@ -49,4 +49,4 @@ pub use csrs::{Zicsr32, Zicsr32Conn, Zicsr64, Zicsr64Conn, CSRProvider};
 mod vector;
 pub use vector::{Rv32v,Rv32vConn,Rv64v,Rv64vConn,Rv64vCheriConn};
 mod cheri;
-pub use cheri::{XCheri64,XCheri64Conn};
+pub use cheri::{XCheri64,Rv64imCapabilityMode,XCheri64Conn};

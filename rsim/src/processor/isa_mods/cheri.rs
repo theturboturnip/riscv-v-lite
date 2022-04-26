@@ -1,3 +1,4 @@
+use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
 use crate::processor::isa_mods::*;
 use crate::processor::exceptions::{CapabilityException,CapOrRegister};
 use crate::processor::elements::cheri::{Cc128,CompressedCapability,Cc128Cap,CheriAggregateMemory,CheriRVFuncs,SafeTaggedCap};
@@ -53,7 +54,7 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
     fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
-            (AddUpperImmPC, _) | (Custom2CHERI, _) => true,
+            (Custom2CHERI, _) => true,
             // LC (reuses RV128-LQ, which itself is on top of the Misc-Mem opcode)
             (MiscMem, InstructionBits::IType{funct3: 0x2, ..}) => true,
             // SC (reuses RV128-Sq, which is an extra instruction in Store)
@@ -67,14 +68,6 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
     fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, conn: XCheri64Conn) -> ProcessorResult<Option<Self::Pc>> {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
-            (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
-                let addr = conn.pcc.address().wrapping_add(imm.sign_extend_u64());
-                let (representable, mut new_cap) = Cc128::setCapAddr(&conn.pcc, addr);
-                if !representable {
-                    new_cap = Cc128::invalidateCap(&new_cap);
-                }
-                conn.sreg.write(rd, SafeTaggedCap::from_cap(new_cap))?;
-            }
             (MiscMem, InstructionBits::IType{rd, funct3: 0x2, rs1, imm}) => {
                 // LC = Load Capability
                 /*
@@ -363,6 +356,74 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
 
             _ => bail!("Invalid opcode/instruction pair passed to XCheri64")   
         }
+        Ok(None)
+    }
+}
+
+/// Override for base RV64I instructions when in "capability mode"
+/// See TR-951$5.3.6, page 152 for list of affected instructions.
+pub struct Rv64imCapabilityMode {}
+impl IsaMod<XCheri64Conn<'_>> for Rv64imCapabilityMode {
+    type Pc = u64;
+
+    fn will_handle(&self, opcode: Opcode, _inst: InstructionBits) -> bool {
+        use crate::processor::decode::Opcode::*;
+        match opcode {
+            Load | Store | AddUpperImmPC => true,
+
+            _ => false
+        }
+    }
+
+    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, conn: XCheri64Conn) -> ProcessorResult<Option<Self::Pc>> {
+        use crate::processor::decode::Opcode::*;
+        match (opcode, inst) {
+            (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
+                let addr = conn.pcc.address().wrapping_add(imm.sign_extend_u64());
+                let (representable, mut new_cap) = Cc128::setCapAddr(&conn.pcc, addr);
+                if !representable {
+                    new_cap = Cc128::invalidateCap(&new_cap);
+                }
+                conn.sreg.write(rd, SafeTaggedCap::from_cap(new_cap))?;
+            }
+            (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
+                let offset = imm.sign_extend_u64();
+                let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                cap.set_address_unchecked(cap.address().wrapping_add(offset));
+
+                let new_val = match funct3 {
+                    // LB, LH, LW sign-extend if necessary
+                    0b000 => (conn.memory.load_u8(cap)? as i8) as i64 as u64, // LB
+                    0b001 => (conn.memory.load_u16(cap)? as i16) as i64 as u64, // LH
+                    0b010 => (conn.memory.load_u32(cap)? as i32) as i64 as u64, // LW
+                    0b011 => conn.memory.load_u64(cap)? as u64, // LD
+                    // LBU, LHU, LWU don't sign-extend
+                    0b100 => conn.memory.load_u8(cap)? as u64, // LBU
+                    0b101 => conn.memory.load_u16(cap)? as u64, // LHU
+                    0b110 => conn.memory.load_u32(cap)? as u64, // LWU
+
+                    _ => bail!(UnsupportedParam(format!("Load funct3 {:03b}", funct3)))
+                };
+                conn.sreg.write(rd, new_val)?;
+            }
+            (Store, InstructionBits::SType{funct3, rs1, rs2, imm}) => {
+                let offset = imm.sign_extend_u64();
+                let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                cap.set_address_unchecked(cap.address().wrapping_add(offset));
+                
+                match funct3 {
+                    0b000 => conn.memory.store_u8(cap, (conn.sreg.read_u64(rs2)? & 0xFF) as u8)?,
+                    0b001 => conn.memory.store_u16(cap, (conn.sreg.read_u64(rs2)? & 0xFFFF) as u16)?,
+                    0b010 => conn.memory.store_u32(cap, (conn.sreg.read_u64(rs2)? & 0xFFFF_FFFF) as u32)?,
+                    0b011 => conn.memory.store_u64(cap, (conn.sreg.read_u64(rs2)? & 0xFFFF_FFFF_FFFF_FFFF) as u64)?,
+                    
+                    _ => bail!(UnsupportedParam(format!("Store funct3 {:03b}", funct3)))
+                };
+            }
+
+            _ => bail!("Invalid opcode/instruction pair passed to RV32I")
+        }
+
         Ok(None)
     }
 }

@@ -8,7 +8,7 @@ use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::registers::{RegisterTracking};
 use crate::processor::elements::cheri::{Cc128Cap,CheriRV64RegisterFile,CheriAggregateMemory};
-use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64v, Rv64vCheriConn, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64imCapabilityMode, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64v, Rv64vCheriConn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
@@ -25,6 +25,7 @@ pub struct Rv64imvXCheriProcessor {
 
 pub struct Rv64imvXCheriProcessorModules {
     rv64im: Rv64im,
+    rv64im_cap: Rv64imCapabilityMode,
     xcheri: XCheri64,
     rvv: Rv64v,
     zicsr: Option<Zicsr64>
@@ -72,6 +73,7 @@ impl Rv64imvXCheriProcessor {
         };
         let mut mods = Rv64imvXCheriProcessorModules {
             rv64im: Rv64im{},
+            rv64im_cap: Rv64imCapabilityMode{},
             xcheri: XCheri64{},
             rvv: Rv64v::new(),
             zicsr: Some(Zicsr64::default())
@@ -122,14 +124,12 @@ impl Rv64imvXCheriProcessor {
             1 => CheriExecMode::Capability,
             _ => bail!("invalid flag in PC")
         };
-        // Just for now, assume all-capability-mode-all-the-time
-        assert!(mode == CheriExecMode::Capability);
         
         // Copy self.pcc, set address to address + 4
         let mut next_pcc = self.pcc;
         next_pcc.set_address_unchecked(next_pcc.address() + 4);
         
-        // TODO - should this check if we're in capability mode
+        // CHERI instructions are always handled, regardless of mode
         if mods.xcheri.will_handle(opcode, inst) {
             let requested_pcc = mods.xcheri.execute(opcode, inst, inst_bits, self.xcheri64_conn())?;
             if let Some(requested_pcc) = requested_pcc {
@@ -137,7 +137,15 @@ impl Rv64imvXCheriProcessor {
             }
             return Ok(next_pcc);
         }
-        if mods.rv64im.will_handle(opcode, inst) {
+        // If in Capability mode, try the rv64im_cap first.
+        // If we're in integer mode, or rv64im_cap didn't override the behaviour, use Integer-mode rv64im.
+        if mode == CheriExecMode::Capability && mods.rv64im_cap.will_handle(opcode, inst) {
+            let requested_pc = mods.rv64im_cap.execute(opcode, inst, inst_bits, self.xcheri64_conn())?;
+            if let Some(requested_pc) = requested_pc {
+                next_pcc.set_address_unchecked(requested_pc);
+            }
+            return Ok(next_pcc);
+        } else if mods.rv64im.will_handle(opcode, inst) {
             let requested_pc = {
                 // Create the integer-mode memory wrapper, 
                 // only keep it alive for the duration of
@@ -154,18 +162,19 @@ impl Rv64imvXCheriProcessor {
             }
             return Ok(next_pcc);
         }
+        // Vector, CSR instructions are always handled, regardless of mode
         if mods.rvv.will_handle(opcode, inst) {
             let requested_pc = mods.rvv.execute(opcode, inst, inst_bits, &mut self.rvv_conn())?;
             if let Some(_) = requested_pc {
-                bail!("vector should'nt try to jump");
+                bail!("vector shouldn't try to jump");
             }
             return Ok(next_pcc);
         }
         if let Some(zicsr) = mods.zicsr.as_mut() {
             if zicsr.will_handle(opcode, inst) {
                 let requested_pc = zicsr.execute(opcode, inst, inst_bits, self.zicsr_conn(&mut mods.rvv))?;
-                if let Some(requested_pc) = requested_pc {
-                    next_pcc.set_address_unchecked(requested_pc);
+                if let Some(_) = requested_pc {
+                    bail!("csr shouldn't try to jump");
                 }
                 return Ok(next_pcc);
             }
