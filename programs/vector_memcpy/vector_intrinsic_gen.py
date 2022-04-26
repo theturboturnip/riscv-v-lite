@@ -61,6 +61,9 @@ class VType:
     def get_code(self) -> str:
         return f"{self.sew.get_ecode()}{self.lmul.get_code()}"
 
+    def get_unsigned_elem_type(self) -> str:
+        return f"uint{self.sew.value}_t"
+
     def get_unsigned_type(self) -> str:
         return f"vuint{self.sew.value}{self.lmul.get_code()}_t"
 

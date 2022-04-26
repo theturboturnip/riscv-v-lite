@@ -126,6 +126,11 @@ class CppBuilder:
             if stmt:
                 self._split_write_statement(stmt)
 
+    def write_snippet(self, snippet: str) -> None:
+        snippet = snippet.replace("\n", "\n" + self.indentation).strip()
+        self.write(snippet)
+        self.write("\n")
+
     def comment(self, comment: str) -> None:
         self.write_line('// {}'.format(comment))
 
@@ -182,9 +187,8 @@ class VectorCppBuilder_NoCHERI(CppBuilder):
     def with_vlen(self, elem_count: str, output_var: str, vtype: VType):
         assert self.vlen_var is None
         self.vlen_var = (output_var, vtype)
-        bytes_per_elem = vtype.sew.value // 8
         with self.block(""):
-            self.write_code(f"size_t {output_var} = {vtype.get_vsetvl_func()}({elem_count}/{bytes_per_elem})")
+            self.write_code(f"size_t {output_var} = {vtype.get_vsetvl_func()}({elem_count})")
             
             try:
                 yield
@@ -279,84 +283,156 @@ class VectorTestsCpp(VectorCppBuilder_NoCHERI):
             finally:
                 pass
 
+def generate_vanilla_harnesses(b: VectorTestsCpp):
+    for width in [8, 16, 32, 64]:
+        val_t = f"uint{width}_t"
 
-def generate_vanilla_tests(b: VectorTestsCpp):
-    harness = Harness(
-        name="vector_memcpy_harness",
-        test_args = {
-            "n": "size_t",
-            "in": "const int8_t* __restrict__",
-            "out": "int8_t* __restrict__",
-        }
-    )
+        harness = Harness(
+            name=f"vector_memcpy_harness_{val_t}",
+            test_args = {
+                "n": "size_t",
+                "in": f"const {val_t}* __restrict__",
+                "out": f"{val_t}* __restrict__",
+            }
+        )
 
-    # Create harness
-    with b.new_harness(harness):
-        b.write_code(
-"""
-uint8_t data[128] = {0};
-uint8_t out_data[128] = {0};
+        # Create harness
+        with b.new_harness(harness):
+            b.write_snippet(
+f"""{val_t} data[128] = {{0}};
+{val_t} out_data[128] = {{0}};
 
-for (uint32_t i = 0; i < 128; i++) {
+for ({val_t} i = 0; i < 128; i++) {{
     data[i] = i;
-}
+}}
 
-// ONLY copy 110 bytes
-// Assume vectors are 32/64 bytes
-// We want to force memcpy_fn to copy with a not-full vector register, to test vlen
-// regardless of what element width (1byte, 2byte, 4byte, 8byte) it uses
-// => choose a value that isn't a multiple of 32,64
-// = 110
+// ONLY copy 110 elements
 memcpy_fn(110, data, out_data);
 
-// Check the first 110 bytes of output are the same
+// Check the first 110 elements of output are the same
 // This ensures that the emulator correctly loaded/stored enough values
-for (uint32_t i = 0; i < 110; i++) {
-    if (data[i] != out_data[i]) {
+for ({val_t} i = 0; i < 110; i++) {{
+    if (data[i] != out_data[i]) {{
         return 0;
-    }
-}
+    }}
+}}
 // Check that the rest are 0 (the original value)
 // This ensures that the emulator didn't store more elements than it should have
-for (uint32_t i = 110; i < 128; i++) {
-    if (out_data[i] != 0) {
+for ({val_t} i = 110; i < 128; i++) {{
+    if (out_data[i] != 0) {{
         return 0;
-    }
-}
+    }}
+}}
 return 1;
 """)
 
+def generate_unit_tests(b: VectorTestsCpp, vtypes: List[VType]):
     # Create tests
-    for vtype in VType.iterate():
+    for vtype in vtypes:
         test = Test(
             f"vector_memcpy_unit_stride_{vtype.get_code()}",
             required_def = None
         )
         vtype_type = vtype.get_unsigned_type()
+        vtype_elem_type = vtype.get_unsigned_elem_type()
         vtype_unit_load = f"vle{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
         vtype_unit_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
-        with b.new_test(test, harness):
+        vtype_unit_load_asm = f"vle{vtype.sew.value}.v"
+        vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+        with b.new_test(test, b.harnesses[f"vector_memcpy_harness_{vtype_elem_type}"]):
             with b.block("while (true)"):
                 with b.with_vlen("n", "copied_per_iter", vtype):
                     b.write_code(f"if (copied_per_iter == 0) break;")
-                    b.write_code(f"{vtype_type} data = {vtype_unit_load}(in, copied_per_iter);")
+                    b.write_code(f"{vtype_type} data;")
+
+                    b.write_code("#if __has_feature(capabilities)")
+                    b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(data) : "C"(in));')
+                    b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  "C"(out));')
+                    b.write_code("#else")
+                    b.write_code(f"data = {vtype_unit_load}(in, copied_per_iter);")
                     b.write_code(f"{vtype_unit_store}(out, data, copied_per_iter)")
+                    b.write_code("#endif")
+
                     b.write_code(f"in += copied_per_iter;")
                     b.write_code(f"out += copied_per_iter;")
                     b.write_code(f"n -= copied_per_iter;")
-            b.write_code(f"// Cleanup, in case 'n' wasn't a clean multiple of {vtype.sew.value//8} bytes")
-            with b.block(f"while (n > 0)"):
-                b.write_code(f"*out = *in;")
-                b.write_code(f"out += 1;")
-                b.write_code(f"in += 1;")
-                b.write_code(f"n -= 1;")
+
+def generate_strided_tests(b: VectorTestsCpp, vtypes: List[VType]):
+    # Create tests
+    for vtype in vtypes:
+        test = Test(
+            f"vector_memcpy_strided_{vtype.get_code()}",
+            required_def = None
+        )
+        vtype_type = vtype.get_unsigned_type()
+        vtype_elem_type = vtype.get_unsigned_elem_type()
+        vtype_unit_load = f"vle{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_load_asm = f"vle{vtype.sew.value}.v"
+        vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+        vtype_strided_load = f"vlse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_strided_store = f"vsse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_strided_load_asm = f"vlse{vtype.sew.value}.v"
+        vtype_strided_store_asm = f"vsse{vtype.sew.value}.v"
+        with b.new_test(test, b.harnesses[f"vector_memcpy_harness_{vtype_elem_type}"]):
+            b.write_code(f"const size_t STRIDE_ELEMS = 4;")
+            b.write_code(f"const size_t STRIDE_BYTES = 4 * sizeof({vtype_elem_type});")
+            with b.block("while (true)"):
+                with b.with_vlen("n", "copied_per_iter", vtype):
+                    b.write_code(f"if (copied_per_iter == 0) break;")
+                    b.write_code(f"{vtype_type} data;")
+
+                    # If we have room to do so, copy STRIDE*elems by copying STRIDE vectors each of length `elems`
+                    with b.block("if (copied_per_iter * STRIDE_ELEMS < n)"):
+                        with b.block("for (size_t i = 0; i < STRIDE_ELEMS; i++)"):
+                            b.write_code(f"const {vtype_elem_type}* in_offset = in + i;")
+                            b.write_code(f"{vtype_elem_type}* out_offset = out + i;")
+
+                            b.write_code("#if __has_feature(capabilities)")
+                            b.write_code(f'asm volatile ("{vtype_strided_load_asm} %0, (%1), %2" : "=vr"(data) : "C"(in_offset), "r"(STRIDE_BYTES));')
+                            b.write_code(f'asm volatile ("{vtype_strided_store_asm} %0, (%1), %2" :: "vr"(data),  "C"(out_offset), "r"(STRIDE_BYTES));')
+                            b.write_code("#else")
+                            b.write_code(f"data = {vtype_strided_load}(in_offset, STRIDE_BYTES, copied_per_iter);")
+                            b.write_code(f"{vtype_strided_store}(out_offset, STRIDE_BYTES, data, copied_per_iter)")
+                            b.write_code("#endif")
+
+                        b.write_code(f"in += copied_per_iter * STRIDE_ELEMS;")
+                        b.write_code(f"out += copied_per_iter * STRIDE_ELEMS;")
+                        b.write_code(f"n -= copied_per_iter * STRIDE_ELEMS;")
+                    with b.block("else"):
+                        # We don't have room to do STRIDE*elems, pick up the rest with normal copies
+                        b.write_code("#if __has_feature(capabilities)")
+                        b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(data) : "C"(in));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  "C"(out));')
+                        b.write_code("#else")
+                        b.write_code(f"data = {vtype_unit_load}(in, copied_per_iter);")
+                        b.write_code(f"{vtype_unit_store}(out, data, copied_per_iter)")
+                        b.write_code("#endif")
+
+                        b.write_code(f"in += copied_per_iter;")
+                        b.write_code(f"out += copied_per_iter;")
+                        b.write_code(f"n -= copied_per_iter;")
 
 
 def generate_tests() -> str:
     b = VectorTestsCpp()
 
     # Create harnesses+tests
-    generate_vanilla_tests(b)
+    generate_vanilla_harnesses(b)
+    generate_unit_tests(b, [
+        VType(Sew.e8, Lmul.e8),
+        VType(Sew.e16, Lmul.e8),
+        VType(Sew.e32, Lmul.e8),
+        # Test fractional lmul
+        VType(Sew.e32, Lmul.eHalf),
+    ])
+    generate_strided_tests(b, [
+        VType(Sew.e8, Lmul.e8),
+        VType(Sew.e16, Lmul.e8),
+        VType(Sew.e32, Lmul.e8),
+        # Test fractional lmul
+        VType(Sew.e32, Lmul.eHalf),
+    ])
 
     # Make main
     b.write_code("#ifdef __cplusplus")
