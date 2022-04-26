@@ -716,7 +716,10 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                             .context("Executing pre-checked vector access - shouldn't throw CapabilityExceptions under any circumstances")?;
                     },
                     // There was a fast path that raised an exception, re-raise it
-                    Err(e) => return Err(e),
+                    Err(e) => {
+                        todo!("this shouldn't raise the exception, because it means the accesses before the exception don't complete");
+                        return Err(e);
+                    }
                     // There was no fast path, or it was uncertain if a CapabilityException would actually be raised
                     Ok(false) => {
                         self.exec_load_store(rd, rs1, rs2, vm, op, conn)
