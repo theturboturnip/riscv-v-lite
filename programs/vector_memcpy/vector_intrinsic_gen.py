@@ -24,6 +24,9 @@ class Lmul(Enum):
     e4 = 5
     e8 = 6
 
+    def is_frac(self) -> bool:
+        return self.value < Lmul.e1.value
+
     def get_num_regs_times_8(self) -> int:
         return 1 << (self.value)
 
