@@ -5,7 +5,7 @@ import contextlib
 from dataclasses import dataclass
 from enum import Enum
 from io import StringIO
-from typing import ContextManager, Dict, List, Optional, Tuple
+from typing import ContextManager, Dict, List, Optional, Tuple, Union
 
 from vector_intrinsic_gen import Sew, Lmul, VType
 
@@ -223,16 +223,27 @@ class Test:
     required_def: Optional[str]
 
 @dataclass
+class ArrayArg:
+    arg_t: str
+    arg_n: int
+
+@dataclass
 class Harness:
     name: str
-    test_args: Dict[str, str]
+    test_args: Dict[str, Union[str, ArrayArg]]
 
     def get_prototype(self):
-        arg_types = list(self.test_args.values())
+        arg_types = [
+            f"{v.arg_t}[{v.arg_n}]" if isinstance(v, ArrayArg) else v
+            for v in self.test_args.values()
+        ]
         return f"int {self.name}(void (*memcpy_fn)({', '.join(arg_types)}))"
 
     def get_test_func_decl(self, test_name: str):
-        args = ', '.join([f"{t} {name}" for name,t in self.test_args.items()])
+        args = ', '.join([
+            f"{t.arg_t} {name}[{t.arg_n}]" if isinstance(t, ArrayArg) else f"{t} {name}" 
+            for name,t in self.test_args.items()
+        ])
         return f"void {test_name}({args})"
 
 class VectorTestsCpp(VectorCppBuilder_NoCHERI):
@@ -368,6 +379,65 @@ for ({val_t} i = 0; i < 110; i++) {{
 // This ensures that the emulator didn't store more elements than it should have
 for ({val_t} i = 110; i < 128; i++) {{
     if (out_data[i] != SENTINEL_NOT_WRITTEN) {{
+        return 0;
+    }}
+}}
+return 1;
+""")
+
+def generate_segmented_harnesses(b: VectorTestsCpp):
+    for width in [8, 16, 32, 64]:
+        val_t = f"uint{width}_t"
+
+        harness = Harness(
+            name=f"vector_memcpy_segmented_harness_{val_t}",
+            test_args = {
+                "n": "size_t",
+                "in": f"const {val_t}* __restrict__",
+                "out": ArrayArg(f"{val_t}* __restrict__", 4),
+            }
+        )
+
+        # Create harness
+        with b.new_harness(harness):
+            b.write_snippet(
+f"""{val_t} data[128] = {{0}};
+{val_t} out_r[32] = {{0}};
+{val_t} out_g[32] = {{0}};
+{val_t} out_b[32] = {{0}};
+{val_t} out_a[32] = {{0}};
+
+for ({val_t} i = 0; i < 128; i++) {{
+    data[i] = i;
+}}
+
+{val_t}* out_datas[4] = {{out_r, out_g, out_b, out_a}};
+
+
+// ONLY copy 104 elements = 26 segments
+// For the masked function, this should only copy odd-indexed elements.
+memcpy_fn(26, data, out_datas);
+
+// Check the first 104 elements = 26 segments of output are the same
+// This ensures that the emulator correctly loaded/stored enough values
+for ({val_t} i = 0; i < 26; i++) {{
+    if (data[i*4 + 0] != out_r[i]) {{
+        return 0;
+    }}
+    if (data[i*4 + 1] != out_g[i]) {{
+        return 0;
+    }}
+    if (data[i*4 + 2] != out_b[i]) {{
+        return 0;
+    }}
+    if (data[i*4 + 3] != out_a[i]) {{
+        return 0;
+    }}
+}}
+// Check that the rest are 0 (the original value)
+// This ensures that the emulator didn't store more elements than it should have
+for ({val_t} i = 26; i < 32; i++) {{
+    if (out_r[i] != 0 || out_g[i] != 0 || out_b[i] != 0 || out_a[i] != 0) {{
         return 0;
     }}
 }}
@@ -532,7 +602,7 @@ def generate_masked_tests(b: VectorTestsCpp, vtypes: List[VType]):
     # Create tests
     for vtype in vtypes:
         test = Test(
-            f"vector_memcpy_masked_stride_{vtype.get_code()}",
+            f"vector_memcpy_masked_{vtype.get_code()}",
             required_def = None
         )
         vtype_type = vtype.get_unsigned_type()
@@ -546,7 +616,7 @@ def generate_masked_tests(b: VectorTestsCpp, vtypes: List[VType]):
         vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
         vtype_masked_load = f"vle{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}_m"
         vtype_masked_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}_m"
-        with b.new_test(test, b.harnesses[f"vector_memcpy_harness_{vtype_elem_type}"]):
+        with b.new_test(test, b.harnesses[f"vector_memcpy_masked_harness_{vtype_elem_type}"]):
             # Generate mask - make an array of values, each 0 or 1, then set the mask register bits based on those
             b.write_code(f"{vtype_elem_type} mask_ints[128] = {{0}}")
             b.write_code(f"const size_t VLMAX = vsetvlmax_e{vtype.sew.value}{vtype.lmul.get_code()}();")
@@ -587,37 +657,72 @@ def generate_masked_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     b.write_code(f"n -= copied_per_iter;")
 
 
+def generate_segmented_tests(b: VectorTestsCpp, vtypes: List[VType]):
+    # Create tests
+    for vtype in vtypes:
+        test = Test(
+            f"vector_memcpy_segmented_{vtype.get_code()}",
+            required_def = None
+        )
+        vtype_type = vtype.get_unsigned_type()
+        vtype_elem_type = vtype.get_unsigned_elem_type()
+        vtype_seg_load = f"vlseg4e{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_seg_load_asm = f"vlseg4e{vtype.sew.value}.v"
+        vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+        with b.new_test(test, b.harnesses[f"vector_memcpy_segmented_harness_{vtype_elem_type}"]):
+            with b.block("while (1)"):
+                with b.with_vlen("n", "copied_per_iter", vtype):
+                    b.write_code(f"if (copied_per_iter == 0) break;")
+
+                    b.write_line("#if __has_feature(capabilities)")
+                    # Under capabilities, we don't have a way to force r,g,b,a to use subsequent vector registers.
+                    # Therefore we hardcode the registers - {r,g,b,a} = {v4,5,6,7}
+                    b.write_code(f'asm volatile ("{vtype_seg_load_asm} v4, (%0)" :: "C"(in));')
+                    b.write_code(f'asm volatile ("{vtype_unit_store_asm} v4, (%0)" :: "C"(out[0]));')
+                    b.write_code(f'asm volatile ("{vtype_unit_store_asm} v5, (%0)" :: "C"(out[1]));')
+                    b.write_code(f'asm volatile ("{vtype_unit_store_asm} v6, (%0)" :: "C"(out[2]));')
+                    b.write_code(f'asm volatile ("{vtype_unit_store_asm} v7, (%0)" :: "C"(out[3]));')
+                    b.write_line("#else")
+                    b.write_code(f"{vtype_type} r, g, b, a;")
+                    b.write_code(f"{vtype_seg_load}(&r, &g, &b, &a, in, copied_per_iter);")
+                    b.write_code(f"{vtype_unit_store}(out[0], r, copied_per_iter)")
+                    b.write_code(f"{vtype_unit_store}(out[1], g, copied_per_iter)")
+                    b.write_code(f"{vtype_unit_store}(out[2], b, copied_per_iter)")
+                    b.write_code(f"{vtype_unit_store}(out[3], a, copied_per_iter)")
+                    b.write_line("#endif")
+
+                    b.write_code(f"in += copied_per_iter * 4;")
+                    with b.block("for (int i = 0; i < 4; i++)"):
+                        b.write_code(f"out[i] += copied_per_iter;")
+                    b.write_code(f"n -= copied_per_iter;")
+
 def generate_tests() -> str:
     b = VectorTestsCpp()
 
-    # Create harnesses+tests
+    # Create harnesses
     generate_vanilla_harnesses(b)
     generate_masked_harnesses(b)
-    generate_unit_tests(b, [
+    generate_segmented_harnesses(b)
+
+    # Create tests
+    vtypes = [
         VType(Sew.e8, Lmul.e8),
         VType(Sew.e16, Lmul.e8),
         VType(Sew.e32, Lmul.e8),
         # Test fractional lmul
         VType(Sew.e32, Lmul.eHalf),
-    ])
-    generate_strided_tests(b, [
-        VType(Sew.e8, Lmul.e8),
-        VType(Sew.e16, Lmul.e8),
-        VType(Sew.e32, Lmul.e8),
-        # Test fractional lmul
-        VType(Sew.e32, Lmul.eHalf),
-    ])
-    generate_indexed_tests(b, [
-        VType(Sew.e8, Lmul.e8),
-        VType(Sew.e16, Lmul.e8),
-        VType(Sew.e32, Lmul.e8),
-        # Test fractional lmul
-        VType(Sew.e32, Lmul.eHalf),
-    ])
-    generate_masked_tests(b, [
-        VType(Sew.e8, Lmul.e8),
-        VType(Sew.e16, Lmul.e8),
-        VType(Sew.e32, Lmul.e8),
+    ]
+    generate_unit_tests(b, vtypes)
+    generate_strided_tests(b, vtypes)
+    generate_indexed_tests(b, vtypes)
+    generate_masked_tests(b, vtypes)
+    # Can't use m8 for 4x segmented loads
+    # At most can use 2x, so that total number of registers = 8
+    generate_segmented_tests(b, [
+        VType(Sew.e8, Lmul.e2),
+        VType(Sew.e16, Lmul.e2),
+        VType(Sew.e32, Lmul.e2),
         # Test fractional lmul
         VType(Sew.e32, Lmul.eHalf),
     ])
