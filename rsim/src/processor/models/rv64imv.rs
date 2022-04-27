@@ -203,4 +203,8 @@ impl Processor<Rv64imvProcessorModules> for Rv64imvProcessor {
     fn running(&self) -> bool {
         self.running
     }
+
+    fn get_io_values(&self) -> Vec<Option<u64>> {
+        self.memory.get_io_values()
+    }
 }

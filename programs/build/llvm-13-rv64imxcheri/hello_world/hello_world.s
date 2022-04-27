@@ -174,6 +174,10 @@ main:
 	addi	a0, zero, 15
 	slli	a0, a0, 28
 	cincoffset	ca2, cnull, a0
+	addi	a3, zero, 7
+	csw	a3, 0(ca2)
+	addi	a0, a0, 8
+	cincoffset	ca2, cnull, a0
 	sext.w	a0, a1
 	csw	a1, 0(ca2)
 	clc	cs0, 0(csp)
@@ -183,6 +187,6 @@ main:
 .Lfunc_end6:
 	.size	main, .Lfunc_end6-main
 
-	.ident	"clang version 13.0.0 (https://github.com/CTSRD-CHERI/llvm-project.git 62cac4e2d70fb43bf3bef79e2f3821a5c1805588)"
+	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 7db8166e318b1545c939e478a83c2ba14973df19)"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig

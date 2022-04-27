@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::ops::Range;
 use std::convert::TryInto;
 use std::collections::HashSet;
@@ -127,6 +128,10 @@ impl CheriAggregateMemory {
 
         full_range_cap
     }
+
+    pub fn get_io_values(&self) -> Vec<Option<u64>> {
+        self.base_mem.get_io_values()
+    }
 }
 /// Implement MemoryOf<TData> addressed by Cc128Cap, which does all necessary validity checks,
 /// for every TData in {u8,u16,u32,u64}
@@ -158,6 +163,7 @@ impl Memory<Cc128Cap> for CheriAggregateMemory {
     fn range(&self) -> Range<usize> {
         self.base_mem.range().clone()
     }
+    fn as_any(&self) -> &dyn Any { self }
 }
 /// Impl a capability-aware view of memory for CHERI instructions
 /// e.g. a CHERI Load instruction, which is allowed to load capabilities, would use this version.
@@ -235,4 +241,5 @@ impl<'a> Memory for IntegerModeCheriAggregateMemory<'a> {
     fn range(&self) -> Range<usize> {
         self.base_mem.range()
     }
+    fn as_any(&self) -> &dyn Any { unreachable!("Should never try to devirtualize an IntegerMode wrapper") }
 }

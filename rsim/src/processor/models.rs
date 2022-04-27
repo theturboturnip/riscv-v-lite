@@ -5,6 +5,7 @@ pub trait Processor<TModules> {
     fn exec_step(&mut self, mods: &mut TModules) -> Result<()>;
     fn dump(&self, mods: &TModules);
     fn running(&self) -> bool;
+    fn get_io_values(&self) -> Vec<Option<u64>>;
 }
 
 mod rv32imv;

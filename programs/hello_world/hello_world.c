@@ -59,13 +59,18 @@ int fib_memo_test() {
 
 int main(void)
 {
-  int *outputDevice = (int*) 0xf0000000; // magic output device
+  volatile int *outputRan = (int*) 0xf0000000; // magic output device
+  volatile int *outputSuccess = (int*) 0xf0000008; // magic output device
+
   int result = 0;
 
   result |= fac_test() << 0;
   result |= fib_test() << 1;
   result |= fib_memo_test() << 2;
 
-  outputDevice[0] = result;
+  int ran = 0b111;
+
+  outputRan[0] = ran;
+  outputSuccess[0] = result;
   return result;
 }

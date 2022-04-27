@@ -259,4 +259,8 @@ impl Processor<Rv64imvXCheriProcessorModules> for Rv64imvXCheriProcessor {
     fn running(&self) -> bool {
         self.running
     }
+
+    fn get_io_values(&self) -> Vec<Option<u64>> {
+        self.memory.get_io_values()
+    }
 }

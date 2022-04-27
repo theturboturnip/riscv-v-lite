@@ -1,5 +1,6 @@
-use crate::processor::exceptions::MemoryException;
+use crate::processor::exceptions::{MemoryException,ProgramHaltedException};
 use std::ops::Range;
+use std::any::Any;
 
 pub type MemoryResult<T> = anyhow::Result<T>;
 
@@ -58,6 +59,8 @@ pub trait Memory<TAddr=u64>: MemoryOf<u8, TAddr> + MemoryOf<u16, TAddr> + Memory
     fn store_u64(&mut self, addr: TAddr, val: u64) -> MemoryResult<()> {
         <Self as MemoryOf<u64, TAddr>>::write(self, addr, val)
     }
+
+    fn as_any(&self) -> &dyn Any;
 }
 
 // Memory expects to address a Vec of data by u64 - usize should be at least that large
@@ -67,60 +70,40 @@ const_assert!(size_of::<usize>() >= size_of::<u64>());
 /// I/O Memory
 /// Defines an address range of a single u32.
 /// Reads from this address return 0,
-/// Writes to this address throw MemoryException::ResultReturned.
+/// Writes to this address throw ProgramHaltedException::ResultReturned.
 pub struct IOMemory {
     range: Range<usize>,
-    expected: u32,
+    value: Option<u64>,
+    halt_on_write: bool,
 }
 impl IOMemory {
     /// Build an I/O memory with the specified address
-    pub fn return_address(addr: usize, expected: u32) -> IOMemory {
+    pub fn return_address(addr: usize, halt_on_write: bool) -> IOMemory {
         IOMemory{
             range: Range{ start: addr, end: addr+8 },
-            expected
+            halt_on_write,
+            value: None
         }
     }
 }
-impl MemoryOf<u8> for IOMemory {
-    fn read(&mut self, _: u64) -> MemoryResult<u8> { Ok(0) }
-    fn write(&mut self, _: u64, val: u8) -> MemoryResult<()> {
-        bail!(MemoryException::ResultReturned{
-            got: val as u32,
-            expected: self.expected
-        })
-    }
-}
-impl MemoryOf<u16> for IOMemory {
-    fn read(&mut self, _: u64) -> MemoryResult<u16> { Ok(0) }
-    fn write(&mut self, _: u64, val: u16) -> MemoryResult<()> {
-        bail!(MemoryException::ResultReturned{
-            got: val as u32,
-            expected: self.expected
-        })
-    }
-}
-impl MemoryOf<u32> for IOMemory {
-    fn read(&mut self, _: u64) -> MemoryResult<u32> { Ok(0) }
-    fn write(&mut self, _: u64, val: u32) -> MemoryResult<()> {
-        bail!(MemoryException::ResultReturned{
-            got: val as u32,
-            expected: self.expected
-        })
-    }
-}
-impl MemoryOf<u64> for IOMemory {
-    fn read(&mut self, _: u64) -> MemoryResult<u64> { Ok(0) }
-    fn write(&mut self, _: u64, val: u64) -> MemoryResult<()> {
-        bail!(MemoryException::ResultReturned{
-            got: val as u32,
-            expected: self.expected
-        })
+impl<TData> MemoryOf<TData> for IOMemory where TData: Into<u64> + Default, dyn Memory: MemoryOf<TData> {
+    fn read(&mut self, _: u64) -> MemoryResult<TData> { Ok(TData::default()) }
+    fn write(&mut self, addr: u64, val: TData) -> MemoryResult<()> {
+        self.value = Some(val.into());
+        if self.halt_on_write {
+            bail!(ProgramHaltedException::ResultReturned{
+                addr: addr as usize
+            })
+        } else {
+            Ok(())
+        }
     }
 }
 impl Memory for IOMemory {
     fn range(&self) -> Range<usize> {
         self.range.clone()
     }
+    fn as_any(&self) -> &dyn Any { self }
 }
 
 /// Array-backed memory
@@ -299,6 +282,7 @@ impl Memory for MemoryBacking {
     fn range(&self) -> Range<usize> {
         self.range.clone()
     }
+    fn as_any(&self) -> &dyn Any { self }
 }
 
 /// Struct that combines a set of array-backed memory mappings.
@@ -349,6 +333,17 @@ impl AggregateMemory {
             full_range
         }
     }
+
+    /// Returns a vector of all stored I/O values
+    pub fn get_io_values(&self) -> Vec<Option<u64>> {
+        let mut io_vals = vec![];
+        for mapping in &self.mappings {
+            if let Some(io) = mapping.as_ref().as_any().downcast_ref::<IOMemory>() {
+                io_vals.push(io.value);
+            }
+        }
+        return io_vals;
+    }
 }
 /// Foreach TData, where Memory implements MemoryOf<TData>, re-implement it for AggregateMemory
 /// TData = u8,u16,u32,u64
@@ -380,6 +375,7 @@ impl Memory for AggregateMemory {
     fn range(&self) -> Range<usize> {
         self.full_range.clone()
     }
+    fn as_any(&self) -> &dyn Any { self }
 }
 /// For convenience, allow a single MemoryBacking to be converted directly to an AggregateMemory
 impl From<MemoryBacking> for AggregateMemory {

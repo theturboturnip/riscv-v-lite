@@ -160,7 +160,9 @@ main:
 	slli	a0, a0, 2
 	or	a0, s0, a0
 	lui	a1, 983040
-	sw	a0, 0(a1)
+	addi	a2, zero, 7
+	sw	a2, 0(a1)
+	sw	a0, 8(a1)
 	lw	s0, 8(sp)
 	lw	ra, 12(sp)
 	addi	sp, sp, 16
@@ -168,6 +170,6 @@ main:
 .Lfunc_end6:
 	.size	main, .Lfunc_end6-main
 
-	.ident	"Ubuntu clang version 13.0.1-++20220120110844+75e33f71c2da-1~exp1~20220120230854.66"
+	.ident	"Ubuntu clang version 13.0.1-++20220120110924+75e33f71c2da-1~exp1~20220120231001.58"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig

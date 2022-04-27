@@ -9,7 +9,7 @@ set( CMAKE_EXECUTABLE_SUFFIX    ".elf" )
 set( CMAKE_EXECUTABLE_SUFFIX_C    ".elf" )
 
 # Look for RISC-V CLANG
-SET(RISCV_CLANG_COMPILER_MAYBE "/home/samuel/cheri/output/sdk/bin/clang")
+SET(RISCV_CLANG_COMPILER_MAYBE "$ENV{HOME}/cheri/output/sdk/bin/clang")
 
 # Select which is found
 if (EXISTS ${RISCV_CLANG_COMPILER_MAYBE})

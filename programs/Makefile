@@ -3,7 +3,7 @@
 # build directory
 BUILD = build
 # the programs we're going to build
-PROGRAMS := vector_memcpy cheri_hello_world
+PROGRAMS := vector_memcpy hello_world
 
 # The associated files for all programs
 ALL_PROGRAMS_SOURCES := $(foreach P,$(PROGRAMS),$(wildcard $(P)/*))

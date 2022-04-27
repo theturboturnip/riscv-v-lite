@@ -1,4 +1,5 @@
 extern crate clap;
+use rsim::processor::exceptions::ProgramHaltedException;
 use clap::{Arg, App};
 
 use anyhow::{Result,bail};
@@ -58,8 +59,9 @@ fn load_cheri_elf(elf_path: &str) -> Result<(u64, CheriAggregateMemory)> {
         Box::new(MemoryBacking::from_vec(code_data, 0x0..0x2000)),
         // Allocate ~96KB for RAM
         Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
-        // Add one I/O memory address, which expects 0x3FFF as a return value
-        Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
+        // Add two I/O memory addresses: tests_ran, tests_suceeded
+        Box::new(IOMemory::return_address(0xF000_0000, false)),
+        Box::new(IOMemory::return_address(0xF000_0008, true)),
     ]);
     let mut cheri_mem = CheriAggregateMemory::from_base(agg_mem);
 
@@ -142,14 +144,44 @@ fn load_cheri_elf(elf_path: &str) -> Result<(u64, CheriAggregateMemory)> {
     Ok((entry_pc, cheri_mem))
 }
 
-fn run_binary_in_processor<T>(mut processor: Box<dyn Processor<T>>, mut mods: T) -> Result<()> where T: Sized {
+fn run_binary_in_processor<T>(mut processor: Box<dyn Processor<T>>, mut mods: T) -> Result<bool> where T: Sized {
     loop {
         let res = processor.exec_step(&mut mods);
 
         match res {
             Err(e) => {
-                processor.dump(&mods);
-                return Err(e)
+                if let Some(_) = e.downcast_ref::<ProgramHaltedException>() {
+                    // Lookup I/O values
+                    let io_vals = processor.get_io_values();
+                    match &io_vals[..] {
+                        [Some(tests_ran), Some(tests_successful)] => {
+                            if tests_ran == tests_successful {
+                                println!("All tests ran were successful: 0x{:016x}", tests_ran);
+                                return Ok(true)
+                            } else {
+                                let tests_unsuccessful = tests_ran ^ tests_successful;
+                                println!("Not all tests were successful.");
+                                println!("Ran          0x{:016x}", tests_ran);
+                                println!("Successful   0x{:016x}", tests_successful);
+                                println!("Unsuccessful 0x{:016x}", tests_unsuccessful);
+                                println!("Unsuccessful Indices:");
+                                for i in 0..63 {
+                                    if ((tests_unsuccessful >> i) & 1) == 1 {
+                                        println!("{}", i);
+                                    }
+                                }
+                                return Ok(false)
+                            }
+                        }
+                        [tests_ran_maybe, tests_successful_maybe] => {
+                            bail!("Not all I/O addresses were written: tests_ran = {:?}, tests_successful = {:?}", tests_ran_maybe, tests_successful_maybe)
+                        }
+                        _ => bail!("Should have exactly two IO values, found {}", io_vals.len())
+                    }
+                } else {
+                    processor.dump(&mods);
+                    return Err(e)
+                }
             },
             Ok(()) => {}
         }
@@ -158,7 +190,7 @@ fn run_binary_in_processor<T>(mut processor: Box<dyn Processor<T>>, mut mods: T)
         }
     }
 
-    Ok(())
+    Ok(false)
 }
 
 fn main() -> Result<()> {
@@ -186,7 +218,8 @@ fn main() -> Result<()> {
             // Get the filepath for program memory
             let memory_bin = sub_matches.value_of("memory_bin").unwrap();
 
-            match sub_matches.value_of("riscv_profile") {
+            // Ok(true) if program completed execution and was successful, Ok(false) if program completed execution but a test failed
+            let run_result = match sub_matches.value_of("riscv_profile") {
                 Some("rv32imv") => {
                     // Create the memory map
                     let mem = AggregateMemory::from_mappings(vec![
@@ -194,8 +227,9 @@ fn main() -> Result<()> {
                         Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
                         // Allocate ~96KB for RAM
                         Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
-                        // Add one I/O memory address, which expects 0x3FFF as a return value
-                        Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
+                        // Add two I/O memory addresses: tests_ran, tests_suceeded
+                        Box::new(IOMemory::return_address(0xF000_0000, false)),
+                        Box::new(IOMemory::return_address(0xF000_0008, true)),
                     ]);
 
                     let (processor, mods) = Processor32::new(mem);
@@ -208,8 +242,9 @@ fn main() -> Result<()> {
                         Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
                         // Allocate ~96KB for RAM
                         Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
-                        // Add one I/O memory address, which expects 0x3FFF as a return value
-                        Box::new(IOMemory::return_address(0xF000_0000, 0x3FFF))
+                        // Add two I/O memory addresses: tests_ran, tests_suceeded
+                        Box::new(IOMemory::return_address(0xF000_0000, false)),
+                        Box::new(IOMemory::return_address(0xF000_0008, true)),
                     ]);
 
                     let (processor, mods) = Rv64imvProcessor::new(mem);
@@ -223,8 +258,12 @@ fn main() -> Result<()> {
                     run_binary_in_processor(Box::new(processor), mods)
                 },
                 _ => unreachable!("invalid riscv profile")
+            };
+            if run_result? {
+                std::process::exit(0)
+            } else {
+                std::process::exit(1)
             }
-
         }
         _ => unreachable!("invalid subcommand name")
     }

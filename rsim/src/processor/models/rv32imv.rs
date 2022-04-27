@@ -219,4 +219,8 @@ impl Processor<ProcessorModules32> for Processor32 {
     fn running(&self) -> bool {
         self.running
     }
+
+    fn get_io_values(&self) -> Vec<Option<u64>> {
+        self.memory.get_io_values()
+    }
 }
