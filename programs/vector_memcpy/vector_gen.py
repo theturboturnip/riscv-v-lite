@@ -326,6 +326,54 @@ for ({val_t} i = 110; i < 128; i++) {{
 return 1;
 """)
 
+def generate_masked_harnesses(b: VectorTestsCpp):
+    for width in [8, 16, 32, 64]:
+        val_t = f"uint{width}_t"
+
+        harness = Harness(
+            name=f"vector_memcpy_masked_harness_{val_t}",
+            test_args = {
+                "n": "size_t",
+                "in": f"const {val_t}* __restrict__",
+                "out": f"{val_t}* __restrict__",
+            }
+        )
+
+        # Create harness
+        with b.new_harness(harness):
+            b.write_snippet(
+f"""{val_t} data[128] = {{0}};
+{val_t} out_data[128] = {{0}};
+const {val_t} SENTINEL_NOT_WRITTEN = 0xbb;
+
+for ({val_t} i = 0; i < 128; i++) {{
+    data[i] = i;
+    out_data[i] = SENTINEL_NOT_WRITTEN;
+}}
+
+// ONLY copy 110 elements
+// For the masked function, this should only copy odd-indexed elements.
+memcpy_fn(110, data, out_data);
+
+// Check the first 110 elements of output are the same
+// This ensures that the emulator correctly loaded/stored enough values
+for ({val_t} i = 0; i < 110; i++) {{
+    if ((i & 1) == 1 && data[i] != out_data[i]) {{
+        return 0;
+    }} else if ((i & 1) == 0 && out_data[i] != SENTINEL_NOT_WRITTEN) {{
+        return 0;
+    }}
+}}
+// Check that the rest are all the original value
+// This ensures that the emulator didn't store more elements than it should have
+for ({val_t} i = 110; i < 128; i++) {{
+    if (out_data[i] != SENTINEL_NOT_WRITTEN) {{
+        return 0;
+    }}
+}}
+return 1;
+""")
+
 def generate_unit_tests(b: VectorTestsCpp, vtypes: List[VType]):
     # Create tests
     for vtype in vtypes:
@@ -480,12 +528,71 @@ def generate_indexed_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     b.write_code(f"out += copied_per_iter;")
                     b.write_code(f"n -= copied_per_iter;")
 
+def generate_masked_tests(b: VectorTestsCpp, vtypes: List[VType]):
+    # Create tests
+    for vtype in vtypes:
+        test = Test(
+            f"vector_memcpy_masked_stride_{vtype.get_code()}",
+            required_def = None
+        )
+        vtype_type = vtype.get_unsigned_type()
+        vtype_elem_type = vtype.get_unsigned_elem_type()
+        vtype_mask_type = vtype.get_mask_type()
+        vtype_sew_lmul_ratio = vtype.get_sew_lmul_ratio()
+        if vtype_sew_lmul_ratio < 1:
+            raise RuntimeError(f"vtype {vtype} has a SEW/LMUL ratio smaller than 1, so won't have relevant intrinsics")
+        vtype_unit_load = f"vle{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_load_asm = f"vle{vtype.sew.value}.v"
+        vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+        vtype_masked_load = f"vle{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}_m"
+        vtype_masked_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}_m"
+        with b.new_test(test, b.harnesses[f"vector_memcpy_harness_{vtype_elem_type}"]):
+            # Generate mask - make an array of values, each 0 or 1, then set the mask register bits based on those
+            b.write_code(f"{vtype_elem_type} mask_ints[128] = {{0}}")
+            b.write_code(f"const size_t VLMAX = vsetvlmax_e{vtype.sew.value}{vtype.lmul.get_code()}();")
+            with b.block("for (size_t i = 0; i < VLMAX; i++)"):
+                b.write_code("mask_ints[i] = i & 1")
+            # Load mask ints into a vector
+            b.write_code(f"{vtype_type} mask_ints_v")
+            b.write_line("#if __has_feature(capabilities)")
+            b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));')
+            b.write_line("#else")
+            b.write_code(f"mask_ints_v = {vtype_unit_load}(in, VLMAX);")
+            b.write_line("#endif")
+            # Create a mask from that vector
+            # Use the intrinsic on all platforms, it doesn't involve a pointer
+            b.write_code(f"{vtype_mask_type} mask = vmseq_vx_u{vtype.sew.value}{vtype.lmul.get_code()}_b{vtype_sew_lmul_ratio}(mask_ints_v, 1, VLMAX);")
+            # If we're on a capabilities platform, we don't use masked intrinsics, so the mask may not be moved into v0 automatically.
+            # Do it ourselves instead
+            b.write_line("#if __has_feature(capabilities)")
+            b.write_code(f'asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));')
+            b.write_line("#endif")
+
+            with b.block("while (1)"):
+                with b.with_vlen("n", "copied_per_iter", vtype):
+                    b.write_code(f"if (copied_per_iter == 0) break;")
+                    b.write_code(f"{vtype_type} data;")
+
+                    b.write_line("#if __has_feature(capabilities)")
+                    # Masked load = unit load with extra argument
+                    b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1), v0.t" : "=vr"(data) : "C"(in));')
+                    b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1), v0.t" :: "vr"(data),  "C"(out));')
+                    b.write_line("#else")
+                    b.write_code(f"data = {vtype_masked_load}(mask, data, in, copied_per_iter);")
+                    b.write_code(f"{vtype_masked_store}(mask, out, data, copied_per_iter)")
+                    b.write_line("#endif")
+
+                    b.write_code(f"in += copied_per_iter;")
+                    b.write_code(f"out += copied_per_iter;")
+                    b.write_code(f"n -= copied_per_iter;")
+
 
 def generate_tests() -> str:
     b = VectorTestsCpp()
 
     # Create harnesses+tests
     generate_vanilla_harnesses(b)
+    generate_masked_harnesses(b)
     generate_unit_tests(b, [
         VType(Sew.e8, Lmul.e8),
         VType(Sew.e16, Lmul.e8),
@@ -501,6 +608,13 @@ def generate_tests() -> str:
         VType(Sew.e32, Lmul.eHalf),
     ])
     generate_indexed_tests(b, [
+        VType(Sew.e8, Lmul.e8),
+        VType(Sew.e16, Lmul.e8),
+        VType(Sew.e32, Lmul.e8),
+        # Test fractional lmul
+        VType(Sew.e32, Lmul.eHalf),
+    ])
+    generate_masked_tests(b, [
         VType(Sew.e8, Lmul.e8),
         VType(Sew.e16, Lmul.e8),
         VType(Sew.e32, Lmul.e8),

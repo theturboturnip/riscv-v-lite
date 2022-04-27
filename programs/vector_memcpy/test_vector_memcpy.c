@@ -125,6 +125,134 @@ int vector_memcpy_harness_uint64_t(void (*memcpy_fn)(size_t, const uint64_t* __r
     }
     return 1;
 }
+int vector_memcpy_masked_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
+    uint8_t data[128] = {0};
+    uint8_t out_data[128] = {0};
+    const uint8_t SENTINEL_NOT_WRITTEN = 0xbb;
+    
+    for (uint8_t i = 0; i < 128; i++) {
+        data[i] = i;
+        out_data[i] = SENTINEL_NOT_WRITTEN;
+    }
+    
+    // ONLY copy 110 elements
+    // For the masked function, this should only copy odd-indexed elements.
+    memcpy_fn(110, data, out_data);
+    
+    // Check the first 110 elements of output are the same
+    // This ensures that the emulator correctly loaded/stored enough values
+    for (uint8_t i = 0; i < 110; i++) {
+        if ((i & 1) == 1 && data[i] != out_data[i]) {
+            return 0;
+        } else if ((i & 1) == 0 && out_data[i] != SENTINEL_NOT_WRITTEN) {
+            return 0;
+        }
+    }
+    // Check that the rest are all the original value
+    // This ensures that the emulator didn't store more elements than it should have
+    for (uint8_t i = 110; i < 128; i++) {
+        if (out_data[i] != SENTINEL_NOT_WRITTEN) {
+            return 0;
+        }
+    }
+    return 1;
+}
+int vector_memcpy_masked_harness_uint16_t(void (*memcpy_fn)(size_t, const uint16_t* __restrict__, uint16_t* __restrict__)) {
+    uint16_t data[128] = {0};
+    uint16_t out_data[128] = {0};
+    const uint16_t SENTINEL_NOT_WRITTEN = 0xbb;
+    
+    for (uint16_t i = 0; i < 128; i++) {
+        data[i] = i;
+        out_data[i] = SENTINEL_NOT_WRITTEN;
+    }
+    
+    // ONLY copy 110 elements
+    // For the masked function, this should only copy odd-indexed elements.
+    memcpy_fn(110, data, out_data);
+    
+    // Check the first 110 elements of output are the same
+    // This ensures that the emulator correctly loaded/stored enough values
+    for (uint16_t i = 0; i < 110; i++) {
+        if ((i & 1) == 1 && data[i] != out_data[i]) {
+            return 0;
+        } else if ((i & 1) == 0 && out_data[i] != SENTINEL_NOT_WRITTEN) {
+            return 0;
+        }
+    }
+    // Check that the rest are all the original value
+    // This ensures that the emulator didn't store more elements than it should have
+    for (uint16_t i = 110; i < 128; i++) {
+        if (out_data[i] != SENTINEL_NOT_WRITTEN) {
+            return 0;
+        }
+    }
+    return 1;
+}
+int vector_memcpy_masked_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32_t* __restrict__, uint32_t* __restrict__)) {
+    uint32_t data[128] = {0};
+    uint32_t out_data[128] = {0};
+    const uint32_t SENTINEL_NOT_WRITTEN = 0xbb;
+    
+    for (uint32_t i = 0; i < 128; i++) {
+        data[i] = i;
+        out_data[i] = SENTINEL_NOT_WRITTEN;
+    }
+    
+    // ONLY copy 110 elements
+    // For the masked function, this should only copy odd-indexed elements.
+    memcpy_fn(110, data, out_data);
+    
+    // Check the first 110 elements of output are the same
+    // This ensures that the emulator correctly loaded/stored enough values
+    for (uint32_t i = 0; i < 110; i++) {
+        if ((i & 1) == 1 && data[i] != out_data[i]) {
+            return 0;
+        } else if ((i & 1) == 0 && out_data[i] != SENTINEL_NOT_WRITTEN) {
+            return 0;
+        }
+    }
+    // Check that the rest are all the original value
+    // This ensures that the emulator didn't store more elements than it should have
+    for (uint32_t i = 110; i < 128; i++) {
+        if (out_data[i] != SENTINEL_NOT_WRITTEN) {
+            return 0;
+        }
+    }
+    return 1;
+}
+int vector_memcpy_masked_harness_uint64_t(void (*memcpy_fn)(size_t, const uint64_t* __restrict__, uint64_t* __restrict__)) {
+    uint64_t data[128] = {0};
+    uint64_t out_data[128] = {0};
+    const uint64_t SENTINEL_NOT_WRITTEN = 0xbb;
+    
+    for (uint64_t i = 0; i < 128; i++) {
+        data[i] = i;
+        out_data[i] = SENTINEL_NOT_WRITTEN;
+    }
+    
+    // ONLY copy 110 elements
+    // For the masked function, this should only copy odd-indexed elements.
+    memcpy_fn(110, data, out_data);
+    
+    // Check the first 110 elements of output are the same
+    // This ensures that the emulator correctly loaded/stored enough values
+    for (uint64_t i = 0; i < 110; i++) {
+        if ((i & 1) == 1 && data[i] != out_data[i]) {
+            return 0;
+        } else if ((i & 1) == 0 && out_data[i] != SENTINEL_NOT_WRITTEN) {
+            return 0;
+        }
+    }
+    // Check that the rest are all the original value
+    // This ensures that the emulator didn't store more elements than it should have
+    for (uint64_t i = 110; i < 128; i++) {
+        if (out_data[i] != SENTINEL_NOT_WRITTEN) {
+            return 0;
+        }
+    }
+    return 1;
+}
 void vector_memcpy_unit_stride_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out) {
     while (1) {
          {
@@ -525,6 +653,142 @@ void vector_memcpy_indexed_e32mf2(size_t n, const uint32_t* __restrict__ in, uin
         }
     }
 }
+void vector_memcpy_masked_stride_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out) {
+    uint8_t mask_ints[128] = {0};
+    const size_t VLMAX = vsetvlmax_e8m8();
+    for (size_t i = 0; i < VLMAX; i++) {
+        mask_ints[i] = i & 1;
+    }
+    vuint8m8_t mask_ints_v;
+    #if __has_feature(capabilities)
+    asm volatile ("vle8.v %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));
+    #else
+    mask_ints_v = vle8_v_u8m8(in, VLMAX);
+    #endif
+    vbool1_t mask = vmseq_vx_u8m8_b1(mask_ints_v, 1, VLMAX);
+    #if __has_feature(capabilities)
+    asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));
+    #endif
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e8m8(n);
+            if (copied_per_iter == 0) break;
+            vuint8m8_t data;
+            #if __has_feature(capabilities)
+            asm volatile ("vle8.v %0, (%1), v0.t" : "=vr"(data) : "C"(in));
+            asm volatile ("vse8.v %0, (%1), v0.t" :: "vr"(data),  "C"(out));
+            #else
+            data = vle8_v_u8m8_m(mask, data, in, copied_per_iter);
+            vse8_v_u8m8_m(mask, out, data, copied_per_iter);
+            #endif
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+void vector_memcpy_masked_stride_e16m8(size_t n, const uint16_t* __restrict__ in, uint16_t* __restrict__ out) {
+    uint16_t mask_ints[128] = {0};
+    const size_t VLMAX = vsetvlmax_e16m8();
+    for (size_t i = 0; i < VLMAX; i++) {
+        mask_ints[i] = i & 1;
+    }
+    vuint16m8_t mask_ints_v;
+    #if __has_feature(capabilities)
+    asm volatile ("vle16.v %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));
+    #else
+    mask_ints_v = vle16_v_u16m8(in, VLMAX);
+    #endif
+    vbool2_t mask = vmseq_vx_u16m8_b2(mask_ints_v, 1, VLMAX);
+    #if __has_feature(capabilities)
+    asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));
+    #endif
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e16m8(n);
+            if (copied_per_iter == 0) break;
+            vuint16m8_t data;
+            #if __has_feature(capabilities)
+            asm volatile ("vle16.v %0, (%1), v0.t" : "=vr"(data) : "C"(in));
+            asm volatile ("vse16.v %0, (%1), v0.t" :: "vr"(data),  "C"(out));
+            #else
+            data = vle16_v_u16m8_m(mask, data, in, copied_per_iter);
+            vse16_v_u16m8_m(mask, out, data, copied_per_iter);
+            #endif
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+void vector_memcpy_masked_stride_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    uint32_t mask_ints[128] = {0};
+    const size_t VLMAX = vsetvlmax_e32m8();
+    for (size_t i = 0; i < VLMAX; i++) {
+        mask_ints[i] = i & 1;
+    }
+    vuint32m8_t mask_ints_v;
+    #if __has_feature(capabilities)
+    asm volatile ("vle32.v %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));
+    #else
+    mask_ints_v = vle32_v_u32m8(in, VLMAX);
+    #endif
+    vbool4_t mask = vmseq_vx_u32m8_b4(mask_ints_v, 1, VLMAX);
+    #if __has_feature(capabilities)
+    asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));
+    #endif
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32m8(n);
+            if (copied_per_iter == 0) break;
+            vuint32m8_t data;
+            #if __has_feature(capabilities)
+            asm volatile ("vle32.v %0, (%1), v0.t" : "=vr"(data) : "C"(in));
+            asm volatile ("vse32.v %0, (%1), v0.t" :: "vr"(data),  "C"(out));
+            #else
+            data = vle32_v_u32m8_m(mask, data, in, copied_per_iter);
+            vse32_v_u32m8_m(mask, out, data, copied_per_iter);
+            #endif
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+void vector_memcpy_masked_stride_e32mf2(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    uint32_t mask_ints[128] = {0};
+    const size_t VLMAX = vsetvlmax_e32mf2();
+    for (size_t i = 0; i < VLMAX; i++) {
+        mask_ints[i] = i & 1;
+    }
+    vuint32mf2_t mask_ints_v;
+    #if __has_feature(capabilities)
+    asm volatile ("vle32.v %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));
+    #else
+    mask_ints_v = vle32_v_u32mf2(in, VLMAX);
+    #endif
+    vbool64_t mask = vmseq_vx_u32mf2_b64(mask_ints_v, 1, VLMAX);
+    #if __has_feature(capabilities)
+    asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));
+    #endif
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32mf2(n);
+            if (copied_per_iter == 0) break;
+            vuint32mf2_t data;
+            #if __has_feature(capabilities)
+            asm volatile ("vle32.v %0, (%1), v0.t" : "=vr"(data) : "C"(in));
+            asm volatile ("vse32.v %0, (%1), v0.t" :: "vr"(data),  "C"(out));
+            #else
+            data = vle32_v_u32mf2_m(mask, data, in, copied_per_iter);
+            vse32_v_u32mf2_m(mask, out, data, copied_per_iter);
+            #endif
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
 #ifdef __cplusplus
 extern "C" {;
 #endif // __cplusplus
@@ -544,6 +808,10 @@ int main(void) {
     result |= vector_memcpy_harness_uint16_t(vector_memcpy_indexed_e16m8) << 9;
     result |= vector_memcpy_harness_uint32_t(vector_memcpy_indexed_e32m8) << 10;
     result |= vector_memcpy_harness_uint32_t(vector_memcpy_indexed_e32mf2) << 11;
+    result |= vector_memcpy_harness_uint8_t(vector_memcpy_masked_stride_e8m8) << 12;
+    result |= vector_memcpy_harness_uint16_t(vector_memcpy_masked_stride_e16m8) << 13;
+    result |= vector_memcpy_harness_uint32_t(vector_memcpy_masked_stride_e32m8) << 14;
+    result |= vector_memcpy_harness_uint32_t(vector_memcpy_masked_stride_e32mf2) << 15;
     outputDevice[0] = result;
     return result;
 }

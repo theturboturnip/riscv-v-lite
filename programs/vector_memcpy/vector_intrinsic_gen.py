@@ -4,6 +4,7 @@ import argparse
 from dataclasses import dataclass
 from enum import Enum
 from typing import List
+import math
 
 class Sew(Enum):
     e8 = 8
@@ -72,6 +73,12 @@ class VType:
 
     def get_vsetvl_func(self) -> str:
         return f"vsetvl_{self.sew.get_ecode()}{self.lmul.get_code()}"
+
+    def get_sew_lmul_ratio(self) -> int:
+        return math.trunc(self.sew.value * 8.0 / self.lmul.get_num_regs_times_8())
+
+    def get_mask_type(self) -> str:
+        return f"vbool{self.get_sew_lmul_ratio()}_t"
 
 PREFIX="cheri_"
 
