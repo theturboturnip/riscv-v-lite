@@ -390,7 +390,7 @@ class VectorTestsCpp(VectorCppBuilder_NoCHERI):
                 pass
 
 def generate_vanilla_harnesses(b: VectorTestsCpp):
-    for width in [8, 16, 32, 64]:
+    for width in [8, 16, 32]:
         val_t = f"uint{width}_t"
 
         harness = Harness(
@@ -433,7 +433,7 @@ return 1;
 """)
 
 def generate_masked_harnesses(b: VectorTestsCpp):
-    for width in [8, 16, 32, 64]:
+    for width in [8, 16, 32]:
         val_t = f"uint{width}_t"
 
         harness = Harness(
@@ -481,7 +481,7 @@ return 1;
 """)
 
 def generate_segmented_harnesses(b: VectorTestsCpp):
-    for width in [8, 16, 32, 64]:
+    for width in [8, 16, 32]:
         val_t = f"uint{width}_t"
 
         harness = Harness(

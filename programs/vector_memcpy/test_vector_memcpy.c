@@ -179,33 +179,6 @@ int vector_memcpy_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32_t* __r
     }
     return 1;
 }
-int vector_memcpy_harness_uint64_t(void (*memcpy_fn)(size_t, const uint64_t* __restrict__, uint64_t* __restrict__)) {
-    uint64_t data[128] = {0};
-    uint64_t out_data[128] = {0};
-    
-    for (uint64_t i = 0; i < 128; i++) {
-        data[i] = i;
-    }
-    
-    // ONLY copy 110 elements
-    memcpy_fn(110, data, out_data);
-    
-    // Check the first 110 elements of output are the same
-    // This ensures that the emulator correctly loaded/stored enough values
-    for (uint64_t i = 0; i < 110; i++) {
-        if (data[i] != out_data[i]) {
-            return 0;
-        }
-    }
-    // Check that the rest are 0 (the original value)
-    // This ensures that the emulator didn't store more elements than it should have
-    for (uint64_t i = 110; i < 128; i++) {
-        if (out_data[i] != 0) {
-            return 0;
-        }
-    }
-    return 1;
-}
 int vector_memcpy_masked_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
     uint8_t data[128] = {0};
     uint8_t out_data[128] = {0};
@@ -296,38 +269,6 @@ int vector_memcpy_masked_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32
     // Check that the rest are all the original value
     // This ensures that the emulator didn't store more elements than it should have
     for (uint32_t i = 110; i < 128; i++) {
-        if (out_data[i] != SENTINEL_NOT_WRITTEN) {
-            return 0;
-        }
-    }
-    return 1;
-}
-int vector_memcpy_masked_harness_uint64_t(void (*memcpy_fn)(size_t, const uint64_t* __restrict__, uint64_t* __restrict__)) {
-    uint64_t data[128] = {0};
-    uint64_t out_data[128] = {0};
-    const uint64_t SENTINEL_NOT_WRITTEN = 0xbb;
-    
-    for (uint64_t i = 0; i < 128; i++) {
-        data[i] = i;
-        out_data[i] = SENTINEL_NOT_WRITTEN;
-    }
-    
-    // ONLY copy 110 elements
-    // For the masked function, this should only copy odd-indexed elements.
-    memcpy_fn(110, data, out_data);
-    
-    // Check the first 110 elements of output are the same
-    // This ensures that the emulator correctly loaded/stored enough values
-    for (uint64_t i = 0; i < 110; i++) {
-        if ((i & 1) == 1 && data[i] != out_data[i]) {
-            return 0;
-        } else if ((i & 1) == 0 && out_data[i] != SENTINEL_NOT_WRITTEN) {
-            return 0;
-        }
-    }
-    // Check that the rest are all the original value
-    // This ensures that the emulator didn't store more elements than it should have
-    for (uint64_t i = 110; i < 128; i++) {
         if (out_data[i] != SENTINEL_NOT_WRITTEN) {
             return 0;
         }
@@ -457,49 +398,6 @@ int vector_memcpy_segmented_harness_uint32_t(void (*memcpy_fn)(size_t, const uin
     // Check that the rest are 0 (the original value)
     // This ensures that the emulator didn't store more elements than it should have
     for (uint32_t i = 26; i < 32; i++) {
-        if (out_r[i] != 0 || out_g[i] != 0 || out_b[i] != 0 || out_a[i] != 0) {
-            return 0;
-        }
-    }
-    return 1;
-}
-int vector_memcpy_segmented_harness_uint64_t(void (*memcpy_fn)(size_t, const uint64_t* __restrict__, uint64_t* __restrict__[4])) {
-    uint64_t data[128] = {0};
-    uint64_t out_r[32] = {0};
-    uint64_t out_g[32] = {0};
-    uint64_t out_b[32] = {0};
-    uint64_t out_a[32] = {0};
-    
-    for (uint64_t i = 0; i < 128; i++) {
-        data[i] = i;
-    }
-    
-    uint64_t* out_datas[4] = {out_r, out_g, out_b, out_a};
-    
-    
-    // ONLY copy 104 elements = 26 segments
-    // For the masked function, this should only copy odd-indexed elements.
-    memcpy_fn(26, data, out_datas);
-    
-    // Check the first 104 elements = 26 segments of output are the same
-    // This ensures that the emulator correctly loaded/stored enough values
-    for (uint64_t i = 0; i < 26; i++) {
-        if (data[i*4 + 0] != out_r[i]) {
-            return 0;
-        }
-        if (data[i*4 + 1] != out_g[i]) {
-            return 0;
-        }
-        if (data[i*4 + 2] != out_b[i]) {
-            return 0;
-        }
-        if (data[i*4 + 3] != out_a[i]) {
-            return 0;
-        }
-    }
-    // Check that the rest are 0 (the original value)
-    // This ensures that the emulator didn't store more elements than it should have
-    for (uint64_t i = 26; i < 32; i++) {
         if (out_r[i] != 0 || out_g[i] != 0 || out_b[i] != 0 || out_a[i] != 0) {
             return 0;
         }
