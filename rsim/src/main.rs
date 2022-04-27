@@ -13,6 +13,7 @@ use object::SegmentFlags;
 /// __cap_relocs section structure.
 /// 
 /// See TR-949, [crt_init_globals.c](https://github.com/CTSRD-CHERI/device-model/blob/master/src/crt_init_globals.c)
+/// CHERI-BSD version [crt_init_globals.c](https://github.com/CTSRD-CHERI/cheribsd/blob/main/lib/csu/common-cheri/crt_init_globals.c)
 /// 
 /// This is used to create initial capabilities at startup.
 /// On full systems the C runtime(?) does this, but we do it manually here.
