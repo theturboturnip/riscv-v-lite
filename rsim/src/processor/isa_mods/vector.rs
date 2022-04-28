@@ -604,9 +604,26 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                         self.exec_config(inst_kind, inst, conn)?
                     }
 
-                    // 0b000 => {
-                    //     // Vector-Vector int
-                    // }
+                    0b000 => {
+                        // Vector-Vector int
+                        let vs1 = rs1;
+                        let vd = rd;
+
+                        match funct6 {
+                            0b010111 => {
+                                // vmv.v.v
+                                if !vm {
+                                    bail!("vector-vector move can't be masked");
+                                }
+
+                                for i in self.vstart..self.vl {
+                                    let val = self.load_vreg_elem(self.vtype.vsew, vs1, i)?;
+                                    self.store_vreg_elem(self.vtype.vsew, vd, i, val)?;
+                                }
+                            }
+                            _ => bail!("Unsupported OPIVV funct6 {:b}", funct6)
+                        }
+                    }
 
                     // 0b010 => {
                     //     // Vector-Vector Move
