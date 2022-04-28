@@ -7,6 +7,7 @@ use crate::processor::exceptions::{CapabilityException,CapOrRegister};
 use crate::processor::elements::memory::*;
 use super::capability::*;
 
+/// Return the range of addresses you can access with a capability
 fn cap_bounds_range(cap: Cc128Cap) -> Range<u64> {
     let b = cap.bounds();
     Range { start: b.0, end: b.1.try_into().unwrap() }
@@ -74,7 +75,7 @@ impl CheriAggregateMemory {
         self.check_bounds_against_capability(
             Range{
                 start: addr,
-                end: addr + size - 1
+                end: addr + size
             },
             cap,
             expected_perms
@@ -86,7 +87,8 @@ impl CheriAggregateMemory {
         } else if cap.permissions() & expected_perms != expected_perms {
             bail!(CapabilityException::PermissionViolation{ cap: CapOrRegister::Cap(cap), perms: expected_perms })
         } else if !cap_bounds_range(cap).contains(&bounds.start) 
-            || !cap_bounds_range(cap).contains(&bounds.end) {
+            || !cap_bounds_range(cap).contains(&(bounds.end - 1)) {
+                // ^ check end - 1 because bounds is an exclusive range - we're only going to access the byte at (end - 1)
             bail!(CapabilityException::BoundsViolation{ cap: CapOrRegister::Cap(cap), size: (bounds.end - bounds.start) as usize })
         } else if cap.is_sealed() {
             bail!(CapabilityException::SealViolation{ cap: CapOrRegister::Cap(cap) })

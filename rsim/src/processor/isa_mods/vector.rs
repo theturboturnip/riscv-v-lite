@@ -176,12 +176,14 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
         // Try to calculate an address range that totally encompasses the access.
         let addr_range = match op {
             Strided{stride, eew, evl, nf, ..} => {
+                // inclusive range
                 let offset_range = Range::<u64> {
                     start: self.vstart as u64 * stride,
                     // The index of the final segment = (evl - 1)
                     // The start of the final segment = (evl - 1) * stride
                     // The end of the final segment = (evl - 1) * stride + (nf * eew)
-                    end: (evl as u64) * stride + (nf as u64) * eew.width_in_bytes()
+                    // subtract 1 to get the final byte accessed
+                    end: (evl as u64) * stride + (nf as u64) * eew.width_in_bytes() - 1
                 };
                 Range::<u64> {
                     start: base_addr + offset_range.start,
@@ -198,7 +200,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     // stride = eew * nf
                     // => The end of the final segment = (evl - 1) * eew * nf + eew * nf
                     // = evl * eew * nf
-                    end: (evl as u64) * (nf as u64) * eew.width_in_bytes()
+                    end: (evl as u64) * (nf as u64) * eew.width_in_bytes() - 1
                 };
                 Range::<u64> {
                     start: base_addr + index_range.start ,
@@ -213,7 +215,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
 
                 let offset_range = Range::<u64> {
                     start: *offsets.iter().min().unwrap() as u64,
-                    end: *offsets.iter().max().unwrap() as u64 + (nf as u64 * eew.width_in_bytes()),
+                    end: *offsets.iter().max().unwrap() as u64 + (nf as u64 * eew.width_in_bytes()) - 1,
                 };
                 Range::<u64> {
                     start: base_addr + offset_range.start,
@@ -224,7 +226,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                 // op.evl() accounts for the number of registers
                 let index_range = Range::<u64> {
                     start: 0,
-                    end: (op.evl() as u64)
+                    end: (op.evl() as u64) - 1
                 };
                 Range::<u64> {
                     start: base_addr + index_range.start * eew.width_in_bytes(),
@@ -235,7 +237,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                 // bytemask does not have segment support
                 let index_range = Range::<u64> {
                     start: self.vstart as u64,
-                    end: (evl as u64)
+                    end: (evl as u64) - 1
                 };
                 Range::<u64> {
                     start: base_addr + index_range.start,
@@ -762,8 +764,8 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                     // There was a fast path that raised an exception, re-raise it
                     Err(e) => {
                         // This assumes imprecise error handling
-                        todo!("set vstart");
-                        return Err(e);
+                        // todo!("set vstart");
+                        Err(e).context(format!("Fast-path checking vector access {:?}", op))?;
                     }
                     // There was no fast path, or it was uncertain if a CapabilityException would actually be raised
                     Ok(false) => {
