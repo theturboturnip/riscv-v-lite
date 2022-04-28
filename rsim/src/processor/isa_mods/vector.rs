@@ -159,94 +159,111 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     }
 
     /// Try doing fast-path capability checks for accesses for a vector load/store.
+    /// Fast-paths exist for all accesses, although in hardware some may not be as fast as others.
     /// Return values:
-    /// - Ok(true) if there was a fast-path check that raised no capability exceptions
+    /// - Ok(true) if the fast-path check raised no capability exceptions
     ///   - Therefore the full access should not raise any capability exceptions
-    /// - Ok(false) if there wasn't a fast-path, or a fast-path check failed in a tolerable manner 
+    /// - Ok(false) if the fast-path check failed in a tolerable manner 
     ///   - Therefore the full access *may* raise a capability exception
     ///   - A tolerable fast-path failure = fault-only-first, which might absorb the exception,
     ///     or masked operations that might mask out the offending element.
-    /// - Err() if there was a fast-path check that failed in a not-tolerable manner
-    fn fast_check_load_store(&mut self, addr_provenance: (u64, Provenance), vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<bool> {
+    /// - Err() if the fast-path check failed in a not-tolerable manner
+    fn fast_check_load_store(&mut self, addr_provenance: (u64, Provenance), rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> (Result<bool>, Range<u64>) {
         let (base_addr, provenance) = addr_provenance;
 
         use DecodedMemOp::*;
         let mut is_fault_only_first = false;
-        // Try to calculate an address range that totally encompases the access.
+        // Try to calculate an address range that totally encompasses the access.
         let addr_range = match op {
-            Strided{stride, evl, nf, ..} => {
-                let index_range = Range::<u64> {
-                    start: self.vstart as u64,
-                    end: (evl as u64) * (nf as u64)
+            Strided{stride, eew, evl, nf, ..} => {
+                let offset_range = Range::<u64> {
+                    start: self.vstart as u64 * stride,
+                    // The index of the final segment = (evl - 1)
+                    // The start of the final segment = (evl - 1) * stride
+                    // The end of the final segment = (evl - 1) * stride + (nf * eew)
+                    end: (evl as u64) * stride + (nf as u64) * eew.width_in_bytes()
                 };
-                let addr_range = Range::<u64> {
-                    start: base_addr + index_range.start * stride,
-                    end: base_addr + index_range.end * stride,
-                };
-                Some(addr_range)
+                Range::<u64> {
+                    start: base_addr + offset_range.start,
+                    end: base_addr + offset_range.end,
+                }
             },
             FaultOnlyFirst{evl, nf, eew, ..} => {
                 is_fault_only_first = true;
                 let index_range = Range::<u64> {
-                    start: self.vstart as u64,
-                    end: (evl as u64) * (nf as u64)
+                    start: self.vstart as u64 * nf as u64 * eew.width_in_bytes(),
+                    // The index of the final segment = (evl - 1)
+                    // The start of the final segment = (evl - 1) * stride
+                    // The end of the final segment = (evl - 1) * stride + (nf * eew)
+                    // stride = eew * nf
+                    // => The end of the final segment = (evl - 1) * eew * nf + eew * nf
+                    // = evl * eew * nf
+                    end: (evl as u64) * (nf as u64) * eew.width_in_bytes()
                 };
-                let addr_range = Range::<u64> {
-                    start: base_addr + index_range.start * eew.width_in_bytes(),
+                Range::<u64> {
+                    start: base_addr + index_range.start ,
                     end: base_addr + index_range.end * eew.width_in_bytes(),
-                };
-                Some(addr_range)
+                }
             },
+            Indexed{evl, nf, eew, index_ew, ..} => {
+                let mut offsets = vec![];
+                for i_segment in self.vstart..evl {
+                    offsets.push(self.load_vreg_elem(index_ew, rs2, i_segment).unwrap());
+                }
+
+                let offset_range = Range::<u64> {
+                    start: *offsets.iter().min().unwrap() as u64,
+                    end: *offsets.iter().max().unwrap() as u64 + (nf as u64 * eew.width_in_bytes()),
+                };
+                Range::<u64> {
+                    start: base_addr + offset_range.start,
+                    end: base_addr + offset_range.end,
+                }
+            }
             WholeRegister{eew, ..} => {
-                // This accounts for the number of registers
-                let vl = op.evl();
+                // op.evl() accounts for the number of registers
                 let index_range = Range::<u64> {
                     start: 0,
-                    end: (vl as u64)
+                    end: (op.evl() as u64)
                 };
-                let addr_range = Range::<u64> {
+                Range::<u64> {
                     start: base_addr + index_range.start * eew.width_in_bytes(),
                     end: base_addr + index_range.end * eew.width_in_bytes(),
-                };
-                Some(addr_range)
-            
+                }
             }
             ByteMask{evl, ..} => {
+                // bytemask does not have segment support
                 let index_range = Range::<u64> {
                     start: self.vstart as u64,
                     end: (evl as u64)
                 };
-                let addr_range = Range::<u64> {
+                Range::<u64> {
                     start: base_addr + index_range.start,
                     end: base_addr + index_range.end,
-                };
-                Some(addr_range)
+                }
             }
-            
-            _ => None
         };
-        if let Some(addr_range) = addr_range {
-            // We have a fast-path range to check
-            let check_result = conn.check_addr_range_against_provenance(addr_range, provenance, op.dir());
-            // if that range check succeeded, we can return true
-            if check_result.is_ok() {
-                return Ok(true);
-            }
-            // otherwise the full range encountered a capability exception
-            // if this is a fault-only-first operation, that's ok - it will handle that
-            // if this is a masked operation (i.e. vm == false), it's also ok 
-            //     - the element that generates that exception might be masked out
-            if is_fault_only_first || (vm == false) {
-                return Ok(false);
-            }
-            // the address range gave an error, and we aren't in a state that can tolerate that.
-            // this instruction will not succeed.
-            // raise the exception.
-            check_result?
-        }
 
-        // Couldn't do a fast-path check
-        Ok(false)
+        let check_result = conn.check_addr_range_against_provenance(addr_range.clone(), provenance, op.dir());
+        match check_result {
+            Ok(()) => {
+                // if that range check succeeded, we can return true
+                return (Ok(true), addr_range);
+            }
+            Err(e) => {
+                // the full range encountered a capability exception
+                // if this is a fault-only-first operation, that's ok - it will handle that
+                // if this is a masked operation (i.e. vm == false), it's also ok 
+                //     - the element that generates that exception might be masked out
+                if is_fault_only_first || (vm == false) {
+                    return (Ok(false), addr_range);
+                }
+                // we aren't in a state that can tolerate errors.
+                // this instruction will not succeed.
+                // raise the exception.
+                return (Err(e), addr_range);
+            }
+        }
     }
 
     /// Converts a decoded memory operation to the list of accesses it performs.
@@ -370,11 +387,19 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     }
 
     /// Execute a decoded memory access, assuming all access checks have already been performed.
-    fn exec_load_store(&mut self, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
+    fn exec_load_store(&mut self, expected_addr_range: Range<u64>, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
         // Determine which accesses we need to do
         let addr_p = conn.get_addr_provenance(rs1)?;
         let accesses = self.get_load_store_accesses(rd, addr_p, rs2, vm, op)?;
         let (_, provenance) = addr_p;
+
+        // Check the fast-path range contains all of the addresses we're planning to access
+        for (_, addr) in &accesses {
+            if !expected_addr_range.contains(&addr) {
+                bail!("Computed fast-path address range 0x{:x}-{:x} doesn't contain access address 0x{:x}",
+                    expected_addr_range.start, expected_addr_range.end, addr);
+            }
+        }
 
         use DecodedMemOp::*;
         match op {
@@ -707,22 +732,25 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
 
                 let addr_provenance = conn.get_addr_provenance(rs1)?;
 
+                // TODO - set vstart in exec_load_store
+
                 // Pre-check capability access
-                let fast_check_result = self.fast_check_load_store(addr_provenance, vm, op, conn);
+                let (fast_check_result, addr_range) = self.fast_check_load_store(addr_provenance, rs2, vm, op, conn);
                 match fast_check_result {
                     // There was a fast path that didn't raise an exception
                     Ok(true) => {
-                        self.exec_load_store(rd, rs1, rs2, vm, op, conn)
+                        self.exec_load_store(addr_range, rd, rs1, rs2, vm, op, conn)
                             .context("Executing pre-checked vector access - shouldn't throw CapabilityExceptions under any circumstances")?;
                     },
                     // There was a fast path that raised an exception, re-raise it
                     Err(e) => {
-                        todo!("this shouldn't raise the exception, because it means the accesses before the exception don't complete");
+                        // This assumes imprecise error handling
+                        todo!("set vstart");
                         return Err(e);
                     }
                     // There was no fast path, or it was uncertain if a CapabilityException would actually be raised
                     Ok(false) => {
-                        self.exec_load_store(rd, rs1, rs2, vm, op, conn)
+                        self.exec_load_store(addr_range, rd, rs1, rs2, vm, op, conn)
                             .context("Executing not-pre-checked vector access - may throw CapabilityException")?;
                     },
                 }
