@@ -103,11 +103,12 @@ impl Imm {
     /// use rsim::processor::decode::Imm;
     /// let i = Imm::new(0xF0FF, 16);
     /// assert_eq!(i.sign_extend_u32(), 0xFFFF_F0FF);
+    /// assert_eq!(Imm::new(0x00FF_0000, 32).sign_extend_u32(), 0x00FF_0000);
     /// ```
     #[inline]
     pub fn sign_extend_u32(&self) -> u32 {
         // Chop the top bits off a full sign-extended u64
-        self.sign_extend_u64() as u32
+        self.sign_extend_i32() as u32
     }
     /// Sign-extend the immediate value and return as a u64
     /// 
@@ -129,7 +130,12 @@ impl Imm {
     /// ```
     #[inline]
     pub fn sign_extend_i32(&self) -> i32 {
-        ((self.data << (32 - self.width)) as i32) >> (32 - self.width)
+        let sign = self.data & (1 << (self.width - 1));
+        if self.width == 32 || sign == 0 {
+            self.data as i32
+        } else {
+            (-1i32 << self.width) | self.data as i32
+        }
     }
     /// Sign-extend the immediate value and return as a i64
     /// 
