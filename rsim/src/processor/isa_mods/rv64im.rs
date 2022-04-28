@@ -64,12 +64,12 @@ impl IsaMod<Rv64imConn<'_>> for Rv64im {
                     (shamt, 0b001) => input << shamt, // SLLI
                     (imm, 0b101) => {
                         // Check top bits of imm to see if arithmetic or logical
-                        // shamt = bottom-five-bits
-                        let shamt = imm & 0x1F;
+                        // shamt = bottom-six-bits
+                        let shamt = imm & 0x3F;
                         if ((imm >> 10) & 1) == 1 {
                             // SRAI
-                            // input as i32 => shift will be arithmetic
-                            // cast back to u32 afterwards
+                            // input as i64 => shift will be arithmetic
+                            // cast back to u64 afterwards
                             ((input as i64) >> shamt) as u64
                         } else {
                             // SRLI
