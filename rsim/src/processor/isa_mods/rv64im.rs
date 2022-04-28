@@ -254,12 +254,16 @@ impl IsaMod<Rv64imConn<'_>> for Rv64im {
             }
 
             (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
-                let addr = imm.no_extend_u64().wrapping_add(conn.pc);
+                // This has to be sign-extend! imm is a u32
+                // 32-bit RISC-V can get away with not extending it, because it's already the right width.
+                // We have to extend it.
+                let addr = imm.sign_extend_u64().wrapping_add(conn.pc);
                 conn.sreg.write(rd, addr)?;
             }
 
             (LoadUpperImm, InstructionBits::UType{rd, imm}) => {
-                conn.sreg.write(rd, imm.no_extend_u64())?;
+                // Must be sign extended for same reason as above
+                conn.sreg.write(rd, imm.sign_extend_u64())?;
             }
 
             (JumpAndLink, InstructionBits::JType{rd, imm}) => {
