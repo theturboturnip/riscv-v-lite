@@ -20,6 +20,8 @@ void* memset(void* dest, int ch, size_t count) {
 }
 #endif
 
+#define ASM_PREG(val) "r"(val)
+
 // Patch over differences between GCC, clang, and CHERI-clang
 #if defined(__llvm__)
 // Clang intrinsics are correct for segmented loads and supports fractional LMUL.
@@ -33,6 +35,10 @@ void* memset(void* dest, int ch, size_t count) {
     #endif
 
     #if __has_feature(capabilities)
+        // Replace the ASM pointer register function to use capability register
+        #undef ASM_PREG
+        #define ASM_PREG(val) "C"(val)
+
         // Enable everything
         #define ENABLE_UNIT 1
         #define ENABLE_STRIDED 1
@@ -62,9 +68,9 @@ void* memset(void* dest, int ch, size_t count) {
 
         // Use intrinsics for everything
         #define USE_ASM_FOR_UNIT 0
-        #define USE_ASM_FOR_STRIDED 0
-        #define USE_ASM_FOR_INDEXED 0
-        #define USE_ASM_FOR_MASKED 0
+        #define USE_ASM_FOR_STRIDED 1
+        #define USE_ASM_FOR_INDEXED 1
+        #define USE_ASM_FOR_MASKED 1
         #define USE_ASM_FOR_SEGMENTED 0
 
         #define ENABLE_FAULTONLYFIRST 1
@@ -412,8 +418,8 @@ void vector_memcpy_unit_stride_e8m8(size_t n, const uint8_t* __restrict__ in, ui
             if (copied_per_iter == 0) break;
             vuint8m8_t data;
             #if USE_ASM_FOR_UNIT
-            asm volatile ("vle8.v %0, (%1)" : "=vr"(data) : "C"(in));
-            asm volatile ("vse8.v %0, (%1)" :: "vr"(data),  "C"(out));
+            asm volatile ("vle8.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("vse8.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
             #else
             data = vle8_v_u8m8(in, copied_per_iter);
             vse8_v_u8m8(out, data, copied_per_iter);
@@ -439,8 +445,8 @@ void vector_memcpy_strided_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_
                     const uint8_t* in_offset = in + i;
                     uint8_t* out_offset = out + i;
                     #if USE_ASM_FOR_STRIDED
-                    asm volatile ("vlse8.v %0, (%1), %2" : "=vr"(data) : "C"(in_offset), "r"(STRIDE_BYTES));
-                    asm volatile ("vsse8.v %0, (%1), %2" :: "vr"(data),  "C"(out_offset), "r"(STRIDE_BYTES));
+                    asm volatile ("vlse8.v %0, (%1), %2" : "=vr"(data) : ASM_PREG(in_offset), "r"(STRIDE_BYTES));
+                    asm volatile ("vsse8.v %0, (%1), %2" :: "vr"(data),  ASM_PREG(out_offset), "r"(STRIDE_BYTES));
                     #else
                     data = vlse8_v_u8m8(in_offset, STRIDE_BYTES, copied_per_iter);
                     vsse8_v_u8m8(out_offset, STRIDE_BYTES, data, copied_per_iter);
@@ -452,8 +458,8 @@ void vector_memcpy_strided_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_
             }
             else {
                 #if USE_ASM_FOR_UNIT
-                asm volatile ("vle8.v %0, (%1)" : "=vr"(data) : "C"(in));
-                asm volatile ("vse8.v %0, (%1)" :: "vr"(data),  "C"(out));
+                asm volatile ("vle8.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse8.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
                 #else
                 data = vle8_v_u8m8(in, copied_per_iter);
                 vse8_v_u8m8(out, data, copied_per_iter);
@@ -476,7 +482,7 @@ void vector_memcpy_indexed_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_
     }
     vuint8m8_t indices_v;
     #if __has_feature(capabilities)
-    asm volatile ("vle8.v %0, (%1)" : "=vr"(indices_v) : "C"(indices));
+    asm volatile ("vle8.v %0, (%1)" : "=vr"(indices_v) : ASM_PREG(indices));
     #else
     indices_v = vle8_v_u8m8(indices, VLMAX);
     #endif
@@ -487,8 +493,8 @@ void vector_memcpy_indexed_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_
             vuint8m8_t data;
             if (copied_per_iter == VLMAX) {
                 #if USE_ASM_FOR_INDEXED
-                asm volatile ("vluxei8.v %0, (%1), %2" : "=vr"(data) : "C"(in), "vr"(indices_v));
-                asm volatile ("vsuxei8.v %0, (%1), %2" :: "vr"(data),  "C"(out), "vr"(indices_v));
+                asm volatile ("vluxei8.v %0, (%1), %2" : "=vr"(data) : ASM_PREG(in), "vr"(indices_v));
+                asm volatile ("vsuxei8.v %0, (%1), %2" :: "vr"(data),  ASM_PREG(out), "vr"(indices_v));
                 #else
                 data = vluxei8_v_u8m8(in, indices_v, copied_per_iter);
                 vsuxei8_v_u8m8(out, indices_v, data, copied_per_iter);
@@ -496,8 +502,8 @@ void vector_memcpy_indexed_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_
             }
             else {
                 #if USE_ASM_FOR_UNIT
-                asm volatile ("vle8.v %0, (%1)" : "=vr"(data) : "C"(in));
-                asm volatile ("vse8.v %0, (%1)" :: "vr"(data),  "C"(out));
+                asm volatile ("vle8.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse8.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
                 #else
                 data = vle8_v_u8m8(in, copied_per_iter);
                 vse8_v_u8m8(out, data, copied_per_iter);
@@ -519,12 +525,13 @@ void vector_memcpy_masked_e32m8(size_t n, const uint32_t* __restrict__ in, uint3
     }
     vuint32m8_t mask_ints_v;
     #if USE_ASM_FOR_UNIT
-    asm volatile ("vle32.v %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));
+    asm volatile ("vle32.v %0, (%1)" : "=vr"(mask_ints_v) : ASM_PREG(in));
     #else
     mask_ints_v = vle32_v_u32m8(in, VLMAX);
     #endif // USE_ASM_FOR_UNIT
     vbool4_t mask = vmseq_vx_u32m8_b4(mask_ints_v, 1, VLMAX);
     #if USE_ASM_FOR_MASKED
+    size_t mask_vlen = vsetvlmax_e8m1();
     asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));
     #endif // USE_ASM_FOR_MASKED
     while (1) {
@@ -533,8 +540,8 @@ void vector_memcpy_masked_e32m8(size_t n, const uint32_t* __restrict__ in, uint3
             if (copied_per_iter == 0) break;
             vuint32m8_t data;
             #if USE_ASM_FOR_MASKED
-            asm volatile ("vle32.v %0, (%1), v0.t" : "=vr"(data) : "C"(in));
-            asm volatile ("vse32.v %0, (%1), v0.t" :: "vr"(data),  "C"(out));
+            asm volatile ("vle32.v %0, (%1), v0.t" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("vse32.v %0, (%1), v0.t" :: "vr"(data),  ASM_PREG(out));
             #else
             data = vle32_v_u32m8_m(mask, data, in, copied_per_iter);
             vse32_v_u32m8_m(mask, out, data, copied_per_iter);
@@ -553,11 +560,11 @@ void vector_memcpy_segmented_e8m2(size_t n, const uint8_t* __restrict__ in, uint
             size_t copied_per_iter = vsetvl_e8m2(n);
             if (copied_per_iter == 0) break;
             #if USE_ASM_FOR_SEGMENTED
-            asm volatile ("vlseg4e8.v v4, (%0)" :: "C"(in));
-            asm volatile ("vse8.v v4, (%0)" :: "C"(out[0]));
-            asm volatile ("vse8.v v5, (%0)" :: "C"(out[1]));
-            asm volatile ("vse8.v v6, (%0)" :: "C"(out[2]));
-            asm volatile ("vse8.v v7, (%0)" :: "C"(out[3]));
+            asm volatile ("vlseg4e8.v v4, (%0)" :: ASM_PREG(in));
+            asm volatile ("vse8.v v4, (%0)" :: ASM_PREG(out[0]));
+            asm volatile ("vse8.v v5, (%0)" :: ASM_PREG(out[1]));
+            asm volatile ("vse8.v v6, (%0)" :: ASM_PREG(out[2]));
+            asm volatile ("vse8.v v7, (%0)" :: ASM_PREG(out[3]));
             #else
             vuint8m2_t r, g, b, a;
             vlseg4e8_v_u8m2(&r, &g, &b, &a, in, copied_per_iter);
@@ -582,11 +589,11 @@ void vector_memcpy_segmented_e16m2(size_t n, const uint16_t* __restrict__ in, ui
             size_t copied_per_iter = vsetvl_e16m2(n);
             if (copied_per_iter == 0) break;
             #if USE_ASM_FOR_SEGMENTED
-            asm volatile ("vlseg4e16.v v4, (%0)" :: "C"(in));
-            asm volatile ("vse16.v v4, (%0)" :: "C"(out[0]));
-            asm volatile ("vse16.v v5, (%0)" :: "C"(out[1]));
-            asm volatile ("vse16.v v6, (%0)" :: "C"(out[2]));
-            asm volatile ("vse16.v v7, (%0)" :: "C"(out[3]));
+            asm volatile ("vlseg4e16.v v4, (%0)" :: ASM_PREG(in));
+            asm volatile ("vse16.v v4, (%0)" :: ASM_PREG(out[0]));
+            asm volatile ("vse16.v v5, (%0)" :: ASM_PREG(out[1]));
+            asm volatile ("vse16.v v6, (%0)" :: ASM_PREG(out[2]));
+            asm volatile ("vse16.v v7, (%0)" :: ASM_PREG(out[3]));
             #else
             vuint16m2_t r, g, b, a;
             vlseg4e16_v_u16m2(&r, &g, &b, &a, in, copied_per_iter);
@@ -611,11 +618,11 @@ void vector_memcpy_segmented_e32m2(size_t n, const uint32_t* __restrict__ in, ui
             size_t copied_per_iter = vsetvl_e32m2(n);
             if (copied_per_iter == 0) break;
             #if USE_ASM_FOR_SEGMENTED
-            asm volatile ("vlseg4e32.v v4, (%0)" :: "C"(in));
-            asm volatile ("vse32.v v4, (%0)" :: "C"(out[0]));
-            asm volatile ("vse32.v v5, (%0)" :: "C"(out[1]));
-            asm volatile ("vse32.v v6, (%0)" :: "C"(out[2]));
-            asm volatile ("vse32.v v7, (%0)" :: "C"(out[3]));
+            asm volatile ("vlseg4e32.v v4, (%0)" :: ASM_PREG(in));
+            asm volatile ("vse32.v v4, (%0)" :: ASM_PREG(out[0]));
+            asm volatile ("vse32.v v5, (%0)" :: ASM_PREG(out[1]));
+            asm volatile ("vse32.v v6, (%0)" :: ASM_PREG(out[2]));
+            asm volatile ("vse32.v v7, (%0)" :: ASM_PREG(out[3]));
             #else
             vuint32m2_t r, g, b, a;
             vlseg4e32_v_u32m2(&r, &g, &b, &a, in, copied_per_iter);
@@ -640,11 +647,11 @@ void vector_memcpy_segmented_e32mf2(size_t n, const uint32_t* __restrict__ in, u
             size_t copied_per_iter = vsetvl_e32mf2(n);
             if (copied_per_iter == 0) break;
             #if USE_ASM_FOR_SEGMENTED
-            asm volatile ("vlseg4e32.v v4, (%0)" :: "C"(in));
-            asm volatile ("vse32.v v4, (%0)" :: "C"(out[0]));
-            asm volatile ("vse32.v v5, (%0)" :: "C"(out[1]));
-            asm volatile ("vse32.v v6, (%0)" :: "C"(out[2]));
-            asm volatile ("vse32.v v7, (%0)" :: "C"(out[3]));
+            asm volatile ("vlseg4e32.v v4, (%0)" :: ASM_PREG(in));
+            asm volatile ("vse32.v v4, (%0)" :: ASM_PREG(out[0]));
+            asm volatile ("vse32.v v5, (%0)" :: ASM_PREG(out[1]));
+            asm volatile ("vse32.v v6, (%0)" :: ASM_PREG(out[2]));
+            asm volatile ("vse32.v v7, (%0)" :: ASM_PREG(out[3]));
             #else
             vuint32mf2_t r, g, b, a;
             vlseg4e32_v_u32mf2(&r, &g, &b, &a, in, copied_per_iter);

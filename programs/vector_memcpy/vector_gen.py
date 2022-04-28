@@ -232,6 +232,8 @@ void* memset(void* dest, int ch, size_t count) {
 }
 #endif
 """ + f"""
+#define ASM_PREG(val) "r"(val)
+
 // Patch over differences between GCC, clang, and CHERI-clang
 #if defined(__llvm__)
 // Clang intrinsics are correct for segmented loads and supports fractional LMUL.
@@ -245,6 +247,10 @@ void* memset(void* dest, int ch, size_t count) {
     #endif
 
     #if __has_feature(capabilities)
+        // Replace the ASM pointer register function to use capability register
+        #undef ASM_PREG
+        #define ASM_PREG(val) "C"(val)
+
         // Enable everything
         #define {ENABLE_UNIT_DEF} 1
         #define {ENABLE_STRIDED_DEF} 1
@@ -559,8 +565,8 @@ def generate_unit_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     b.write_code(f"{vtype_type} data;")
 
                     with b.preproc_guard(UNIT_ASM_DEF):
-                        b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(data) : "C"(in));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  "C"(out));')
+                        b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(data) : ASM_PREG(in));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  ASM_PREG(out));')
                         b.write_line("#else")
                         b.write_code(f"data = {vtype_unit_load}(in, copied_per_iter);")
                         b.write_code(f"{vtype_unit_store}(out, data, copied_per_iter)")
@@ -601,8 +607,8 @@ def generate_strided_tests(b: VectorTestsCpp, vtypes: List[VType]):
                             b.write_code(f"{vtype_elem_type}* out_offset = out + i;")
 
                             with b.preproc_guard(STRIDED_ASM_DEF):
-                                b.write_code(f'asm volatile ("{vtype_strided_load_asm} %0, (%1), %2" : "=vr"(data) : "C"(in_offset), "r"(STRIDE_BYTES));')
-                                b.write_code(f'asm volatile ("{vtype_strided_store_asm} %0, (%1), %2" :: "vr"(data),  "C"(out_offset), "r"(STRIDE_BYTES));')
+                                b.write_code(f'asm volatile ("{vtype_strided_load_asm} %0, (%1), %2" : "=vr"(data) : ASM_PREG(in_offset), "r"(STRIDE_BYTES));')
+                                b.write_code(f'asm volatile ("{vtype_strided_store_asm} %0, (%1), %2" :: "vr"(data),  ASM_PREG(out_offset), "r"(STRIDE_BYTES));')
                                 b.write_line("#else")
                                 b.write_code(f"data = {vtype_strided_load}(in_offset, STRIDE_BYTES, copied_per_iter);")
                                 b.write_code(f"{vtype_strided_store}(out_offset, STRIDE_BYTES, data, copied_per_iter)")
@@ -613,8 +619,8 @@ def generate_strided_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     with b.block("else"):
                         # We don't have room to do STRIDE*elems, pick up the rest with normal copies
                         with b.preproc_guard(UNIT_ASM_DEF):
-                            b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(data) : "C"(in));')
-                            b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  "C"(out));')
+                            b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(data) : ASM_PREG(in));')
+                            b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  ASM_PREG(out));')
                             b.write_line("#else")
                             b.write_code(f"data = {vtype_unit_load}(in, copied_per_iter);")
                             b.write_code(f"{vtype_unit_store}(out, data, copied_per_iter)")
@@ -655,7 +661,7 @@ def generate_indexed_tests(b: VectorTestsCpp, vtypes: List[VType]):
             # Load indices into a vector
             b.write_code(f"{vtype_type} indices_v;")
             b.write_line("#if __has_feature(capabilities)")
-            b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(indices_v) : "C"(indices));')
+            b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(indices_v) : ASM_PREG(indices));')
             b.write_line("#else")
             b.write_code(f"indices_v = {vtype_unit_load}(indices, VLMAX);")
             b.write_line("#endif")
@@ -671,15 +677,15 @@ def generate_indexed_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     # Just using [0-copied_per_iter] won't necessarily cover all 0..copied_per_iter-1 values.
                     with b.block("if (copied_per_iter == VLMAX)"):
                         with b.preproc_guard(INDEXED_ASM_DEF):
-                            b.write_code(f'asm volatile ("{vtype_indexed_load_asm} %0, (%1), %2" : "=vr"(data) : "C"(in), "vr"(indices_v));')
-                            b.write_code(f'asm volatile ("{vtype_indexed_store_asm} %0, (%1), %2" :: "vr"(data),  "C"(out), "vr"(indices_v));')
+                            b.write_code(f'asm volatile ("{vtype_indexed_load_asm} %0, (%1), %2" : "=vr"(data) : ASM_PREG(in), "vr"(indices_v));')
+                            b.write_code(f'asm volatile ("{vtype_indexed_store_asm} %0, (%1), %2" :: "vr"(data),  ASM_PREG(out), "vr"(indices_v));')
                             b.write_line("#else")
                             b.write_code(f"data = {vtype_indexed_load}(in, indices_v, copied_per_iter);")
                             b.write_code(f"{vtype_indexed_store}(out, indices_v, data, copied_per_iter)")
                     with b.block("else"):
                         with b.preproc_guard(UNIT_ASM_DEF):
-                            b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(data) : "C"(in));')
-                            b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  "C"(out));')
+                            b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(data) : ASM_PREG(in));')
+                            b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  ASM_PREG(out));')
                             b.write_line("#else")
                             b.write_code(f"data = {vtype_unit_load}(in, copied_per_iter);")
                             b.write_code(f"{vtype_unit_store}(out, data, copied_per_iter)")
@@ -715,7 +721,7 @@ def generate_masked_tests(b: VectorTestsCpp, vtypes: List[VType]):
             # Load mask ints into a vector
             b.write_code(f"{vtype_type} mask_ints_v")
             with b.preproc_guard(UNIT_ASM_DEF):
-                b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));')
+                b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(mask_ints_v) : ASM_PREG(in));')
                 b.write_line("#else")
                 b.write_code(f"mask_ints_v = {vtype_unit_load}(in, VLMAX);")
             # Create a mask from that vector
@@ -724,6 +730,8 @@ def generate_masked_tests(b: VectorTestsCpp, vtypes: List[VType]):
             # If we're on a capabilities platform, we don't use masked intrinsics, so the mask may not be moved into v0 automatically.
             # Do it ourselves instead
             with b.preproc_guard(MASKED_ASM_DEF):
+                # Set VLEN, vtype to the same vtype as the mask - i.e. as many 8-bit elements that fit into 1 register
+                b.write_code("size_t mask_vlen = vsetvlmax_e8m1();")
                 b.write_code(f'asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));')
 
             with b.block("while (1)"):
@@ -733,8 +741,8 @@ def generate_masked_tests(b: VectorTestsCpp, vtypes: List[VType]):
 
                     with b.preproc_guard(MASKED_ASM_DEF):
                         # Masked load = unit load with extra argument
-                        b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1), v0.t" : "=vr"(data) : "C"(in));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1), v0.t" :: "vr"(data),  "C"(out));')
+                        b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1), v0.t" : "=vr"(data) : ASM_PREG(in));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1), v0.t" :: "vr"(data),  ASM_PREG(out));')
                         b.write_line("#else")
                         b.write_code(f"data = {vtype_masked_load}(mask, data, in, copied_per_iter);")
                         b.write_code(f"{vtype_masked_store}(mask, out, data, copied_per_iter)")
@@ -765,11 +773,11 @@ def generate_segmented_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     with b.preproc_guard(SEGMENTED_ASM_DEF):
                         # Under capabilities, we don't have a way to force r,g,b,a to use subsequent vector registers.
                         # Therefore we hardcode the registers - {r,g,b,a} = {v4,5,6,7}
-                        b.write_code(f'asm volatile ("{vtype_seg_load_asm} v4, (%0)" :: "C"(in));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v4, (%0)" :: "C"(out[0]));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v5, (%0)" :: "C"(out[1]));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v6, (%0)" :: "C"(out[2]));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v7, (%0)" :: "C"(out[3]));')
+                        b.write_code(f'asm volatile ("{vtype_seg_load_asm} v4, (%0)" :: ASM_PREG(in));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v4, (%0)" :: ASM_PREG(out[0]));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v5, (%0)" :: ASM_PREG(out[1]));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v6, (%0)" :: ASM_PREG(out[2]));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v7, (%0)" :: ASM_PREG(out[3]));')
                         b.write_line("#else")
                         b.write_code(f"{vtype_type} r, g, b, a;")
                         b.write_code(f"{vtype_seg_load}(&r, &g, &b, &a, in, copied_per_iter);")
