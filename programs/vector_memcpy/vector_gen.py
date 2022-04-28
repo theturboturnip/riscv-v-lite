@@ -765,6 +765,7 @@ def generate_segmented_tests(b: VectorTestsCpp, vtypes: List[VType]):
         vtype_unit_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
         vtype_seg_load_asm = f"vlseg4e{vtype.sew.value}.v"
         vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+        vtype_num_regs = vtype.lmul.get_num_regs_consumed()
         with b.new_test(test, b.harnesses[f"vector_memcpy_segmented_harness_{vtype_elem_type}"]):
             with b.block("while (1)"):
                 with b.with_vlen("n", "copied_per_iter", vtype):
@@ -774,10 +775,10 @@ def generate_segmented_tests(b: VectorTestsCpp, vtypes: List[VType]):
                         # Under capabilities, we don't have a way to force r,g,b,a to use subsequent vector registers.
                         # Therefore we hardcode the registers - {r,g,b,a} = {v4,5,6,7}
                         b.write_code(f'asm volatile ("{vtype_seg_load_asm} v4, (%0)" :: ASM_PREG(in));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v4, (%0)" :: ASM_PREG(out[0]));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v5, (%0)" :: ASM_PREG(out[1]));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v6, (%0)" :: ASM_PREG(out[2]));')
-                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v7, (%0)" :: ASM_PREG(out[3]));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v{4 + vtype_num_regs * 0}, (%0)" :: ASM_PREG(out[0]));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v{4 + vtype_num_regs * 1}, (%0)" :: ASM_PREG(out[1]));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v{4 + vtype_num_regs * 2}, (%0)" :: ASM_PREG(out[2]));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} v{4 + vtype_num_regs * 3}, (%0)" :: ASM_PREG(out[3]));')
                         b.write_line("#else")
                         b.write_code(f"{vtype_type} r, g, b, a;")
                         b.write_code(f"{vtype_seg_load}(&r, &g, &b, &a, in, copied_per_iter);")

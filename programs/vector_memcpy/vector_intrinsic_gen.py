@@ -30,6 +30,17 @@ class Lmul(Enum):
     def get_num_regs_times_8(self) -> int:
         return 1 << (self.value)
 
+    # get_num_regs_times_8 contains the fractional - this counts the number of registers consumed by a single Lmul group
+    def get_num_regs_consumed(self) -> int:
+        if self.value <= Lmul.e1.value:
+            return 1
+        elif self == Lmul.e2:
+            return 2
+        elif self == Lmul.e4:
+            return 4
+        elif self == Lmul.e8:
+            return 8
+
     def get_code(x: 'Lmul') -> str:
         return {
             Lmul.eEighth: "mf8",

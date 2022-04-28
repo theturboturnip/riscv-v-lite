@@ -562,9 +562,9 @@ void vector_memcpy_segmented_e8m2(size_t n, const uint8_t* __restrict__ in, uint
             #if USE_ASM_FOR_SEGMENTED
             asm volatile ("vlseg4e8.v v4, (%0)" :: ASM_PREG(in));
             asm volatile ("vse8.v v4, (%0)" :: ASM_PREG(out[0]));
-            asm volatile ("vse8.v v5, (%0)" :: ASM_PREG(out[1]));
-            asm volatile ("vse8.v v6, (%0)" :: ASM_PREG(out[2]));
-            asm volatile ("vse8.v v7, (%0)" :: ASM_PREG(out[3]));
+            asm volatile ("vse8.v v6, (%0)" :: ASM_PREG(out[1]));
+            asm volatile ("vse8.v v8, (%0)" :: ASM_PREG(out[2]));
+            asm volatile ("vse8.v v10, (%0)" :: ASM_PREG(out[3]));
             #else
             vuint8m2_t r, g, b, a;
             vlseg4e8_v_u8m2(&r, &g, &b, &a, in, copied_per_iter);
@@ -591,9 +591,9 @@ void vector_memcpy_segmented_e16m2(size_t n, const uint16_t* __restrict__ in, ui
             #if USE_ASM_FOR_SEGMENTED
             asm volatile ("vlseg4e16.v v4, (%0)" :: ASM_PREG(in));
             asm volatile ("vse16.v v4, (%0)" :: ASM_PREG(out[0]));
-            asm volatile ("vse16.v v5, (%0)" :: ASM_PREG(out[1]));
-            asm volatile ("vse16.v v6, (%0)" :: ASM_PREG(out[2]));
-            asm volatile ("vse16.v v7, (%0)" :: ASM_PREG(out[3]));
+            asm volatile ("vse16.v v6, (%0)" :: ASM_PREG(out[1]));
+            asm volatile ("vse16.v v8, (%0)" :: ASM_PREG(out[2]));
+            asm volatile ("vse16.v v10, (%0)" :: ASM_PREG(out[3]));
             #else
             vuint16m2_t r, g, b, a;
             vlseg4e16_v_u16m2(&r, &g, &b, &a, in, copied_per_iter);
@@ -620,9 +620,9 @@ void vector_memcpy_segmented_e32m2(size_t n, const uint32_t* __restrict__ in, ui
             #if USE_ASM_FOR_SEGMENTED
             asm volatile ("vlseg4e32.v v4, (%0)" :: ASM_PREG(in));
             asm volatile ("vse32.v v4, (%0)" :: ASM_PREG(out[0]));
-            asm volatile ("vse32.v v5, (%0)" :: ASM_PREG(out[1]));
-            asm volatile ("vse32.v v6, (%0)" :: ASM_PREG(out[2]));
-            asm volatile ("vse32.v v7, (%0)" :: ASM_PREG(out[3]));
+            asm volatile ("vse32.v v6, (%0)" :: ASM_PREG(out[1]));
+            asm volatile ("vse32.v v8, (%0)" :: ASM_PREG(out[2]));
+            asm volatile ("vse32.v v10, (%0)" :: ASM_PREG(out[3]));
             #else
             vuint32m2_t r, g, b, a;
             vlseg4e32_v_u32m2(&r, &g, &b, &a, in, copied_per_iter);
