@@ -151,12 +151,12 @@ impl IsaMod<Rv32imConn<'_>> for Rv32im {
             }
 
             (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
-                let addr = imm.sign_extend_u32() + conn.pc;
+                let addr = imm.no_extend_u32().wrapping_add(conn.pc);
                 conn.sreg.write(rd, addr)?;
             }
 
             (LoadUpperImm, InstructionBits::UType{rd, imm}) => {
-                conn.sreg.write(rd, imm.sign_extend_u32())?;
+                conn.sreg.write(rd, imm.no_extend_u32())?;
             }
 
             (JumpAndLink, InstructionBits::JType{rd, imm}) => {
