@@ -98,7 +98,7 @@ void* memset(void* dest, int ch, size_t count) {
 // it has been tested with the inline asm whole-register loads
 #define ENABLE_ASM_WHOLEREG 1
 #endif
-int vector_memcpy_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
+int64_t vector_memcpy_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
     uint8_t data[128] = {0};
     uint8_t out_data[128] = {0};
     
@@ -125,7 +125,7 @@ int vector_memcpy_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __res
     }
     return 1;
 }
-int vector_memcpy_harness_uint16_t(void (*memcpy_fn)(size_t, const uint16_t* __restrict__, uint16_t* __restrict__)) {
+int64_t vector_memcpy_harness_uint16_t(void (*memcpy_fn)(size_t, const uint16_t* __restrict__, uint16_t* __restrict__)) {
     uint16_t data[128] = {0};
     uint16_t out_data[128] = {0};
     
@@ -152,7 +152,7 @@ int vector_memcpy_harness_uint16_t(void (*memcpy_fn)(size_t, const uint16_t* __r
     }
     return 1;
 }
-int vector_memcpy_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32_t* __restrict__, uint32_t* __restrict__)) {
+int64_t vector_memcpy_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32_t* __restrict__, uint32_t* __restrict__)) {
     uint32_t data[128] = {0};
     uint32_t out_data[128] = {0};
     
@@ -179,7 +179,7 @@ int vector_memcpy_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32_t* __r
     }
     return 1;
 }
-int vector_memcpy_masked_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
+int64_t vector_memcpy_masked_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
     uint8_t data[128] = {0};
     uint8_t out_data[128] = {0};
     const uint8_t SENTINEL_NOT_WRITTEN = 0xbb;
@@ -211,7 +211,7 @@ int vector_memcpy_masked_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t
     }
     return 1;
 }
-int vector_memcpy_masked_harness_uint16_t(void (*memcpy_fn)(size_t, const uint16_t* __restrict__, uint16_t* __restrict__)) {
+int64_t vector_memcpy_masked_harness_uint16_t(void (*memcpy_fn)(size_t, const uint16_t* __restrict__, uint16_t* __restrict__)) {
     uint16_t data[128] = {0};
     uint16_t out_data[128] = {0};
     const uint16_t SENTINEL_NOT_WRITTEN = 0xbb;
@@ -243,7 +243,7 @@ int vector_memcpy_masked_harness_uint16_t(void (*memcpy_fn)(size_t, const uint16
     }
     return 1;
 }
-int vector_memcpy_masked_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32_t* __restrict__, uint32_t* __restrict__)) {
+int64_t vector_memcpy_masked_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32_t* __restrict__, uint32_t* __restrict__)) {
     uint32_t data[128] = {0};
     uint32_t out_data[128] = {0};
     const uint32_t SENTINEL_NOT_WRITTEN = 0xbb;
@@ -275,7 +275,7 @@ int vector_memcpy_masked_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32
     }
     return 1;
 }
-int vector_memcpy_segmented_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__[4])) {
+int64_t vector_memcpy_segmented_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__[4])) {
     uint8_t data[128] = {0};
     uint8_t out_r[32] = {0};
     uint8_t out_g[32] = {0};
@@ -318,7 +318,7 @@ int vector_memcpy_segmented_harness_uint8_t(void (*memcpy_fn)(size_t, const uint
     }
     return 1;
 }
-int vector_memcpy_segmented_harness_uint16_t(void (*memcpy_fn)(size_t, const uint16_t* __restrict__, uint16_t* __restrict__[4])) {
+int64_t vector_memcpy_segmented_harness_uint16_t(void (*memcpy_fn)(size_t, const uint16_t* __restrict__, uint16_t* __restrict__[4])) {
     uint16_t data[128] = {0};
     uint16_t out_r[32] = {0};
     uint16_t out_g[32] = {0};
@@ -361,7 +361,7 @@ int vector_memcpy_segmented_harness_uint16_t(void (*memcpy_fn)(size_t, const uin
     }
     return 1;
 }
-int vector_memcpy_segmented_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32_t* __restrict__, uint32_t* __restrict__[4])) {
+int64_t vector_memcpy_segmented_harness_uint32_t(void (*memcpy_fn)(size_t, const uint32_t* __restrict__, uint32_t* __restrict__[4])) {
     uint32_t data[128] = {0};
     uint32_t out_r[32] = {0};
     uint32_t out_g[32] = {0};
@@ -425,69 +425,6 @@ void vector_memcpy_unit_stride_e8m8(size_t n, const uint8_t* __restrict__ in, ui
     }
 }
 #endif // ENABLE_UNIT
-#if ENABLE_UNIT
-void vector_memcpy_unit_stride_e16m8(size_t n, const uint16_t* __restrict__ in, uint16_t* __restrict__ out) {
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e16m8(n);
-            if (copied_per_iter == 0) break;
-            vuint16m8_t data;
-            #if USE_ASM_FOR_UNIT
-            asm volatile ("vle16.v %0, (%1)" : "=vr"(data) : "C"(in));
-            asm volatile ("vse16.v %0, (%1)" :: "vr"(data),  "C"(out));
-            #else
-            data = vle16_v_u16m8(in, copied_per_iter);
-            vse16_v_u16m8(out, data, copied_per_iter);
-            #endif // USE_ASM_FOR_UNIT
-            in += copied_per_iter;
-            out += copied_per_iter;
-            n -= copied_per_iter;
-        }
-    }
-}
-#endif // ENABLE_UNIT
-#if ENABLE_UNIT
-void vector_memcpy_unit_stride_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e32m8(n);
-            if (copied_per_iter == 0) break;
-            vuint32m8_t data;
-            #if USE_ASM_FOR_UNIT
-            asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : "C"(in));
-            asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  "C"(out));
-            #else
-            data = vle32_v_u32m8(in, copied_per_iter);
-            vse32_v_u32m8(out, data, copied_per_iter);
-            #endif // USE_ASM_FOR_UNIT
-            in += copied_per_iter;
-            out += copied_per_iter;
-            n -= copied_per_iter;
-        }
-    }
-}
-#endif // ENABLE_UNIT
-#if ENABLE_UNIT && ENABLE_FRAC_LMUL
-void vector_memcpy_unit_stride_e32mf2(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e32mf2(n);
-            if (copied_per_iter == 0) break;
-            vuint32mf2_t data;
-            #if USE_ASM_FOR_UNIT
-            asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : "C"(in));
-            asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  "C"(out));
-            #else
-            data = vle32_v_u32mf2(in, copied_per_iter);
-            vse32_v_u32mf2(out, data, copied_per_iter);
-            #endif // USE_ASM_FOR_UNIT
-            in += copied_per_iter;
-            out += copied_per_iter;
-            n -= copied_per_iter;
-        }
-    }
-}
-#endif // ENABLE_UNIT && ENABLE_FRAC_LMUL
 #if ENABLE_STRIDED
 void vector_memcpy_strided_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out) {
     const size_t STRIDE_ELEMS = 4;
@@ -529,129 +466,6 @@ void vector_memcpy_strided_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_
     }
 }
 #endif // ENABLE_STRIDED
-#if ENABLE_STRIDED
-void vector_memcpy_strided_e16m8(size_t n, const uint16_t* __restrict__ in, uint16_t* __restrict__ out) {
-    const size_t STRIDE_ELEMS = 4;
-    const size_t STRIDE_BYTES = 4 * sizeof(uint16_t);
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e16m8(n);
-            if (copied_per_iter == 0) break;
-            vuint16m8_t data;
-            if (copied_per_iter * STRIDE_ELEMS < n) {
-                for (size_t i = 0; i < STRIDE_ELEMS; i++) {
-                    const uint16_t* in_offset = in + i;
-                    uint16_t* out_offset = out + i;
-                    #if USE_ASM_FOR_STRIDED
-                    asm volatile ("vlse16.v %0, (%1), %2" : "=vr"(data) : "C"(in_offset), "r"(STRIDE_BYTES));
-                    asm volatile ("vsse16.v %0, (%1), %2" :: "vr"(data),  "C"(out_offset), "r"(STRIDE_BYTES));
-                    #else
-                    data = vlse16_v_u16m8(in_offset, STRIDE_BYTES, copied_per_iter);
-                    vsse16_v_u16m8(out_offset, STRIDE_BYTES, data, copied_per_iter);
-                    #endif // USE_ASM_FOR_STRIDED
-                }
-                in += copied_per_iter * STRIDE_ELEMS;
-                out += copied_per_iter * STRIDE_ELEMS;
-                n -= copied_per_iter * STRIDE_ELEMS;
-            }
-            else {
-                #if USE_ASM_FOR_UNIT
-                asm volatile ("vle16.v %0, (%1)" : "=vr"(data) : "C"(in));
-                asm volatile ("vse16.v %0, (%1)" :: "vr"(data),  "C"(out));
-                #else
-                data = vle16_v_u16m8(in, copied_per_iter);
-                vse16_v_u16m8(out, data, copied_per_iter);
-                #endif // USE_ASM_FOR_UNIT
-                in += copied_per_iter;
-                out += copied_per_iter;
-                n -= copied_per_iter;
-            }
-        }
-    }
-}
-#endif // ENABLE_STRIDED
-#if ENABLE_STRIDED
-void vector_memcpy_strided_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
-    const size_t STRIDE_ELEMS = 4;
-    const size_t STRIDE_BYTES = 4 * sizeof(uint32_t);
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e32m8(n);
-            if (copied_per_iter == 0) break;
-            vuint32m8_t data;
-            if (copied_per_iter * STRIDE_ELEMS < n) {
-                for (size_t i = 0; i < STRIDE_ELEMS; i++) {
-                    const uint32_t* in_offset = in + i;
-                    uint32_t* out_offset = out + i;
-                    #if USE_ASM_FOR_STRIDED
-                    asm volatile ("vlse32.v %0, (%1), %2" : "=vr"(data) : "C"(in_offset), "r"(STRIDE_BYTES));
-                    asm volatile ("vsse32.v %0, (%1), %2" :: "vr"(data),  "C"(out_offset), "r"(STRIDE_BYTES));
-                    #else
-                    data = vlse32_v_u32m8(in_offset, STRIDE_BYTES, copied_per_iter);
-                    vsse32_v_u32m8(out_offset, STRIDE_BYTES, data, copied_per_iter);
-                    #endif // USE_ASM_FOR_STRIDED
-                }
-                in += copied_per_iter * STRIDE_ELEMS;
-                out += copied_per_iter * STRIDE_ELEMS;
-                n -= copied_per_iter * STRIDE_ELEMS;
-            }
-            else {
-                #if USE_ASM_FOR_UNIT
-                asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : "C"(in));
-                asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  "C"(out));
-                #else
-                data = vle32_v_u32m8(in, copied_per_iter);
-                vse32_v_u32m8(out, data, copied_per_iter);
-                #endif // USE_ASM_FOR_UNIT
-                in += copied_per_iter;
-                out += copied_per_iter;
-                n -= copied_per_iter;
-            }
-        }
-    }
-}
-#endif // ENABLE_STRIDED
-#if ENABLE_STRIDED && ENABLE_FRAC_LMUL
-void vector_memcpy_strided_e32mf2(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
-    const size_t STRIDE_ELEMS = 4;
-    const size_t STRIDE_BYTES = 4 * sizeof(uint32_t);
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e32mf2(n);
-            if (copied_per_iter == 0) break;
-            vuint32mf2_t data;
-            if (copied_per_iter * STRIDE_ELEMS < n) {
-                for (size_t i = 0; i < STRIDE_ELEMS; i++) {
-                    const uint32_t* in_offset = in + i;
-                    uint32_t* out_offset = out + i;
-                    #if USE_ASM_FOR_STRIDED
-                    asm volatile ("vlse32.v %0, (%1), %2" : "=vr"(data) : "C"(in_offset), "r"(STRIDE_BYTES));
-                    asm volatile ("vsse32.v %0, (%1), %2" :: "vr"(data),  "C"(out_offset), "r"(STRIDE_BYTES));
-                    #else
-                    data = vlse32_v_u32mf2(in_offset, STRIDE_BYTES, copied_per_iter);
-                    vsse32_v_u32mf2(out_offset, STRIDE_BYTES, data, copied_per_iter);
-                    #endif // USE_ASM_FOR_STRIDED
-                }
-                in += copied_per_iter * STRIDE_ELEMS;
-                out += copied_per_iter * STRIDE_ELEMS;
-                n -= copied_per_iter * STRIDE_ELEMS;
-            }
-            else {
-                #if USE_ASM_FOR_UNIT
-                asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : "C"(in));
-                asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  "C"(out));
-                #else
-                data = vle32_v_u32mf2(in, copied_per_iter);
-                vse32_v_u32mf2(out, data, copied_per_iter);
-                #endif // USE_ASM_FOR_UNIT
-                in += copied_per_iter;
-                out += copied_per_iter;
-                n -= copied_per_iter;
-            }
-        }
-    }
-}
-#endif // ENABLE_STRIDED && ENABLE_FRAC_LMUL
 #if ENABLE_INDEXED
 void vector_memcpy_indexed_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out) {
     const size_t ELEM_WIDTH = sizeof(uint8_t);
@@ -696,210 +510,6 @@ void vector_memcpy_indexed_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_
     }
 }
 #endif // ENABLE_INDEXED
-#if ENABLE_INDEXED
-void vector_memcpy_indexed_e16m8(size_t n, const uint16_t* __restrict__ in, uint16_t* __restrict__ out) {
-    const size_t ELEM_WIDTH = sizeof(uint16_t);
-    const size_t VLMAX = vsetvlmax_e16m8();
-    uint16_t indices[128] = {0};
-    for (size_t i = 0; i < VLMAX; i++) {
-        indices[i] = (((uint16_t) i) ^ 1) * ELEM_WIDTH;
-    }
-    vuint16m8_t indices_v;
-    #if __has_feature(capabilities)
-    asm volatile ("vle16.v %0, (%1)" : "=vr"(indices_v) : "C"(indices));
-    #else
-    indices_v = vle16_v_u16m8(indices, VLMAX);
-    #endif
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e16m8(n);
-            if (copied_per_iter == 0) break;
-            vuint16m8_t data;
-            if (copied_per_iter == VLMAX) {
-                #if USE_ASM_FOR_INDEXED
-                asm volatile ("vluxei16.v %0, (%1), %2" : "=vr"(data) : "C"(in), "vr"(indices_v));
-                asm volatile ("vsuxei16.v %0, (%1), %2" :: "vr"(data),  "C"(out), "vr"(indices_v));
-                #else
-                data = vluxei16_v_u16m8(in, indices_v, copied_per_iter);
-                vsuxei16_v_u16m8(out, indices_v, data, copied_per_iter);
-                #endif // USE_ASM_FOR_INDEXED
-            }
-            else {
-                #if USE_ASM_FOR_UNIT
-                asm volatile ("vle16.v %0, (%1)" : "=vr"(data) : "C"(in));
-                asm volatile ("vse16.v %0, (%1)" :: "vr"(data),  "C"(out));
-                #else
-                data = vle16_v_u16m8(in, copied_per_iter);
-                vse16_v_u16m8(out, data, copied_per_iter);
-                #endif // USE_ASM_FOR_UNIT
-            }
-            in += copied_per_iter;
-            out += copied_per_iter;
-            n -= copied_per_iter;
-        }
-    }
-}
-#endif // ENABLE_INDEXED
-#if ENABLE_INDEXED
-void vector_memcpy_indexed_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
-    const size_t ELEM_WIDTH = sizeof(uint32_t);
-    const size_t VLMAX = vsetvlmax_e32m8();
-    uint32_t indices[128] = {0};
-    for (size_t i = 0; i < VLMAX; i++) {
-        indices[i] = (((uint32_t) i) ^ 1) * ELEM_WIDTH;
-    }
-    vuint32m8_t indices_v;
-    #if __has_feature(capabilities)
-    asm volatile ("vle32.v %0, (%1)" : "=vr"(indices_v) : "C"(indices));
-    #else
-    indices_v = vle32_v_u32m8(indices, VLMAX);
-    #endif
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e32m8(n);
-            if (copied_per_iter == 0) break;
-            vuint32m8_t data;
-            if (copied_per_iter == VLMAX) {
-                #if USE_ASM_FOR_INDEXED
-                asm volatile ("vluxei32.v %0, (%1), %2" : "=vr"(data) : "C"(in), "vr"(indices_v));
-                asm volatile ("vsuxei32.v %0, (%1), %2" :: "vr"(data),  "C"(out), "vr"(indices_v));
-                #else
-                data = vluxei32_v_u32m8(in, indices_v, copied_per_iter);
-                vsuxei32_v_u32m8(out, indices_v, data, copied_per_iter);
-                #endif // USE_ASM_FOR_INDEXED
-            }
-            else {
-                #if USE_ASM_FOR_UNIT
-                asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : "C"(in));
-                asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  "C"(out));
-                #else
-                data = vle32_v_u32m8(in, copied_per_iter);
-                vse32_v_u32m8(out, data, copied_per_iter);
-                #endif // USE_ASM_FOR_UNIT
-            }
-            in += copied_per_iter;
-            out += copied_per_iter;
-            n -= copied_per_iter;
-        }
-    }
-}
-#endif // ENABLE_INDEXED
-#if ENABLE_INDEXED && ENABLE_FRAC_LMUL
-void vector_memcpy_indexed_e32mf2(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
-    const size_t ELEM_WIDTH = sizeof(uint32_t);
-    const size_t VLMAX = vsetvlmax_e32mf2();
-    uint32_t indices[128] = {0};
-    for (size_t i = 0; i < VLMAX; i++) {
-        indices[i] = (((uint32_t) i) ^ 1) * ELEM_WIDTH;
-    }
-    vuint32mf2_t indices_v;
-    #if __has_feature(capabilities)
-    asm volatile ("vle32.v %0, (%1)" : "=vr"(indices_v) : "C"(indices));
-    #else
-    indices_v = vle32_v_u32mf2(indices, VLMAX);
-    #endif
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e32mf2(n);
-            if (copied_per_iter == 0) break;
-            vuint32mf2_t data;
-            if (copied_per_iter == VLMAX) {
-                #if USE_ASM_FOR_INDEXED
-                asm volatile ("vluxei32.v %0, (%1), %2" : "=vr"(data) : "C"(in), "vr"(indices_v));
-                asm volatile ("vsuxei32.v %0, (%1), %2" :: "vr"(data),  "C"(out), "vr"(indices_v));
-                #else
-                data = vluxei32_v_u32mf2(in, indices_v, copied_per_iter);
-                vsuxei32_v_u32mf2(out, indices_v, data, copied_per_iter);
-                #endif // USE_ASM_FOR_INDEXED
-            }
-            else {
-                #if USE_ASM_FOR_UNIT
-                asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : "C"(in));
-                asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  "C"(out));
-                #else
-                data = vle32_v_u32mf2(in, copied_per_iter);
-                vse32_v_u32mf2(out, data, copied_per_iter);
-                #endif // USE_ASM_FOR_UNIT
-            }
-            in += copied_per_iter;
-            out += copied_per_iter;
-            n -= copied_per_iter;
-        }
-    }
-}
-#endif // ENABLE_INDEXED && ENABLE_FRAC_LMUL
-#if ENABLE_MASKED
-void vector_memcpy_masked_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out) {
-    uint8_t mask_ints[128] = {0};
-    const size_t VLMAX = vsetvlmax_e8m8();
-    for (size_t i = 0; i < VLMAX; i++) {
-        mask_ints[i] = i & 1;
-    }
-    vuint8m8_t mask_ints_v;
-    #if USE_ASM_FOR_UNIT
-    asm volatile ("vle8.v %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));
-    #else
-    mask_ints_v = vle8_v_u8m8(in, VLMAX);
-    #endif // USE_ASM_FOR_UNIT
-    vbool1_t mask = vmseq_vx_u8m8_b1(mask_ints_v, 1, VLMAX);
-    #if USE_ASM_FOR_MASKED
-    asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));
-    #endif // USE_ASM_FOR_MASKED
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e8m8(n);
-            if (copied_per_iter == 0) break;
-            vuint8m8_t data;
-            #if USE_ASM_FOR_MASKED
-            asm volatile ("vle8.v %0, (%1), v0.t" : "=vr"(data) : "C"(in));
-            asm volatile ("vse8.v %0, (%1), v0.t" :: "vr"(data),  "C"(out));
-            #else
-            data = vle8_v_u8m8_m(mask, data, in, copied_per_iter);
-            vse8_v_u8m8_m(mask, out, data, copied_per_iter);
-            #endif // USE_ASM_FOR_MASKED
-            in += copied_per_iter;
-            out += copied_per_iter;
-            n -= copied_per_iter;
-        }
-    }
-}
-#endif // ENABLE_MASKED
-#if ENABLE_MASKED
-void vector_memcpy_masked_e16m8(size_t n, const uint16_t* __restrict__ in, uint16_t* __restrict__ out) {
-    uint16_t mask_ints[128] = {0};
-    const size_t VLMAX = vsetvlmax_e16m8();
-    for (size_t i = 0; i < VLMAX; i++) {
-        mask_ints[i] = i & 1;
-    }
-    vuint16m8_t mask_ints_v;
-    #if USE_ASM_FOR_UNIT
-    asm volatile ("vle16.v %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));
-    #else
-    mask_ints_v = vle16_v_u16m8(in, VLMAX);
-    #endif // USE_ASM_FOR_UNIT
-    vbool2_t mask = vmseq_vx_u16m8_b2(mask_ints_v, 1, VLMAX);
-    #if USE_ASM_FOR_MASKED
-    asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));
-    #endif // USE_ASM_FOR_MASKED
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e16m8(n);
-            if (copied_per_iter == 0) break;
-            vuint16m8_t data;
-            #if USE_ASM_FOR_MASKED
-            asm volatile ("vle16.v %0, (%1), v0.t" : "=vr"(data) : "C"(in));
-            asm volatile ("vse16.v %0, (%1), v0.t" :: "vr"(data),  "C"(out));
-            #else
-            data = vle16_v_u16m8_m(mask, data, in, copied_per_iter);
-            vse16_v_u16m8_m(mask, out, data, copied_per_iter);
-            #endif // USE_ASM_FOR_MASKED
-            in += copied_per_iter;
-            out += copied_per_iter;
-            n -= copied_per_iter;
-        }
-    }
-}
-#endif // ENABLE_MASKED
 #if ENABLE_MASKED
 void vector_memcpy_masked_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
     uint32_t mask_ints[128] = {0};
@@ -936,42 +546,6 @@ void vector_memcpy_masked_e32m8(size_t n, const uint32_t* __restrict__ in, uint3
     }
 }
 #endif // ENABLE_MASKED
-#if ENABLE_MASKED && ENABLE_FRAC_LMUL
-void vector_memcpy_masked_e32mf2(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
-    uint32_t mask_ints[128] = {0};
-    const size_t VLMAX = vsetvlmax_e32mf2();
-    for (size_t i = 0; i < VLMAX; i++) {
-        mask_ints[i] = i & 1;
-    }
-    vuint32mf2_t mask_ints_v;
-    #if USE_ASM_FOR_UNIT
-    asm volatile ("vle32.v %0, (%1)" : "=vr"(mask_ints_v) : "C"(in));
-    #else
-    mask_ints_v = vle32_v_u32mf2(in, VLMAX);
-    #endif // USE_ASM_FOR_UNIT
-    vbool64_t mask = vmseq_vx_u32mf2_b64(mask_ints_v, 1, VLMAX);
-    #if USE_ASM_FOR_MASKED
-    asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));
-    #endif // USE_ASM_FOR_MASKED
-    while (1) {
-         {
-            size_t copied_per_iter = vsetvl_e32mf2(n);
-            if (copied_per_iter == 0) break;
-            vuint32mf2_t data;
-            #if USE_ASM_FOR_MASKED
-            asm volatile ("vle32.v %0, (%1), v0.t" : "=vr"(data) : "C"(in));
-            asm volatile ("vse32.v %0, (%1), v0.t" :: "vr"(data),  "C"(out));
-            #else
-            data = vle32_v_u32mf2_m(mask, data, in, copied_per_iter);
-            vse32_v_u32mf2_m(mask, out, data, copied_per_iter);
-            #endif // USE_ASM_FOR_MASKED
-            in += copied_per_iter;
-            out += copied_per_iter;
-            n -= copied_per_iter;
-        }
-    }
-}
-#endif // ENABLE_MASKED && ENABLE_FRAC_LMUL
 #if ENABLE_SEGMENTED
 void vector_memcpy_segmented_e8m2(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out[4]) {
     while (1) {
@@ -1092,91 +666,55 @@ void vector_memcpy_segmented_e32mf2(size_t n, const uint32_t* __restrict__ in, u
 extern "C" {;
 #endif // __cplusplus
 int main(void) {
-    int *outputDevice = (int*) 0xf0000000;
+    volatile int64_t *outputAttempted = (int64_t*) 0xf0000000;
     // magic output device;
-    int result = 0;
+    volatile int64_t *outputSuccessful = (int64_t*) 0xf0000008;
+    // magic output device;
+    int64_t attempted = 0;
+    int64_t successful = 0;
     #if ENABLE_UNIT
-    result |= vector_memcpy_harness_uint8_t(vector_memcpy_unit_stride_e8m8) << 0;
+    attempted  |= 1 << 0;
+    successful |= vector_memcpy_harness_uint8_t(vector_memcpy_unit_stride_e8m8) << 0;
     #endif // ENABLE_UNIT
     
-    #if ENABLE_UNIT
-    result |= vector_memcpy_harness_uint16_t(vector_memcpy_unit_stride_e16m8) << 1;
-    #endif // ENABLE_UNIT
-    
-    #if ENABLE_UNIT
-    result |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_e32m8) << 2;
-    #endif // ENABLE_UNIT
-    
-    #if ENABLE_UNIT && ENABLE_FRAC_LMUL
-    result |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_e32mf2) << 3;
-    #endif // ENABLE_UNIT && ENABLE_FRAC_LMUL
-    
     #if ENABLE_STRIDED
-    result |= vector_memcpy_harness_uint8_t(vector_memcpy_strided_e8m8) << 4;
+    attempted  |= 1 << 1;
+    successful |= vector_memcpy_harness_uint8_t(vector_memcpy_strided_e8m8) << 1;
     #endif // ENABLE_STRIDED
     
-    #if ENABLE_STRIDED
-    result |= vector_memcpy_harness_uint16_t(vector_memcpy_strided_e16m8) << 5;
-    #endif // ENABLE_STRIDED
-    
-    #if ENABLE_STRIDED
-    result |= vector_memcpy_harness_uint32_t(vector_memcpy_strided_e32m8) << 6;
-    #endif // ENABLE_STRIDED
-    
-    #if ENABLE_STRIDED && ENABLE_FRAC_LMUL
-    result |= vector_memcpy_harness_uint32_t(vector_memcpy_strided_e32mf2) << 7;
-    #endif // ENABLE_STRIDED && ENABLE_FRAC_LMUL
-    
     #if ENABLE_INDEXED
-    result |= vector_memcpy_harness_uint8_t(vector_memcpy_indexed_e8m8) << 8;
+    attempted  |= 1 << 2;
+    successful |= vector_memcpy_harness_uint8_t(vector_memcpy_indexed_e8m8) << 2;
     #endif // ENABLE_INDEXED
     
-    #if ENABLE_INDEXED
-    result |= vector_memcpy_harness_uint16_t(vector_memcpy_indexed_e16m8) << 9;
-    #endif // ENABLE_INDEXED
-    
-    #if ENABLE_INDEXED
-    result |= vector_memcpy_harness_uint32_t(vector_memcpy_indexed_e32m8) << 10;
-    #endif // ENABLE_INDEXED
-    
-    #if ENABLE_INDEXED && ENABLE_FRAC_LMUL
-    result |= vector_memcpy_harness_uint32_t(vector_memcpy_indexed_e32mf2) << 11;
-    #endif // ENABLE_INDEXED && ENABLE_FRAC_LMUL
-    
     #if ENABLE_MASKED
-    result |= vector_memcpy_masked_harness_uint8_t(vector_memcpy_masked_e8m8) << 12;
+    attempted  |= 1 << 3;
+    successful |= vector_memcpy_masked_harness_uint32_t(vector_memcpy_masked_e32m8) << 3;
     #endif // ENABLE_MASKED
-    
-    #if ENABLE_MASKED
-    result |= vector_memcpy_masked_harness_uint16_t(vector_memcpy_masked_e16m8) << 13;
-    #endif // ENABLE_MASKED
-    
-    #if ENABLE_MASKED
-    result |= vector_memcpy_masked_harness_uint32_t(vector_memcpy_masked_e32m8) << 14;
-    #endif // ENABLE_MASKED
-    
-    #if ENABLE_MASKED && ENABLE_FRAC_LMUL
-    result |= vector_memcpy_masked_harness_uint32_t(vector_memcpy_masked_e32mf2) << 15;
-    #endif // ENABLE_MASKED && ENABLE_FRAC_LMUL
     
     #if ENABLE_SEGMENTED
-    result |= vector_memcpy_segmented_harness_uint8_t(vector_memcpy_segmented_e8m2) << 16;
+    attempted  |= 1 << 4;
+    successful |= vector_memcpy_segmented_harness_uint8_t(vector_memcpy_segmented_e8m2) << 4;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED
-    result |= vector_memcpy_segmented_harness_uint16_t(vector_memcpy_segmented_e16m2) << 17;
+    attempted  |= 1 << 5;
+    successful |= vector_memcpy_segmented_harness_uint16_t(vector_memcpy_segmented_e16m2) << 5;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED
-    result |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32m2) << 18;
+    attempted  |= 1 << 6;
+    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32m2) << 6;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
-    result |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32mf2) << 19;
+    attempted  |= 1 << 7;
+    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32mf2) << 7;
     #endif // ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
     
-    outputDevice[0] = result;
-    return result;
+    outputAttempted[0] = attempted;
+    outputSuccessful[0] = successful;
+    return 0;
 }
 #ifdef __cplusplus
 };

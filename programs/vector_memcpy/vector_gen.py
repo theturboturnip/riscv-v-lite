@@ -332,7 +332,7 @@ class Harness:
             f"{v.arg_t}[{v.arg_n}]" if isinstance(v, ArrayArg) else v
             for v in self.test_args.values()
         ]
-        return f"int {self.name}(void (*memcpy_fn)({', '.join(arg_types)}))"
+        return f"int64_t {self.name}(void (*memcpy_fn)({', '.join(arg_types)}))"
 
     def get_test_func_decl(self, test_name: str):
         args = ', '.join([
@@ -794,15 +794,16 @@ def generate_tests() -> str:
     # Create tests
     vtypes = [
         VType(Sew.e8, Lmul.e8),
-        VType(Sew.e16, Lmul.e8),
-        VType(Sew.e32, Lmul.e8),
-        # Test fractional lmul
-        VType(Sew.e32, Lmul.eHalf),
+        # VType(Sew.e16, Lmul.e8),
+        # VType(Sew.e32, Lmul.e8),
+        # # Test fractional lmul
+        # VType(Sew.e32, Lmul.eHalf),
     ]
     generate_unit_tests(b, vtypes)
     generate_strided_tests(b, vtypes)
     generate_indexed_tests(b, vtypes)
-    generate_masked_tests(b, vtypes)
+    # emulator doesn't support non-32-bit-aritmnetic
+    generate_masked_tests(b, [VType(Sew.e32, Lmul.e8)])
     # Can't use m8 for 4x segmented loads
     # At most can use 2x, so that total number of registers = 8
     generate_segmented_tests(b, [
@@ -818,18 +819,22 @@ def generate_tests() -> str:
     b.write_code('extern "C" {')
     b.write_line("#endif // __cplusplus")
     with b.add_main():
-        b.write_code("int *outputDevice = (int*) 0xf0000000; // magic output device")
-        b.write_code("int result = 0;")
+        b.write_code("volatile int64_t *outputAttempted = (int64_t*) 0xf0000000; // magic output device")
+        b.write_code("volatile int64_t *outputSuccessful = (int64_t*) 0xf0000008; // magic output device")
+        b.write_code("int64_t attempted = 0;")
+        b.write_code("int64_t successful = 0;")
         b.write_code("")
         for i, (test, harness) in enumerate(b.tests.items()):
             if test.required_def:
                 b.write_line(f"#if {test.required_def}")
-            b.write_code(f"result |= {harness.name}({test.name}) << {i};")
+            b.write_code(f"attempted  |= 1 << {i};")
+            b.write_code(f"successful |= {harness.name}({test.name}) << {i};")
             if test.required_def:
                 b.write_line(f"#endif // {test.required_def}")
             b.write_line("")
-        b.write_code("outputDevice[0] = result;")
-        b.write_code("return result;")
+        b.write_code("outputAttempted[0] = attempted;")
+        b.write_code("outputSuccessful[0] = successful;")
+        b.write_code("return 0;")
     b.write_line("#ifdef __cplusplus")
     b.write_code('}')
     b.write_line("#endif // __cplusplus")
