@@ -163,13 +163,13 @@ main:
 	or	s0, a0, s0
 	call	fib_memo_test
 	slli	a0, a0, 2
-	or	a1, s0, a0
-	addi	a0, zero, 15
-	slli	a2, a0, 28
-	addi	a0, zero, 7
-	sw	a0, 0(a2)
-	sext.w	a0, a1
-	sw	a1, 8(a2)
+	or	a0, s0, a0
+	lui	a1, %hi(outputAttempted)
+	addi	a2, zero, 7
+	sd	a2, %lo(outputAttempted)(a1)
+	sext.w	a0, a0
+	lui	a1, %hi(outputSucceeded)
+	sd	a0, %lo(outputSucceeded)(a1)
 	ld	s0, 0(sp)
 	ld	ra, 8(sp)
 	addi	sp, sp, 16
@@ -180,3 +180,5 @@ main:
 	.ident	"Ubuntu clang version 13.0.1-++20220120110924+75e33f71c2da-1~exp1~20220120231001.58"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
+	.addrsig_sym outputAttempted
+	.addrsig_sym outputSucceeded

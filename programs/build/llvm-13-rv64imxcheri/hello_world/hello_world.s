@@ -169,17 +169,18 @@ main:
 	slli	a0, a0, 1
 	or	s0, a0, s0
 	ccall	fib_memo_test
+.LBB6_1:
+	auipcc	ca1, %captab_pcrel_hi(outputAttempted)
+	clc	ca1, %pcrel_lo(.LBB6_1)(ca1)
+	addi	a2, zero, 7
+	csd	a2, 0(ca1)
+.LBB6_2:
+	auipcc	ca1, %captab_pcrel_hi(outputSucceeded)
+	clc	ca1, %pcrel_lo(.LBB6_2)(ca1)
 	slli	a0, a0, 2
-	or	a1, s0, a0
-	addi	a0, zero, 15
-	slli	a0, a0, 28
-	cincoffset	ca2, cnull, a0
-	addi	a3, zero, 7
-	csw	a3, 0(ca2)
-	addi	a0, a0, 8
-	cincoffset	ca2, cnull, a0
-	sext.w	a0, a1
-	csw	a1, 0(ca2)
+	or	a0, s0, a0
+	sext.w	a0, a0
+	csd	a0, 0(ca1)
 	clc	cs0, 0(csp)
 	clc	cra, 16(csp)
 	cincoffset	csp, csp, 32
@@ -190,3 +191,5 @@ main:
 	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 7db8166e318b1545c939e478a83c2ba14973df19)"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
+	.addrsig_sym outputAttempted
+	.addrsig_sym outputSucceeded

@@ -823,12 +823,15 @@ def generate_tests() -> str:
     ])
 
     # Make main
+    b.write_line("")
+    b.write_line("")
+    b.write_code("volatile extern int64_t outputAttempted; // magic output device")
+    b.write_code("volatile extern int64_t outputSucceeded; // magic output device")
+    b.write_line("")
     b.write_line("#ifdef __cplusplus")
     b.write_code('extern "C" {')
     b.write_line("#endif // __cplusplus")
     with b.add_main():
-        b.write_code("volatile int64_t *outputAttempted = (int64_t*) 0xf0000000; // magic output device")
-        b.write_code("volatile int64_t *outputSuccessful = (int64_t*) 0xf0000008; // magic output device")
         b.write_code("int64_t attempted = 0;")
         b.write_code("int64_t successful = 0;")
         b.write_code("")
@@ -840,8 +843,8 @@ def generate_tests() -> str:
             if test.required_def:
                 b.write_line(f"#endif // {test.required_def}")
             b.write_line("")
-        b.write_code("outputAttempted[0] = attempted;")
-        b.write_code("outputSuccessful[0] = successful;")
+        b.write_code("*(&outputAttempted) = attempted;")
+        b.write_code("*(&outputSucceeded) = successful;")
         b.write_code("return 0;")
     b.write_line("#ifdef __cplusplus")
     b.write_code('}')

@@ -68,9 +68,9 @@ void* memset(void* dest, int ch, size_t count) {
 
         // Use intrinsics for everything
         #define USE_ASM_FOR_UNIT 0
-        #define USE_ASM_FOR_STRIDED 1
-        #define USE_ASM_FOR_INDEXED 1
-        #define USE_ASM_FOR_MASKED 1
+        #define USE_ASM_FOR_STRIDED 0
+        #define USE_ASM_FOR_INDEXED 0
+        #define USE_ASM_FOR_MASKED 0
         #define USE_ASM_FOR_SEGMENTED 0
 
         #define ENABLE_FAULTONLYFIRST 1
@@ -669,14 +669,17 @@ void vector_memcpy_segmented_e32mf2(size_t n, const uint32_t* __restrict__ in, u
     }
 }
 #endif // ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
+
+
+volatile extern int64_t outputAttempted;
+// magic output device;
+volatile extern int64_t outputSucceeded;
+// magic output device;
+
 #ifdef __cplusplus
 extern "C" {;
 #endif // __cplusplus
 int main(void) {
-    volatile int64_t *outputAttempted = (int64_t*) 0xf0000000;
-    // magic output device;
-    volatile int64_t *outputSuccessful = (int64_t*) 0xf0000008;
-    // magic output device;
     int64_t attempted = 0;
     int64_t successful = 0;
     #if ENABLE_UNIT
@@ -719,8 +722,8 @@ int main(void) {
     successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32mf2) << 7;
     #endif // ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
     
-    outputAttempted[0] = attempted;
-    outputSuccessful[0] = successful;
+    *(&outputAttempted) = attempted;
+    *(&outputSucceeded) = successful;
     return 0;
 }
 #ifdef __cplusplus

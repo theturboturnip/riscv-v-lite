@@ -4,16 +4,24 @@
  * Here we choose 64K. Change this value to change the working memory size.
  */
 __sp = 0x10000;
+outputAttempted = 0x01000000;
+outputSucceeded = 0x01000008;
+
+MEMORY
+{
+    RAM (rwx) : ORIGIN = 0, LENGTH = 256k
+    IO (w) : org = 0x01000000, len = 16
+}
 
 SECTIONS
 {
     .text.init : {
         *(.text.init)
-    }
+    } > RAM
 
     .text : {
         *(.text)
-    }
+    } > RAM
 
     .data : {
         *(.sbss)
@@ -23,5 +31,5 @@ SECTIONS
         *(.rodata)
         *(.data*)
         *(.got*)
-    }
+    } > RAM
 }

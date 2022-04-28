@@ -60,8 +60,8 @@ fn load_cheri_elf(elf_path: &str) -> Result<(u64, CheriAggregateMemory)> {
         // Allocate ~96KB for RAM
         Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
         // Add two I/O memory addresses: tests_ran, tests_suceeded
-        Box::new(IOMemory::return_address(0xF000_0000, false)),
-        Box::new(IOMemory::return_address(0xF000_0008, true)),
+        Box::new(IOMemory::return_address(0x0100_0000, false)),
+        Box::new(IOMemory::return_address(0x0100_0008, true)),
     ]);
     let mut cheri_mem = CheriAggregateMemory::from_base(agg_mem);
 
@@ -226,10 +226,10 @@ fn main() -> Result<()> {
                         // Allocate 4KB for the program
                         Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
                         // Allocate ~96KB for RAM
-                        Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
+                        Box::new(MemoryBacking::zeros(0x0_2000..0x2_5000)),
                         // Add two I/O memory addresses: tests_ran, tests_suceeded
-                        Box::new(IOMemory::return_address(0xF000_0000, false)),
-                        Box::new(IOMemory::return_address(0xF000_0008, true)),
+                        Box::new(IOMemory::return_address(0x0100_0000, false)),
+                        Box::new(IOMemory::return_address(0x0100_0008, true)),
                     ]);
 
                     let (processor, mods) = Processor32::new(mem);
@@ -241,10 +241,10 @@ fn main() -> Result<()> {
                         // Allocate 4KB for the program
                         Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
                         // Allocate ~96KB for RAM
-                        Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
+                        Box::new(MemoryBacking::zeros(0x0_2000..0x2_5000)),
                         // Add two I/O memory addresses: tests_ran, tests_suceeded
-                        Box::new(IOMemory::return_address(0xF000_0000, false)),
-                        Box::new(IOMemory::return_address(0xF000_0008, true)),
+                        Box::new(IOMemory::return_address(0x0100_0000, false)),
+                        Box::new(IOMemory::return_address(0x0100_0008, true)),
                     ]);
 
                     let (processor, mods) = Rv64imvProcessor::new(mem);

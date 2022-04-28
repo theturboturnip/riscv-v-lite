@@ -6,7 +6,7 @@ BUILD = build
 PROGRAMS := vector_memcpy hello_world
 
 # The associated files for all programs
-ALL_PROGRAMS_SOURCES := $(foreach P,$(PROGRAMS),$(wildcard $(P)/*))
+ALL_PROGRAMS_SOURCES := $(foreach P,$(PROGRAMS),$(wildcard $(P)/*)) cheri_init.s init.s cheri_link.ld link.ld
 ALL_PROGRAMS_CMAKELISTS := $(wildcard */CMakeLists.txt) CMakeLists.txt
 
 # The CMake toolchains we will use

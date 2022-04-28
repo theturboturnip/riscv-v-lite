@@ -57,11 +57,11 @@ int fib_memo_test() {
   return 0;
 }
 
+volatile extern int64_t outputAttempted; // magic output device
+volatile extern int64_t outputSucceeded; // magic output device
+
 int main(void)
 {
-  volatile int *outputRan = (int*) 0xf0000000; // magic output device
-  volatile int *outputSuccess = (int*) 0xf0000008; // magic output device
-
   int result = 0;
 
   result |= fac_test() << 0;
@@ -70,7 +70,7 @@ int main(void)
 
   int ran = 0b111;
 
-  outputRan[0] = ran;
-  outputSuccess[0] = result;
+  *(&outputAttempted) = ran;
+  *(&outputSucceeded) = result;
   return result;
 }
