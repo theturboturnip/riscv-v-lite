@@ -15,7 +15,7 @@ impl CheriRV64RegisterFile {
     pub fn write_u64(&mut self, idx: u8, val: u64) -> Result<(), RegisterFileError> {
         <Self as RegisterFile<u64>>::write(self, idx, val)
     }
-    /// Reads a valid capability from the register file, throws an error if the capability isn't valid
+    /// Reads a valid capability from the register file.
     pub fn read_maybe_cap(&mut self, idx: u8) -> Result<SafeTaggedCap, RegisterFileError> {
         <Self as RegisterFile<SafeTaggedCap>>::read(self, idx)
     }

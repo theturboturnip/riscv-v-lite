@@ -1,3 +1,4 @@
+use crate::models::CheriExecMode;
 use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
 use crate::processor::isa_mods::*;
 use crate::processor::exceptions::{CapabilityException,CapOrRegister};
@@ -9,6 +10,8 @@ pub struct XCheri64Conn<'a> {
     pub pcc: Cc128Cap,
     pub sreg: &'a mut CheriRV64RegisterFile,
     pub memory: &'a mut CheriAggregateMemory,
+    pub mode: CheriExecMode,
+    pub ddc: Cc128Cap,
 }
 
 pub struct XCheri64 {}
@@ -59,8 +62,7 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
             (MiscMem, InstructionBits::IType{funct3: 0x2, ..}) => true,
             // SC (reuses RV128-Sq, which is an extra instruction in Store)
             (Store, InstructionBits::SType{funct3: 0x4, ..}) => true,
-            // CJALR?
-            (JumpAndLinkRegister, _) => true,
+            // CJALR is under the Custom CHERI opcode
             _ => false
         }
     }
@@ -75,36 +77,62 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                 let (auth_val, vaddr, auth_idx) = get_cheri_mode_cap_addr(rs1_cs1, offset);
                 handle_load_cap_via_cap(cd, auth_idx, auth_val, vaddr)
                 */
-                let offset = imm.sign_extend_u64();
-                let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
-                cap.set_address_unchecked(cap.address().wrapping_add(offset));
+                // The address we store to depends on the mode
+                let origin = match conn.mode {
+                    CheriExecMode::Capability => {
+                        let offset = imm.sign_extend_u64();
+                        let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                        cap.set_address_unchecked(cap.address().wrapping_add(offset));
+                        cap
+                    }
+                    CheriExecMode::Integer => {
+                        let reg_rs1 = conn.sreg.read_u64(rs1)?;
+                        let offset = imm.sign_extend_u64().wrapping_add(reg_rs1);
+                        let mut cap = conn.ddc.clone();
+                        cap.set_address_unchecked(cap.address().wrapping_add(offset));
+                        cap
+                    }
+                };
 
                 // Load a capability from cap_with_addr
-                let loaded_cap = conn.memory.load_maybe_cap(cap)?;
+                let loaded_cap = conn.memory.load_maybe_cap(origin)?;
                 // Store it into the register file
                 conn.sreg.write_maybe_cap(rd, loaded_cap)?;
             },
             (Store, InstructionBits::SType{funct3: 0x4, rs1, rs2, imm}) => {
                 // SC = Store Capability
 
-                let offset = imm.sign_extend_u64();
-                let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
-                cap.set_address_unchecked(cap.address().wrapping_add(offset));
-
+                // The address we store to depends on the mode
+                let destination = match conn.mode {
+                    CheriExecMode::Capability => {
+                        let offset = imm.sign_extend_u64();
+                        let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                        cap.set_address_unchecked(cap.address().wrapping_add(offset));
+                        cap
+                    }
+                    CheriExecMode::Integer => {
+                        let reg_rs1 = conn.sreg.read_u64(rs1)?;
+                        let offset = imm.sign_extend_u64().wrapping_add(reg_rs1);
+                        let mut cap = conn.ddc.clone();
+                        cap.set_address_unchecked(cap.address().wrapping_add(offset));
+                        cap
+                    }
+                };
+                
                 let cap_to_store = conn.sreg.read_maybe_cap(rs2)?;
-                conn.memory.store_maybe_cap(cap, cap_to_store)?;
+                conn.memory.store_maybe_cap(destination, cap_to_store)?;
             },
-            (JumpAndLinkRegister, InstructionBits::IType{funct3, imm, rd, rs1}) => {
-                // Vanilla JALR jumps with an immediate offset, unlike CJALR.
-                // It appears CHERI-Clang emits vanilla JALRs rather than CJALRs, even in capability mode.
-                // To account for this, we handle vanilla JALRs as CJALRs.
-                // JALR supports an immediate offset (although technically CJALR doesn't?)
-                if funct3 == 0 {
-                    return Ok(Some(self.handle_cjalr(rd, rs1, imm.sign_extend_u64(), conn)?))
-                } else {
-                    bail!("Vanilla nonzero-offset JumpAndLinkRegister in Capability Mode")
-                }
-            }
+            // (JumpAndLinkRegister, InstructionBits::IType{funct3, imm, rd, rs1}) => {
+            //     // Vanilla JALR jumps with an immediate offset, unlike CJALR.
+            //     // It appears CHERI-Clang emits vanilla JALRs rather than CJALRs, even in capability mode.
+            //     // To account for this, we handle vanilla JALRs as CJALRs.
+            //     // JALR supports an immediate offset (although technically CJALR doesn't?)
+            //     if funct3 == 0 {
+            //         return Ok(Some(self.handle_cjalr(rd, rs1, imm.sign_extend_u64(), conn)?))
+            //     } else {
+            //         bail!("Vanilla nonzero-offset JumpAndLinkRegister in Capability Mode")
+            //     }
+            // }
             (Custom2CHERI, InstructionBits::ROrIType{rd, funct3, rs1, rs2, funct7, imm}) => {
                 match (funct7, funct3) {
                     (0x1, 0x0) => {
@@ -347,6 +375,11 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         0x12 => {
                             // CLoadTags
                             bail!("Haven't implemented CLoadTags")
+                        }
+                        0x14 => {
+                            // CJALR - relative to PCC?
+                            // See llvm/lib/Target/RISCV/RISCVInstrInfoXCheri.td:389
+                            bail!("Haven't implemented CJALR relative to PCC")
                         }
                         _ => bail!("Invalid rs2 value {:x} for CHERI funct3=0x0,funct7=0x7f", rs2)
                     }

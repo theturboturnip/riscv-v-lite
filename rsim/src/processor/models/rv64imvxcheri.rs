@@ -100,11 +100,13 @@ impl Rv64imvXCheriProcessor {
         }
     }
 
-    fn xcheri64_conn<'a,'b>(&'a mut self) -> XCheri64Conn<'b> where 'a: 'b {
+    fn xcheri64_conn<'a,'b>(&'a mut self, mode: CheriExecMode) -> XCheri64Conn<'b> where 'a: 'b {
         XCheri64Conn {
             pcc: self.pcc,
             sreg: &mut self.sreg,
             memory: &mut self.memory,
+            mode,
+            ddc: self.ddc,
         }
     }
 
@@ -129,7 +131,7 @@ impl Rv64imvXCheriProcessor {
         
         // CHERI instructions are always handled, regardless of mode
         if mods.xcheri.will_handle(opcode, inst) {
-            let requested_pcc = mods.xcheri.execute(opcode, inst, inst_bits, self.xcheri64_conn())?;
+            let requested_pcc = mods.xcheri.execute(opcode, inst, inst_bits, self.xcheri64_conn(mode))?;
             if let Some(requested_pcc) = requested_pcc {
                 next_pcc = requested_pcc;
             }
@@ -138,7 +140,7 @@ impl Rv64imvXCheriProcessor {
         // If in Capability mode, try the rv64im_cap first.
         // If we're in integer mode, or rv64im_cap didn't override the behaviour, use Integer-mode rv64im.
         if mode == CheriExecMode::Capability && mods.rv64im_cap.will_handle(opcode, inst) {
-            let requested_pc = mods.rv64im_cap.execute(opcode, inst, inst_bits, self.xcheri64_conn())?;
+            let requested_pc = mods.rv64im_cap.execute(opcode, inst, inst_bits, self.xcheri64_conn(mode))?;
             if let Some(requested_pc) = requested_pc {
                 next_pcc.set_address_unchecked(requested_pc);
             }
