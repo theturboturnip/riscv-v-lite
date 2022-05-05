@@ -803,10 +803,10 @@ def generate_tests() -> str:
     # Create tests
     vtypes = [
         VType(Sew.e8, Lmul.e8),
-        # VType(Sew.e16, Lmul.e8),
-        # VType(Sew.e32, Lmul.e8),
-        # # Test fractional lmul
-        # VType(Sew.e32, Lmul.eHalf),
+        VType(Sew.e16, Lmul.e8),
+        VType(Sew.e32, Lmul.e8),
+        # Test fractional lmul
+        VType(Sew.e32, Lmul.eHalf),
     ]
     generate_unit_tests(b, vtypes)
     generate_strided_tests(b, vtypes)

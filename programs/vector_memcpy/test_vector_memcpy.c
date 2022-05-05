@@ -431,6 +431,69 @@ void vector_memcpy_unit_stride_e8m8(size_t n, const uint8_t* __restrict__ in, ui
     }
 }
 #endif // ENABLE_UNIT
+#if ENABLE_UNIT
+void vector_memcpy_unit_stride_e16m8(size_t n, const uint16_t* __restrict__ in, uint16_t* __restrict__ out) {
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e16m8(n);
+            if (copied_per_iter == 0) break;
+            vuint16m8_t data;
+            #if USE_ASM_FOR_UNIT
+            asm volatile ("vle16.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("vse16.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            #else
+            data = vle16_v_u16m8(in, copied_per_iter);
+            vse16_v_u16m8(out, data, copied_per_iter);
+            #endif // USE_ASM_FOR_UNIT
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_UNIT
+#if ENABLE_UNIT
+void vector_memcpy_unit_stride_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32m8(n);
+            if (copied_per_iter == 0) break;
+            vuint32m8_t data;
+            #if USE_ASM_FOR_UNIT
+            asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            #else
+            data = vle32_v_u32m8(in, copied_per_iter);
+            vse32_v_u32m8(out, data, copied_per_iter);
+            #endif // USE_ASM_FOR_UNIT
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_UNIT
+#if ENABLE_UNIT && ENABLE_FRAC_LMUL
+void vector_memcpy_unit_stride_e32mf2(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32mf2(n);
+            if (copied_per_iter == 0) break;
+            vuint32mf2_t data;
+            #if USE_ASM_FOR_UNIT
+            asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            #else
+            data = vle32_v_u32mf2(in, copied_per_iter);
+            vse32_v_u32mf2(out, data, copied_per_iter);
+            #endif // USE_ASM_FOR_UNIT
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_UNIT && ENABLE_FRAC_LMUL
 #if ENABLE_STRIDED
 void vector_memcpy_strided_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out) {
     const size_t STRIDE_ELEMS = 4;
@@ -472,6 +535,129 @@ void vector_memcpy_strided_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_
     }
 }
 #endif // ENABLE_STRIDED
+#if ENABLE_STRIDED
+void vector_memcpy_strided_e16m8(size_t n, const uint16_t* __restrict__ in, uint16_t* __restrict__ out) {
+    const size_t STRIDE_ELEMS = 4;
+    const size_t STRIDE_BYTES = 4 * sizeof(uint16_t);
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e16m8(n);
+            if (copied_per_iter == 0) break;
+            vuint16m8_t data;
+            if (copied_per_iter * STRIDE_ELEMS < n) {
+                for (size_t i = 0; i < STRIDE_ELEMS; i++) {
+                    const uint16_t* in_offset = in + i;
+                    uint16_t* out_offset = out + i;
+                    #if USE_ASM_FOR_STRIDED
+                    asm volatile ("vlse16.v %0, (%1), %2" : "=vr"(data) : ASM_PREG(in_offset), "r"(STRIDE_BYTES));
+                    asm volatile ("vsse16.v %0, (%1), %2" :: "vr"(data),  ASM_PREG(out_offset), "r"(STRIDE_BYTES));
+                    #else
+                    data = vlse16_v_u16m8(in_offset, STRIDE_BYTES, copied_per_iter);
+                    vsse16_v_u16m8(out_offset, STRIDE_BYTES, data, copied_per_iter);
+                    #endif // USE_ASM_FOR_STRIDED
+                }
+                in += copied_per_iter * STRIDE_ELEMS;
+                out += copied_per_iter * STRIDE_ELEMS;
+                n -= copied_per_iter * STRIDE_ELEMS;
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle16.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse16.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle16_v_u16m8(in, copied_per_iter);
+                vse16_v_u16m8(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+                in += copied_per_iter;
+                out += copied_per_iter;
+                n -= copied_per_iter;
+            }
+        }
+    }
+}
+#endif // ENABLE_STRIDED
+#if ENABLE_STRIDED
+void vector_memcpy_strided_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    const size_t STRIDE_ELEMS = 4;
+    const size_t STRIDE_BYTES = 4 * sizeof(uint32_t);
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32m8(n);
+            if (copied_per_iter == 0) break;
+            vuint32m8_t data;
+            if (copied_per_iter * STRIDE_ELEMS < n) {
+                for (size_t i = 0; i < STRIDE_ELEMS; i++) {
+                    const uint32_t* in_offset = in + i;
+                    uint32_t* out_offset = out + i;
+                    #if USE_ASM_FOR_STRIDED
+                    asm volatile ("vlse32.v %0, (%1), %2" : "=vr"(data) : ASM_PREG(in_offset), "r"(STRIDE_BYTES));
+                    asm volatile ("vsse32.v %0, (%1), %2" :: "vr"(data),  ASM_PREG(out_offset), "r"(STRIDE_BYTES));
+                    #else
+                    data = vlse32_v_u32m8(in_offset, STRIDE_BYTES, copied_per_iter);
+                    vsse32_v_u32m8(out_offset, STRIDE_BYTES, data, copied_per_iter);
+                    #endif // USE_ASM_FOR_STRIDED
+                }
+                in += copied_per_iter * STRIDE_ELEMS;
+                out += copied_per_iter * STRIDE_ELEMS;
+                n -= copied_per_iter * STRIDE_ELEMS;
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle32_v_u32m8(in, copied_per_iter);
+                vse32_v_u32m8(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+                in += copied_per_iter;
+                out += copied_per_iter;
+                n -= copied_per_iter;
+            }
+        }
+    }
+}
+#endif // ENABLE_STRIDED
+#if ENABLE_STRIDED && ENABLE_FRAC_LMUL
+void vector_memcpy_strided_e32mf2(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    const size_t STRIDE_ELEMS = 4;
+    const size_t STRIDE_BYTES = 4 * sizeof(uint32_t);
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32mf2(n);
+            if (copied_per_iter == 0) break;
+            vuint32mf2_t data;
+            if (copied_per_iter * STRIDE_ELEMS < n) {
+                for (size_t i = 0; i < STRIDE_ELEMS; i++) {
+                    const uint32_t* in_offset = in + i;
+                    uint32_t* out_offset = out + i;
+                    #if USE_ASM_FOR_STRIDED
+                    asm volatile ("vlse32.v %0, (%1), %2" : "=vr"(data) : ASM_PREG(in_offset), "r"(STRIDE_BYTES));
+                    asm volatile ("vsse32.v %0, (%1), %2" :: "vr"(data),  ASM_PREG(out_offset), "r"(STRIDE_BYTES));
+                    #else
+                    data = vlse32_v_u32mf2(in_offset, STRIDE_BYTES, copied_per_iter);
+                    vsse32_v_u32mf2(out_offset, STRIDE_BYTES, data, copied_per_iter);
+                    #endif // USE_ASM_FOR_STRIDED
+                }
+                in += copied_per_iter * STRIDE_ELEMS;
+                out += copied_per_iter * STRIDE_ELEMS;
+                n -= copied_per_iter * STRIDE_ELEMS;
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle32_v_u32mf2(in, copied_per_iter);
+                vse32_v_u32mf2(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+                in += copied_per_iter;
+                out += copied_per_iter;
+                n -= copied_per_iter;
+            }
+        }
+    }
+}
+#endif // ENABLE_STRIDED && ENABLE_FRAC_LMUL
 #if ENABLE_INDEXED
 void vector_memcpy_indexed_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out) {
     const size_t ELEM_WIDTH = sizeof(uint8_t);
@@ -516,6 +702,138 @@ void vector_memcpy_indexed_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_
     }
 }
 #endif // ENABLE_INDEXED
+#if ENABLE_INDEXED
+void vector_memcpy_indexed_e16m8(size_t n, const uint16_t* __restrict__ in, uint16_t* __restrict__ out) {
+    const size_t ELEM_WIDTH = sizeof(uint16_t);
+    const size_t VLMAX = vsetvlmax_e16m8();
+    uint16_t indices[128] = {0};
+    for (size_t i = 0; i < VLMAX; i++) {
+        indices[i] = (((uint16_t) i) ^ 1) * ELEM_WIDTH;
+    }
+    vuint16m8_t indices_v;
+    #if __has_feature(capabilities)
+    asm volatile ("vle16.v %0, (%1)" : "=vr"(indices_v) : ASM_PREG(indices));
+    #else
+    indices_v = vle16_v_u16m8(indices, VLMAX);
+    #endif
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e16m8(n);
+            if (copied_per_iter == 0) break;
+            vuint16m8_t data;
+            if (copied_per_iter == VLMAX) {
+                #if USE_ASM_FOR_INDEXED
+                asm volatile ("vluxei16.v %0, (%1), %2" : "=vr"(data) : ASM_PREG(in), "vr"(indices_v));
+                asm volatile ("vsuxei16.v %0, (%1), %2" :: "vr"(data),  ASM_PREG(out), "vr"(indices_v));
+                #else
+                data = vluxei16_v_u16m8(in, indices_v, copied_per_iter);
+                vsuxei16_v_u16m8(out, indices_v, data, copied_per_iter);
+                #endif // USE_ASM_FOR_INDEXED
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle16.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse16.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle16_v_u16m8(in, copied_per_iter);
+                vse16_v_u16m8(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+            }
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_INDEXED
+#if ENABLE_INDEXED
+void vector_memcpy_indexed_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    const size_t ELEM_WIDTH = sizeof(uint32_t);
+    const size_t VLMAX = vsetvlmax_e32m8();
+    uint32_t indices[128] = {0};
+    for (size_t i = 0; i < VLMAX; i++) {
+        indices[i] = (((uint32_t) i) ^ 1) * ELEM_WIDTH;
+    }
+    vuint32m8_t indices_v;
+    #if __has_feature(capabilities)
+    asm volatile ("vle32.v %0, (%1)" : "=vr"(indices_v) : ASM_PREG(indices));
+    #else
+    indices_v = vle32_v_u32m8(indices, VLMAX);
+    #endif
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32m8(n);
+            if (copied_per_iter == 0) break;
+            vuint32m8_t data;
+            if (copied_per_iter == VLMAX) {
+                #if USE_ASM_FOR_INDEXED
+                asm volatile ("vluxei32.v %0, (%1), %2" : "=vr"(data) : ASM_PREG(in), "vr"(indices_v));
+                asm volatile ("vsuxei32.v %0, (%1), %2" :: "vr"(data),  ASM_PREG(out), "vr"(indices_v));
+                #else
+                data = vluxei32_v_u32m8(in, indices_v, copied_per_iter);
+                vsuxei32_v_u32m8(out, indices_v, data, copied_per_iter);
+                #endif // USE_ASM_FOR_INDEXED
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle32_v_u32m8(in, copied_per_iter);
+                vse32_v_u32m8(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+            }
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_INDEXED
+#if ENABLE_INDEXED && ENABLE_FRAC_LMUL
+void vector_memcpy_indexed_e32mf2(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    const size_t ELEM_WIDTH = sizeof(uint32_t);
+    const size_t VLMAX = vsetvlmax_e32mf2();
+    uint32_t indices[128] = {0};
+    for (size_t i = 0; i < VLMAX; i++) {
+        indices[i] = (((uint32_t) i) ^ 1) * ELEM_WIDTH;
+    }
+    vuint32mf2_t indices_v;
+    #if __has_feature(capabilities)
+    asm volatile ("vle32.v %0, (%1)" : "=vr"(indices_v) : ASM_PREG(indices));
+    #else
+    indices_v = vle32_v_u32mf2(indices, VLMAX);
+    #endif
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32mf2(n);
+            if (copied_per_iter == 0) break;
+            vuint32mf2_t data;
+            if (copied_per_iter == VLMAX) {
+                #if USE_ASM_FOR_INDEXED
+                asm volatile ("vluxei32.v %0, (%1), %2" : "=vr"(data) : ASM_PREG(in), "vr"(indices_v));
+                asm volatile ("vsuxei32.v %0, (%1), %2" :: "vr"(data),  ASM_PREG(out), "vr"(indices_v));
+                #else
+                data = vluxei32_v_u32mf2(in, indices_v, copied_per_iter);
+                vsuxei32_v_u32mf2(out, indices_v, data, copied_per_iter);
+                #endif // USE_ASM_FOR_INDEXED
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle32_v_u32mf2(in, copied_per_iter);
+                vse32_v_u32mf2(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+            }
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_INDEXED && ENABLE_FRAC_LMUL
 #if ENABLE_MASKED
 void vector_memcpy_masked_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
     uint32_t mask_ints[128] = {0};
@@ -687,39 +1005,84 @@ int main(void) {
     successful |= vector_memcpy_harness_uint8_t(vector_memcpy_unit_stride_e8m8) << 0;
     #endif // ENABLE_UNIT
     
-    #if ENABLE_STRIDED
+    #if ENABLE_UNIT
     attempted  |= 1 << 1;
-    successful |= vector_memcpy_harness_uint8_t(vector_memcpy_strided_e8m8) << 1;
+    successful |= vector_memcpy_harness_uint16_t(vector_memcpy_unit_stride_e16m8) << 1;
+    #endif // ENABLE_UNIT
+    
+    #if ENABLE_UNIT
+    attempted  |= 1 << 2;
+    successful |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_e32m8) << 2;
+    #endif // ENABLE_UNIT
+    
+    #if ENABLE_UNIT && ENABLE_FRAC_LMUL
+    attempted  |= 1 << 3;
+    successful |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_e32mf2) << 3;
+    #endif // ENABLE_UNIT && ENABLE_FRAC_LMUL
+    
+    #if ENABLE_STRIDED
+    attempted  |= 1 << 4;
+    successful |= vector_memcpy_harness_uint8_t(vector_memcpy_strided_e8m8) << 4;
     #endif // ENABLE_STRIDED
     
+    #if ENABLE_STRIDED
+    attempted  |= 1 << 5;
+    successful |= vector_memcpy_harness_uint16_t(vector_memcpy_strided_e16m8) << 5;
+    #endif // ENABLE_STRIDED
+    
+    #if ENABLE_STRIDED
+    attempted  |= 1 << 6;
+    successful |= vector_memcpy_harness_uint32_t(vector_memcpy_strided_e32m8) << 6;
+    #endif // ENABLE_STRIDED
+    
+    #if ENABLE_STRIDED && ENABLE_FRAC_LMUL
+    attempted  |= 1 << 7;
+    successful |= vector_memcpy_harness_uint32_t(vector_memcpy_strided_e32mf2) << 7;
+    #endif // ENABLE_STRIDED && ENABLE_FRAC_LMUL
+    
     #if ENABLE_INDEXED
-    attempted  |= 1 << 2;
-    successful |= vector_memcpy_harness_uint8_t(vector_memcpy_indexed_e8m8) << 2;
+    attempted  |= 1 << 8;
+    successful |= vector_memcpy_harness_uint8_t(vector_memcpy_indexed_e8m8) << 8;
     #endif // ENABLE_INDEXED
     
+    #if ENABLE_INDEXED
+    attempted  |= 1 << 9;
+    successful |= vector_memcpy_harness_uint16_t(vector_memcpy_indexed_e16m8) << 9;
+    #endif // ENABLE_INDEXED
+    
+    #if ENABLE_INDEXED
+    attempted  |= 1 << 10;
+    successful |= vector_memcpy_harness_uint32_t(vector_memcpy_indexed_e32m8) << 10;
+    #endif // ENABLE_INDEXED
+    
+    #if ENABLE_INDEXED && ENABLE_FRAC_LMUL
+    attempted  |= 1 << 11;
+    successful |= vector_memcpy_harness_uint32_t(vector_memcpy_indexed_e32mf2) << 11;
+    #endif // ENABLE_INDEXED && ENABLE_FRAC_LMUL
+    
     #if ENABLE_MASKED
-    attempted  |= 1 << 3;
-    successful |= vector_memcpy_masked_harness_uint32_t(vector_memcpy_masked_e32m8) << 3;
+    attempted  |= 1 << 12;
+    successful |= vector_memcpy_masked_harness_uint32_t(vector_memcpy_masked_e32m8) << 12;
     #endif // ENABLE_MASKED
     
     #if ENABLE_SEGMENTED
-    attempted  |= 1 << 4;
-    successful |= vector_memcpy_segmented_harness_uint8_t(vector_memcpy_segmented_e8m2) << 4;
+    attempted  |= 1 << 13;
+    successful |= vector_memcpy_segmented_harness_uint8_t(vector_memcpy_segmented_e8m2) << 13;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED
-    attempted  |= 1 << 5;
-    successful |= vector_memcpy_segmented_harness_uint16_t(vector_memcpy_segmented_e16m2) << 5;
+    attempted  |= 1 << 14;
+    successful |= vector_memcpy_segmented_harness_uint16_t(vector_memcpy_segmented_e16m2) << 14;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED
-    attempted  |= 1 << 6;
-    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32m2) << 6;
+    attempted  |= 1 << 15;
+    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32m2) << 15;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
-    attempted  |= 1 << 7;
-    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32mf2) << 7;
+    attempted  |= 1 << 16;
+    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32mf2) << 16;
     #endif // ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
     
     *(&outputAttempted) = attempted;
