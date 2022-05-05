@@ -8,7 +8,7 @@ use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::registers::{RegisterTracking};
 use crate::processor::elements::cheri::{Cc128Cap,CheriRV64RegisterFile,CheriAggregateMemory};
-use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64imCapabilityMode, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64v, Rv64vCheriConn, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64imCapabilityMode, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64v, Rv64vCheriConn, Rv64vConn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
@@ -21,6 +21,7 @@ pub struct Rv64imvXCheriProcessor {
     max_cap: Cc128Cap,
     sreg: CheriRV64RegisterFile,
     csrs: Rv64imvXCheriProcessorCSRs,
+    initial_mode: CheriExecMode,
 }
 
 pub struct Rv64imvXCheriProcessorModules {
@@ -32,7 +33,7 @@ pub struct Rv64imvXCheriProcessorModules {
 }
 
 #[derive(Debug,Copy,Clone,PartialEq,Eq)]
-enum CheriExecMode {
+pub enum CheriExecMode {
     Integer,
     Capability,
 }
@@ -53,13 +54,16 @@ impl Rv64imvXCheriProcessor {
     /// # Arguments
     /// 
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
-    pub fn new(start_pc: u64, mem: CheriAggregateMemory) -> (Rv64imvXCheriProcessor, Rv64imvXCheriProcessorModules) {
+    pub fn new(start_pc: u64, mem: CheriAggregateMemory, mode: CheriExecMode) -> (Rv64imvXCheriProcessor, Rv64imvXCheriProcessorModules) {
         let full_range_cap = mem.get_full_range_cap();
         let mut pcc = full_range_cap.clone();
         pcc.set_address_unchecked(start_pc);
-        // Set the flag on pcc to 1 so we're in Capability Mode
-        // TR-951$5.3
-        pcc.set_flags(1);
+
+        if mode == CheriExecMode::Capability {
+            // Set the flag on pcc to 1 so we're in Capability Mode
+            // TR-951$5.3
+            pcc.set_flags(1);
+        }
 
         let mut p = Rv64imvXCheriProcessor {
             running: false,
@@ -69,7 +73,8 @@ impl Rv64imvXCheriProcessor {
             ddc: full_range_cap,
             max_cap: full_range_cap,
             sreg: CheriRV64RegisterFile::default(),
-            csrs: Rv64imvXCheriProcessorCSRs{}
+            csrs: Rv64imvXCheriProcessorCSRs{},
+            initial_mode: mode,
         };
         let mut mods = Rv64imvXCheriProcessorModules {
             rv64im: Rv64im{},
@@ -92,13 +97,6 @@ impl Rv64imvXCheriProcessor {
         Zicsr64Conn {
             sreg: &mut self.sreg,
             csr_providers
-        }
-    }
-
-    fn rvv_conn<'a,'b>(&'a mut self) -> Rv64vCheriConn<'b> where 'a: 'b {
-        Rv64vCheriConn {
-            sreg: &mut self.sreg,
-            memory: &mut self.memory,
         }
     }
 
@@ -164,7 +162,19 @@ impl Rv64imvXCheriProcessor {
         }
         // Vector, CSR instructions are always handled, regardless of mode
         if mods.rvv.will_handle(opcode, inst) {
-            let requested_pc = mods.rvv.execute(opcode, inst, inst_bits, &mut self.rvv_conn())?;
+            let requested_pc = match mode {
+                CheriExecMode::Capability => mods.rvv.execute(opcode, inst, inst_bits, &mut Rv64vCheriConn {
+                    sreg: &mut self.sreg,
+                    memory: &mut self.memory,
+                })?,
+                CheriExecMode::Integer => {
+                    let mut mem_wrap = IntegerModeCheriAggregateMemory::wrap(&mut self.memory, self.ddc);
+                    mods.rvv.execute(opcode, inst, inst_bits, &mut Rv64vConn {
+                        sreg: &mut self.sreg,
+                        memory: &mut mem_wrap,
+                    })?
+                }
+            };
             if let Some(_) = requested_pc {
                 bail!("vector shouldn't try to jump");
             }
@@ -189,7 +199,9 @@ impl Processor<Rv64imvXCheriProcessorModules> for Rv64imvXCheriProcessor {
         self.running = false;
         self.pcc = self.max_cap;
         self.pcc.set_address_unchecked(self.start_pc);
-        self.pcc.set_flags(1);
+        if self.initial_mode == CheriExecMode::Capability {
+            self.pcc.set_flags(1);
+        }
         self.sreg.reset();
     }
 

@@ -3,7 +3,7 @@ project (RISCV_V_LITE_PROGRAMS)
 
 enable_language(ASM)
 
-if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "xcheri")
+if("${USE_CHERI_LINK_SCRIPT}" MATCHES "TRUE")
     set(INIT_S ${CMAKE_CURRENT_LIST_DIR}/cheri_init.s)
     set(LINK_LD ${CMAKE_CURRENT_LIST_DIR}/cheri_link.ld)
 else()

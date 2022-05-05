@@ -247,9 +247,11 @@ void* memset(void* dest, int ch, size_t count) {
     #endif
 
     #if __has_feature(capabilities)
-        // Replace the ASM pointer register function to use capability register
-        #undef ASM_PREG
-        #define ASM_PREG(val) "C"(val)
+        #if !CHERI_INT_MODE
+            // Replace the ASM pointer register function to use capability register
+            #undef ASM_PREG
+            #define ASM_PREG(val) "C"(val)
+        #endif
 
         // Enable everything
         #define {ENABLE_UNIT_DEF} 1
