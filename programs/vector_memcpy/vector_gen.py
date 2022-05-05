@@ -247,7 +247,7 @@ void* memset(void* dest, int ch, size_t count) {
     #endif
 
     #if __has_feature(capabilities)
-        #if !CHERI_INT_MODE
+        #if __has_feature(pure_capabilities)
             // Replace the ASM pointer register function to use capability register
             #undef ASM_PREG
             #define ASM_PREG(val) "C"(val)

@@ -70,7 +70,15 @@ int main(void)
 
   int ran = 0b111;
 
-  *(&outputAttempted) = ran;
+  // On pure-capability platforms this is equivalent to *(&outputAttempted) = ran;
+  // but on hybrid-capability platforms this tests if capabilities can still be constructed and used.
+  #if __has_feature(capabilities)
+  volatile int64_t* __capability data = &outputAttempted;
+  *data = ran;
+  #else 
+  *(&outputAttempted) = result;
+  #endif
+
   *(&outputSucceeded) = result;
   return result;
 }

@@ -61,7 +61,7 @@ set( CMAKE_OBJDUMP      ${RISCV_TOOLCHAIN_BIN_PATH}/llvm-objdump${RISCV_TOOLCHAI
 
 # Set the CMAKE C flags (which should also be used by the assembler!
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --target=riscv64" )
-set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-relax -mabi=lp64 -DCHERI_INT_MODE=1" )
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-relax -mabi=lp64" )
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${CMAKE_SYSTEM_PROCESSOR} -menable-experimental-extensions" )
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostartfiles" )
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdlib" )

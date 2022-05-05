@@ -165,8 +165,11 @@ main:
 	slli	a0, a0, 2
 	or	a0, s0, a0
 	lui	a1, %hi(outputAttempted)
-	addi	a2, zero, 7
-	sd	a2, %lo(outputAttempted)(a1)
+	addi	a2, a1, %lo(outputAttempted)
+	cfromptr	ca2, ddc, a2
+	addi	a3, zero, 7
+	sd.cap	a3, (ca2)
+	sd	a3, %lo(outputAttempted)(a1)
 	sext.w	a0, a0
 	lui	a1, %hi(outputSucceeded)
 	sd	a0, %lo(outputSucceeded)(a1)
@@ -177,7 +180,7 @@ main:
 .Lfunc_end6:
 	.size	main, .Lfunc_end6-main
 
-	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 7db8166e318b1545c939e478a83c2ba14973df19)"
+	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git b2d07c76c8c04ed8c00e31823043cea2dc91049f)"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
 	.addrsig_sym outputAttempted
