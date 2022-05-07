@@ -6,31 +6,14 @@ pub trait RegisterFile<TData> {
     fn write(&mut self, idx: u8, val: TData) -> Result<(), RegisterFileError>;
 }
 
-pub trait RegisterTracking<TData> {
-    // Access Tracking
-    // Used to track the register accesses done per tick, as necessary for TestRIG
-    fn start_tracking(&mut self) -> Result<(), RegisterFileError>;
-    fn end_tracking(&mut self) -> Result<Vec<RegisterAction<TData>>, RegisterFileError>;
-}
-
-pub enum RegisterAction<TData> {
-    Read{idx: u8, val: TData},
-    Write{idx: u8, val: TData}
-}
-
 #[derive(Debug,Error,Copy,Clone,PartialEq,Eq)]
 pub enum RegisterFileError {
-    #[error("Not currently tracking accesses")]
-    NotTracking,
-    #[error("Already tracking accesses")]
-    AlreadyTracking,
     #[error("Tried to access nonexistant register {0}")]
     InvalidIndex(u8),
 }
 
 pub struct RvRegisterFile<T: PossibleXlen> {
     regs: [T; 31],
-    tracking: Option<Vec<RegisterAction<T>>>
 }
 impl<T> RvRegisterFile<T> where T: PossibleXlen {
     pub fn dump(&self) {
@@ -54,7 +37,6 @@ impl<T> RvRegisterFile<T> where T: PossibleXlen {
     }
     pub fn reset(&mut self) {
         self.regs = [T::zero(); 31];
-        self.tracking = None;
     }
 }
 impl<T> RegisterFile<T> for RvRegisterFile<T> where T: PossibleXlen {    
@@ -64,10 +46,6 @@ impl<T> RegisterFile<T> for RvRegisterFile<T> where T: PossibleXlen {
             1..=31 => Ok(self.regs[(idx - 1) as usize]),
             _ => Err(RegisterFileError::InvalidIndex(idx))
         }?;
-
-        if self.tracking.is_some() {
-            self.tracking.as_mut().unwrap().push(RegisterAction::Read{idx, val})
-        }
 
         Ok(val)
     }
@@ -81,35 +59,13 @@ impl<T> RegisterFile<T> for RvRegisterFile<T> where T: PossibleXlen {
             _ => Err(RegisterFileError::InvalidIndex(idx))
         }?;
 
-        if self.tracking.is_some() {
-            self.tracking.as_mut().unwrap().push(RegisterAction::Write{idx, val})
-        }
-
         Ok(())
-    }
-}
-impl<T> RegisterTracking<T> for RvRegisterFile<T> where T: PossibleXlen {
-    fn start_tracking(&mut self) -> Result<(), RegisterFileError> {
-        if self.tracking.is_some() {
-            Err(RegisterFileError::AlreadyTracking)
-        } else {
-            self.tracking = Some(vec![]);
-            Ok(())
-        }
-    }
-    fn end_tracking(&mut self) -> Result<Vec<RegisterAction<T>>, RegisterFileError> {
-        if let Some(tracking) = self.tracking.take() {
-            Ok(tracking)
-        } else {
-            Err(RegisterFileError::NotTracking)
-        }
     }
 }
 impl<T> Default for RvRegisterFile<T> where T: PossibleXlen {
     fn default() -> Self {
         RvRegisterFile {
             regs: [T::zero(); 31],
-            tracking: None,
         }
     }
 }

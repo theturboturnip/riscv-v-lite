@@ -6,7 +6,6 @@ use super::capability::*;
 /// Implements [RegisterFile<SafeTaggedCap>] for capability-mode access, [RegisterFile<u64>] for integer-mode.
 pub struct CheriRV64RegisterFile {
     regs: [SafeTaggedCap; 31],
-    tracking: Option<Vec<RegisterAction<SafeTaggedCap>>>
 }
 impl CheriRV64RegisterFile {
     pub fn read_u64(&mut self, idx: u8) -> Result<u64, RegisterFileError> {
@@ -54,7 +53,6 @@ impl CheriRV64RegisterFile {
         // Unset Tag bit, offset=0, base=0, length=2^XLEN(?), otype=2^(XLEN)-1(??)
         // Right now, initing them to 0
         self.regs = [SafeTaggedCap::RawData{top: 0, bot: 0}; 31];
-        self.tracking = None;
     }
 }
 impl RegisterFile<SafeTaggedCap> for CheriRV64RegisterFile {
@@ -64,10 +62,6 @@ impl RegisterFile<SafeTaggedCap> for CheriRV64RegisterFile {
             1..=31 => Ok(self.regs[(idx - 1) as usize]),
             _ => Err(RegisterFileError::InvalidIndex(idx))
         }?;
-
-        if self.tracking.is_some() {
-            self.tracking.as_mut().unwrap().push(RegisterAction::Read{idx, val})
-        }
 
         Ok(val)
     }
@@ -80,10 +74,6 @@ impl RegisterFile<SafeTaggedCap> for CheriRV64RegisterFile {
             },
             _ => Err(RegisterFileError::InvalidIndex(idx))
         }?;
-
-        if self.tracking.is_some() {
-            self.tracking.as_mut().unwrap().push(RegisterAction::Write{idx, val})
-        }
 
         Ok(())
     }
@@ -101,12 +91,6 @@ impl RegisterFile<u64> for CheriRV64RegisterFile {
             _ => Err(RegisterFileError::InvalidIndex(idx))
         }?;
 
-        if self.tracking.is_some() {
-            // Track reads-as-32bit events as plain reads, even if we read them from an underlying capability
-            // This better reflects the program state
-            self.tracking.as_mut().unwrap().push(RegisterAction::Read{idx, val: SafeTaggedCap::RawData{top: 0, bot: val}})
-        }
-
         Ok(val as u64)
     }
     fn write(&mut self, idx: u8, val: u64) -> Result<(), RegisterFileError> {
@@ -122,35 +106,13 @@ impl RegisterFile<u64> for CheriRV64RegisterFile {
             _ => Err(RegisterFileError::InvalidIndex(idx))
         }?;
 
-        if self.tracking.is_some() {
-            self.tracking.as_mut().unwrap().push(RegisterAction::Write{idx, val})
-        }
-
         Ok(())
-    }
-}
-impl RegisterTracking<SafeTaggedCap> for CheriRV64RegisterFile {
-    fn start_tracking(&mut self) -> Result<(), RegisterFileError> {
-        if self.tracking.is_some() {
-            Err(RegisterFileError::AlreadyTracking)
-        } else {
-            self.tracking = Some(vec![]);
-            Ok(())
-        }
-    }
-    fn end_tracking(&mut self) -> Result<Vec<RegisterAction<SafeTaggedCap>>, RegisterFileError> {
-        if let Some(tracking) = self.tracking.take() {
-            Ok(tracking)
-        } else {
-            Err(RegisterFileError::NotTracking)
-        }
     }
 }
 impl Default for CheriRV64RegisterFile {
     fn default() -> Self {
         CheriRV64RegisterFile {
             regs: [SafeTaggedCap::RawData{ top: 0, bot: 0 }; 31],
-            tracking: None,
         }
     }
 }

@@ -6,7 +6,6 @@ use anyhow::{Context,Result};
 use crate::processor::exceptions::{IllegalInstructionException,MemoryException};
 use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
-use crate::processor::elements::registers::{RegisterTracking};
 use crate::processor::elements::cheri::{Cc128Cap,CheriRV64RegisterFile,CheriAggregateMemory};
 use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64imCapabilityMode, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64v, Rv64vCheriConn, Rv64vConn, CSRProvider};
 
@@ -215,8 +214,6 @@ impl Processor<Rv64imvXCheriProcessorModules> for Rv64imvXCheriProcessor {
     fn exec_step(&mut self, mods: &mut Rv64imvXCheriProcessorModules) -> Result<()> {
         self.running = true;
 
-        self.sreg.start_tracking()?;
-
         let next_pcc_res: Result<Cc128Cap> = {
             // Fetch
             let inst_bits = self.memory.fetch_inst_u32(self.pcc).context("Couldn't load next instruction")?;
@@ -235,9 +232,6 @@ impl Processor<Rv64imvXCheriProcessorModules> for Rv64imvXCheriProcessor {
                 Ok(next_pcc)
             }
         };
-
-        // TODO use this for something
-        let _register_file_actions = self.sreg.end_tracking()?;
 
         let next_pcc = match next_pcc_res {
             Ok(val) => val,

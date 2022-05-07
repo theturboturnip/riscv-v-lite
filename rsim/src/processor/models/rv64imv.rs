@@ -6,7 +6,7 @@ use crate::processor::exceptions::{IllegalInstructionException,MemoryException};
 use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::memory::{AggregateMemory,Memory};
-use crate::processor::elements::registers::{RvRegisterFile,RegisterTracking};
+use crate::processor::elements::registers::RvRegisterFile;
 use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64v, Rv64vConn, Zicsr64, Zicsr64Conn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=64-bit. No CHERI support.
@@ -143,8 +143,6 @@ impl Processor<Rv64imvProcessorModules> for Rv64imvProcessor {
     fn exec_step(&mut self, mods: &mut Rv64imvProcessorModules) -> Result<()> {
         self.running = true;
 
-        self.sreg.start_tracking()?;
-
         let next_pc_res: Result<u64> = {
             // Fetch
             let inst_bits = self.memory.load_u32(self.pc as u64).context("Couldn't load next instruction")?;
@@ -163,9 +161,6 @@ impl Processor<Rv64imvProcessorModules> for Rv64imvProcessor {
                 Ok(next_pc)
             }
         };
-
-        // TODO use this for something
-        let _register_file_actions = self.sreg.end_tracking()?;
 
         let next_pc = match next_pc_res {
             Ok(val) => val,
