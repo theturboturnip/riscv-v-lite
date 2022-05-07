@@ -4,15 +4,7 @@ use std::mem::size_of;
 use anyhow::Result;
 
 
-/// Unsigned type of length [ELEN]
-/// 
-/// ```
-/// use rsim::processor::vector::{uELEN, ELEN};
-/// use std::mem::size_of;
-/// 
-/// assert_eq!(size_of::<uELEN>() * 8, ELEN);
-/// ```
-pub type uELEN = u32;
+pub type uELEN = u64;
 
 
 /// Unsigned type of length [VLEN]

@@ -131,16 +131,10 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
             // (under some configurations, e.g. Sew=8,Lmul=1/4,Vlen=32, this could be < 1 which is illegal)
             let elems_per_group = req_vtype.elems_per_group();
 
-            let vtype_supported = elems_per_group > 0 && 
-                req_vtype.vsew != Sew::e64 &&  // ELEN = 32, we don't support larger elements
-                match req_vtype.vlmul {
-                    Lmul::eEighth => false, // As per the spec (section 3.4.2) we aren't required to support Lmul = 1/8
-                    _ => true
-                };
+            let vtype_supported = elems_per_group > 0;
 
             if vtype_supported {
                 self.vtype = req_vtype;
-                // dbg!(avl, elems_per_group);
                 // TODO - section 6.3 shows more constraints on setting VL
                 self.vl = min(elems_per_group, avl as u32);
 
@@ -486,7 +480,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
             Sew::e8  => (0xFF, 8),
             Sew::e16 => (0xFFFF, 16),
             Sew::e32 => (0xFFFF_FFFF, 32),
-            Sew::e64 => bail!("64-bit vreg elem unsupported")
+            Sew::e64 => (0xFFFF_FFFF_FFFF_FFFF, 64)
         };
         // Assert the value doesn't have more data
         assert_eq!(val & (!elem_width_mask), 0);
@@ -524,7 +518,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
             Sew::e8  => (0xFF, 8),
             Sew::e16 => (0xFFFF, 16),
             Sew::e32 => (0xFFFF_FFFF, 32),
-            Sew::e64 => bail!("64-bit vreg elem unsupported")
+            Sew::e64 => (0xFFFF_FFFF_FFFF_FFFF, 64)
         };
 
         // TODO refactor to use shifting
@@ -634,11 +628,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                     0b011 => {
                         // Vector-immediate
                         // TODO - this assumes no sign extending?
-                        let imm = rs1 as u32;
-
-                        if self.vtype.vsew != Sew::e32 {
-                            bail!(UnsupportedParam(format!("Sew {:?} != 32 for arithmetic not supported", self.vtype.vsew)));
-                        }
+                        let imm = rs1 as u64;
 
                         match funct6 {
                             0b011000 => {
@@ -647,7 +637,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                 // This cannot itself be masked
                                 let mut val: uVLEN = 0;
                                 for i in self.vstart..self.vl {
-                                    let reg_val = self.load_vreg_elem(Sew::e32, rs2, i)?;
+                                    let reg_val = self.load_vreg_elem(self.vtype.vsew, rs2, i)?;
                                     if reg_val == imm {
                                         val |= (1 as uVLEN) << i;
                                     }
@@ -660,7 +650,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                 // This cannot itself be masked
                                 let mut val: uVLEN = 0;
                                 for i in self.vstart..self.vl {
-                                    if self.load_vreg_elem(Sew::e32, rs2, i)? != imm {
+                                    if self.load_vreg_elem(self.vtype.vsew, rs2, i)? != imm {
                                         val |= (1 as uVLEN) << i;
                                     }
                                 }
@@ -677,13 +667,13 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                 for i in self.vstart..self.vl {
                                     let val = if self.seg_masked_out(vm, i as usize) {
                                         // if masked out, this must be vmerge, write new value in
-                                        self.load_vreg_elem(Sew::e32, rs2, i)?
+                                        self.load_vreg_elem(self.vtype.vsew, rs2, i)?
                                     } else {
                                         // either vmerge + not masked, or vmv
                                         // either way, write immediate
                                         imm
                                     };
-                                    self.store_vreg_elem(Sew::e32, rd, i, val)?;
+                                    self.store_vreg_elem(self.vtype.vsew, rd, i, val)?;
                                 }
                             }
 

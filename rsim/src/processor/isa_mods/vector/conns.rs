@@ -72,15 +72,17 @@ impl<'a, uXLEN: PossibleXlen> VecMemInterface<uXLEN> for RvvConn<'a, uXLEN> {
         let (addr, _) = addr_provenance;
         let val = match eew {
             Sew::e8 => {
-                self.memory.load_u8(addr)? as u32
+                self.memory.load_u8(addr)? as u64
             }
             Sew::e16 => {
-                self.memory.load_u16(addr)? as u32
+                self.memory.load_u16(addr)? as u64
             }
             Sew::e32 => {
-                self.memory.load_u32(addr)? as u32
+                self.memory.load_u32(addr)? as u64
             }
-            Sew::e64 => { bail!("load_from_memory {:?} unsupported", eew) }
+            Sew::e64 => {
+                self.memory.load_u64(addr)? as u64
+            }
         };
         Ok(val)
     }
@@ -96,7 +98,9 @@ impl<'a, uXLEN: PossibleXlen> VecMemInterface<uXLEN> for RvvConn<'a, uXLEN> {
             Sew::e32 => {
                 self.memory.store_u32(addr, val.try_into()?)?
             }
-            Sew::e64 => { bail!("store_to_memory {:?} unsupported", eew) }
+            Sew::e64 => {
+                self.memory.store_u64(addr, val)?
+            }
         }
         Ok(())
     }
@@ -145,15 +149,17 @@ impl<'a> VecMemInterface<u64> for Rv64vCheriConn<'a> {
         cap.set_address_unchecked(addr);
         let val = match eew {
             Sew::e8 => {
-                self.memory.load_u8(cap)? as u32
+                self.memory.load_u8(cap)? as u64
             }
             Sew::e16 => {
-                self.memory.load_u16(cap)? as u32
+                self.memory.load_u16(cap)? as u64
             }
             Sew::e32 => {
-                self.memory.load_u32(cap)? as u32
+                self.memory.load_u32(cap)? as u64
             }
-            Sew::e64 => { bail!("load_from_memory {:?} unsupported", eew) }
+            Sew::e64 => {
+                self.memory.load_u64(cap)? as u64
+            }
         };
         Ok(val)
     }
@@ -171,7 +177,9 @@ impl<'a> VecMemInterface<u64> for Rv64vCheriConn<'a> {
             Sew::e32 => {
                 self.memory.store_u32(cap, val.try_into()?)?
             }
-            Sew::e64 => { bail!("store_to_memory {:?} unsupported", eew) }
+            Sew::e64 => {
+                self.memory.store_u64(cap, val)?
+            }
         }
         Ok(())
     }

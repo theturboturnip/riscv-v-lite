@@ -258,12 +258,6 @@ impl DecodedMemOp {
                 _ => bail!("LoadFP has impossible width {}", width)
             };
     
-            if eew_num == 64 {
-                // We are allowed to reject values of EEW that aren't supported for SEW in vtype
-                // (see section 7.3 of RISC-V V spec)
-                bail!("effective element width of 64 is not supported");
-            }
-    
             // Check the effective element width is valid, given the current SEW and LMUL
     
             // EMUL = Effective LMUL
