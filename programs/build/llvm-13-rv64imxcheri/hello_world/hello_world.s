@@ -174,7 +174,6 @@ main:
 	clc	ca1, %pcrel_lo(.LBB6_1)(ca1)
 	addi	a2, zero, 7
 	csd	a2, 0(ca1)
-	csd	a2, 0(ca1)
 .LBB6_2:
 	auipcc	ca1, %captab_pcrel_hi(outputSucceeded)
 	clc	ca1, %pcrel_lo(.LBB6_2)(ca1)
@@ -189,7 +188,7 @@ main:
 .Lfunc_end6:
 	.size	main, .Lfunc_end6-main
 
-	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git b2d07c76c8c04ed8c00e31823043cea2dc91049f)"
+	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 7e5051d5f73569128c059138e796f4b1f3354ad5)"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
 	.addrsig_sym outputAttempted
