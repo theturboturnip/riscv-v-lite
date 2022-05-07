@@ -1,6 +1,78 @@
+use std::ops::Range;
 use super::types::*;
 use std::convert::TryInto;
 use anyhow::{Context,Result};
+
+/// Returns (register idx, bit range) for an element of a given width `eew` 
+/// in register `idx_from_base` in a register group starting at `vd_base`
+fn bit_range_for_element(eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<(u8, Range<usize>)> {
+    let elem_width = (eew.width_in_bytes() * 8) as u32;
+
+    // TODO refactor to use shifting
+    let elems_per_v = (VLEN as u32)/elem_width;
+    let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
+        .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
+    let idx = idx_from_base % elems_per_v;
+
+    Ok((
+        vd,
+        Range {
+            start: (idx*elem_width) as usize,
+            end: ((idx + 1)*elem_width - 1) as usize,
+        }
+    ))
+}
+
+/// Function that replaces the bits of a value in a specific range with the bits at the bottom of a new value.
+/// The Range is expected in Verilog-style, i.e. all-inclusive *unlike typical usages of Range*.
+/// Panics if new_data has 1s outside of the range specified by `bits`
+/// 
+/// ```
+/// assert_eq!(
+///     replace_bits(0, 0xf, 12:15),
+///     0xf000
+/// );
+/// assert_eq!(
+///     replace_bits(0xffff_ffff, 0b1011, 28:31),
+///     0xbfff_ffff
+/// );
+/// ```
+fn replace_bits(original: u128, new_data: u128, bits: Range<usize>) -> u128 {
+    assert!(bits.end >= bits.start);
+    let data_length_bits = bits.end - bits.start + 1;
+    // Mask of (data_length_bits) 1s, starting at bit 0
+    let data_length_mask = (u128::MAX << (128 - data_length_bits)) >> (128 - data_length_bits);
+    assert_eq!(new_data, new_data & data_length_mask);
+    // Mask applied to the original value to make a hole where the new_data is placed
+    // All 1s except for the range defined by bits, where it is 0
+    let original_mask = !(data_length_mask << bits.start);
+
+    (original & original_mask) | (new_data & data_length_mask) << bits.start
+}
+/// Complementary function to [replace_bits]
+/// 
+/// Grabs the bits of `original` in range `bits`
+/// Expects a Verilog-style i.e. all-inclusive bits range.
+///```
+/// assert_eq!(
+///     extract_bits(0xf000, 12:15),
+///     0xf
+/// );
+/// assert_eq!(
+///     extract_bits(0xbfff_ffff, 28:31),
+///     0b1011
+/// );
+/// ```
+fn extract_bits(original: u128, bits: Range<usize>) -> u128 {
+    assert!(bits.end >= bits.start);
+    let data_length_bits = bits.end - bits.start + 1;
+    // Mask of (data_length_bits) 1s, starting at bit 0
+    let data_length_mask = (u128::MAX << (128 - data_length_bits)) >> (128 - data_length_bits);
+    
+    // Shift down so the bits we want are at the bottom
+    // Mask off all but the bits we want
+    (original >> bits.start) & data_length_mask
+}
 
 /// Trait for a vector register file where VLEN=128, ELEN=128.
 /// Data is stored in TElem, which can be plain integers or a SafeTaggedCap (which implicitly adds 1-bit)
@@ -40,60 +112,23 @@ pub struct IntVectorRegisterFile {
 }
 impl VectorRegisterFile<u128> for IntVectorRegisterFile {
     fn load_vreg_elem(&self, eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<u128> {
-        let (elem_width_mask, elem_width) : (u128, u32) = match eew {
-            Sew::e8  => (0xFF, 8),
-            Sew::e16 => (0xFFFF, 16),
-            Sew::e32 => (0xFFFF_FFFF, 32),
-            Sew::e64 => (0xFFFF_FFFF_FFFF_FFFF, 64),
-            Sew::e128 => (0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF, 128),
-        };
-
-        // TODO refactor to use shifting
-        let elems_per_v: u32 = (VLEN as u32)/elem_width;
-        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
-            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
-        let idx = idx_from_base % elems_per_v;
+        let (vd, bits) = bit_range_for_element(eew, vd_base, idx_from_base)?;
 
         let full_reg = self.vreg[vd as usize];
-        // Shift the register down so the new element is at the bottom,
-        // and mask off the other elements
-        let individual_elem = (full_reg >> (elem_width*idx)) & (elem_width_mask as uVLEN);
 
         // Convert the element to the expected type and return
-        Ok(individual_elem)
+        Ok(extract_bits(full_reg, bits))
     }
     fn load_vreg_elem_int(&self, eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<u128> {
         self.load_vreg_elem(eew, vd_base, idx_from_base)
     }
 
     fn store_vreg_elem(&mut self, eew: Sew, vd_base: u8, idx_from_base: u32, val: u128) -> Result<()> {
-        let (elem_width_mask, elem_width) : (u128, u32) = match eew {
-            Sew::e8  => (0xFF, 8),
-            Sew::e16 => (0xFFFF, 16),
-            Sew::e32 => (0xFFFF_FFFF, 32),
-            Sew::e64 => (0xFFFF_FFFF_FFFF_FFFF, 64),
-            Sew::e128 => (0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF, 128),
-        };
-        // Assert the value doesn't have more data
-        assert_eq!(val & (!elem_width_mask), 0);
+        let (vd, bits) = bit_range_for_element(eew, vd_base, idx_from_base)?;
 
-        // TODO refactor to use shifting
-        let elems_per_v: u32 = (VLEN as u32)/elem_width;
-        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
-            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
-        let idx = idx_from_base % elems_per_v;
+        let full_reg = self.vreg[vd as usize];
 
-        // Get the previous value for the vector
-        let old_value = self.vreg[vd as usize];
-        // Mask off the element we want to write
-        let mask = (elem_width_mask as uVLEN) << (elem_width*idx);
-        let old_value_with_element_removed = old_value & (!mask);
-        // Create a uVLEN value with just the new element, shifted into the right place
-        let new_element_shifted = (val as uVLEN) << (elem_width*idx);
-        // Combine (old value sans element) with (new element)
-        let new_value = old_value_with_element_removed | new_element_shifted;
-
-        self.vreg[vd as usize] = new_value;
+        self.vreg[vd as usize] = replace_bits(full_reg, val, bits);
 
         Ok(())
     }
@@ -139,5 +174,14 @@ impl Default for IntVectorRegisterFile {
 // pub struct CheriVectorRegisterFile {
 //     vreg: [SafeTaggedCap; 32]
 // }
-// impl VectorRegisterFile<SafeTaggedCap> for CheriVectorRegisterFile {}
-// impl Default for CheriVectorRegisterFile {}
+// impl VectorRegisterFile<SafeTaggedCap> for CheriVectorRegisterFile {
+//     fn load_vreg(&mut self, vs: u8) -> Result<SafeTaggedCap> {
+//         Ok(self.vreg[vs as usize])
+//     }
+//     fn store_vreg(&mut self, vd: u8, val: SafeTaggedCap) -> Result<()> {
+//         self.vreg[vd as usize] = val;
+//         Ok(())
+//     }
+
+
+// }
