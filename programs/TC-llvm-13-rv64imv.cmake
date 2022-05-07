@@ -7,6 +7,7 @@ set( CMAKE_SYSTEM_NAME          Generic )
 set( CMAKE_SYSTEM_PROCESSOR     rv64imv0p10   )
 set( CMAKE_EXECUTABLE_SUFFIX    ".elf" )
 set( CMAKE_EXECUTABLE_SUFFIX_C    ".elf" )
+set( CMAKE_EXECUTABLE_SUFFIX_CXX    ".elf" )
 
 # Look for RISC-V CLANG
 FIND_FILE( RISCV_CLANG_COMPILER_MAYBE     "clang-13"     PATHS ENV INCLUDE)

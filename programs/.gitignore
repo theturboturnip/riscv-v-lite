@@ -13,6 +13,22 @@ build/*/vector_memcpy/*
 !build/*/vector_memcpy/mem.bin
 
 # Ignore all files *within* vector_memcpy
+build/*/vector_memcpy_old/*
+# but allow the outputs we like
+!build/*/vector_memcpy_old/vector_memcpy_old.elf
+!build/*/vector_memcpy_old/vector_memcpy_old.elf.dump
+!build/*/vector_memcpy_old/vector_memcpy_old.s
+!build/*/vector_memcpy_old/mem.bin
+
+# Ignore all files *within* vector_memcpy
+build/*/vector_memcpy_pointers/*
+# but allow the outputs we like
+!build/*/vector_memcpy_pointers/vector_memcpy_pointers.elf
+!build/*/vector_memcpy_pointers/vector_memcpy_pointers.elf.dump
+!build/*/vector_memcpy_pointers/vector_memcpy_pointers.s
+!build/*/vector_memcpy_pointers/mem.bin
+
+# Ignore all files *within* vector_memcpy
 build/*/hello_world/*
 # but allow the outputs we like
 !build/*/hello_world/hello_world.elf

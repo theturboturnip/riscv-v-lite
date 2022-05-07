@@ -32,7 +32,7 @@ SECTIONS
         *(COMMON)
         *(.bss)
         *(.sdata)
-        *(.rodata)
+        *(.rodata*)
         *(.data*)
         *(.got*)
     } > RAM
