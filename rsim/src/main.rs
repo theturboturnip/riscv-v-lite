@@ -1,4 +1,5 @@
 extern crate clap;
+use rsim::processor::elements::cheri::CheriMemory;
 use rsim::models::CheriExecMode;
 use rsim::processor::exceptions::ProgramHaltedException;
 use clap::{Arg, App};

@@ -5,7 +5,7 @@ use anyhow::Result;
 
 use super::types::*;
 use super::decode::MemOpDir;
-use crate::processor::elements::cheri::{CheriRV64RegisterFile,CheriAggregateMemory,Cc128,CompressedCapability};
+use crate::processor::elements::cheri::{CheriRV64RegisterFile,CheriAggregateMemory,Cc128,CompressedCapability,check_bounds_against_capability,check_obj_bounds_against_capability};
 use crate::processor::elements::{registers::RegisterFile,memory::Memory};
 
 /// References to all scalar resources touched by the vector unit.
@@ -128,7 +128,7 @@ impl<'a> VecMemInterface<u64, u128> for Rv64vCheriConn<'a> {
             MemOpDir::Load => Cc128::PERM_LOAD,
             MemOpDir::Store => Cc128::PERM_STORE,
         };
-        self.memory.check_bounds_against_capability(addr_range, cap, expected_perms)
+        check_bounds_against_capability(addr_range, cap, expected_perms)
     }
     fn check_elem_bounds_against_provenance(&mut self, eew: Sew, addr_provenance: (u64, Provenance), dir: MemOpDir) -> Result<()> {
         let (addr, prov) = addr_provenance;
@@ -139,13 +139,13 @@ impl<'a> VecMemInterface<u64, u128> for Rv64vCheriConn<'a> {
         };
         match eew {
             Sew::e8 => {
-                self.memory.check_obj_bounds_against_capability::<u8>(addr, cap, expected_perms)
+                check_obj_bounds_against_capability::<u8>(addr, cap, expected_perms)
             }
             Sew::e16 => {
-                self.memory.check_obj_bounds_against_capability::<u16>(addr, cap, expected_perms)
+                check_obj_bounds_against_capability::<u16>(addr, cap, expected_perms)
             }
             Sew::e32 => {
-                self.memory.check_obj_bounds_against_capability::<u32>(addr, cap, expected_perms)
+                check_obj_bounds_against_capability::<u32>(addr, cap, expected_perms)
             }
             Sew::e64 => { bail!("check_elem_bounds_against_provenance {:?} unsupported", eew) }
             Sew::e128 => {

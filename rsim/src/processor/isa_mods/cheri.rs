@@ -2,7 +2,7 @@ use crate::models::CheriExecMode;
 use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
 use crate::processor::isa_mods::*;
 use crate::processor::exceptions::{CapabilityException,CapOrRegister};
-use crate::processor::elements::cheri::{Cc128,CompressedCapability,Cc128Cap,CheriAggregateMemory,CheriRVFuncs,SafeTaggedCap};
+use crate::processor::elements::cheri::{Cc128,CompressedCapability,Cc128Cap,CheriMemory,CheriAggregateMemory,CheriRVFuncs,SafeTaggedCap};
 use crate::processor::elements::cheri::CheriRV64RegisterFile;
 use crate::processor::elements::registers::RegisterFile;
 

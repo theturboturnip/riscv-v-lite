@@ -1,17 +1,10 @@
+use crate::processor::elements::cheri::capability::check_capability;
 use std::any::Any;
 use std::ops::Range;
-use std::convert::TryInto;
 use std::collections::HashSet;
 
-use crate::processor::exceptions::{CapabilityException,CapOrRegister};
 use crate::processor::elements::memory::*;
 use super::capability::*;
-
-/// Return the range of addresses you can access with a capability
-fn cap_bounds_range(cap: Cc128Cap) -> Range<u64> {
-    let b = cap.bounds();
-    Range { start: b.0, end: b.1.try_into().unwrap() }
-}
 
 /// Memory holding tags for capabilities.
 /// Implements MemoryOf<bool>, which checks if the supplied address is a multiple of 16-bytes i.e. the size of a capability.
@@ -49,6 +42,18 @@ impl MemoryOf<bool> for TagMemory {
     }
 }
 
+pub trait CheriMemory<TAddr>: Memory<TAddr> + MemoryOf<SafeTaggedCap, TAddr> {
+    fn load_maybe_cap(&mut self, addr: TAddr) -> MemoryResult<SafeTaggedCap> {
+        <Self as MemoryOf<SafeTaggedCap, TAddr>>::read(self, addr)
+    }
+    fn store_maybe_cap(&mut self, addr: TAddr, val: SafeTaggedCap) -> MemoryResult<()> {
+        <Self as MemoryOf<SafeTaggedCap, TAddr>>::write(self, addr, val)
+    }
+    fn store_cap(&mut self, addr: TAddr, val: Cc128Cap) -> MemoryResult<()> {
+        <Self as MemoryOf<SafeTaggedCap, TAddr>>::write(self, addr, SafeTaggedCap::from_cap(val))
+    }
+}
+
 /// Wrapper for AggregateMemory64 that keeps tags, supports MemoryOf<SafeTaggedCap> for reading/writing capabilities.
 /// All other Memory variants clear associated tag bits on write.
 pub struct CheriAggregateMemory {
@@ -63,53 +68,10 @@ impl CheriAggregateMemory {
         }
     }
 
-    fn check_capability<TData>(&self, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
-        self.check_obj_bounds_against_capability::<TData>(
-            cap.address(),
-            cap,
-            expected_perms
-        )
-    }
-    pub fn check_obj_bounds_against_capability<TData>(&self, addr: u64, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
-        let size = std::mem::size_of::<TData>() as u64;
-        self.check_bounds_against_capability(
-            Range{
-                start: addr,
-                end: addr + size
-            },
-            cap,
-            expected_perms
-        )
-    }
-    pub fn check_bounds_against_capability(&self, bounds: Range<u64>, cap: Cc128Cap, expected_perms: u32) -> MemoryResult<()> {
-        if !cap.tag() {
-            bail!(CapabilityException::TagViolation{ cap: CapOrRegister::Cap(cap) })
-        } else if cap.permissions() & expected_perms != expected_perms {
-            bail!(CapabilityException::PermissionViolation{ cap: CapOrRegister::Cap(cap), perms: expected_perms })
-        } else if !cap_bounds_range(cap).contains(&bounds.start) 
-            || !cap_bounds_range(cap).contains(&(bounds.end - 1)) {
-                // ^ check end - 1 because bounds is an exclusive range - we're only going to access the byte at (end - 1)
-            bail!(CapabilityException::BoundsViolation{ cap: CapOrRegister::Cap(cap), size: (bounds.end - bounds.start) as usize })
-        } else if cap.is_sealed() {
-            bail!(CapabilityException::SealViolation{ cap: CapOrRegister::Cap(cap) })
-        } else {
-            Ok(())
-        }
-    }
-
     pub fn fetch_inst_u32(&mut self, cap: Cc128Cap) -> MemoryResult<u32> {
-        self.check_capability::<u32>(cap, Cc128::PERM_LOAD | Cc128::PERM_EXECUTE)?;
+        check_capability::<u32>(cap, Cc128::PERM_LOAD | Cc128::PERM_EXECUTE)?;
 
         self.base_mem.load_u32(cap.address())
-    }
-    pub fn load_maybe_cap(&mut self, addr: Cc128Cap) -> MemoryResult<SafeTaggedCap> {
-        <Self as MemoryOf<SafeTaggedCap, Cc128Cap>>::read(self, addr)
-    }
-    pub fn store_maybe_cap(&mut self, addr: Cc128Cap, val: SafeTaggedCap) -> MemoryResult<()> {
-        <Self as MemoryOf<SafeTaggedCap, Cc128Cap>>::write(self, addr, val)
-    }
-    pub fn store_cap(&mut self, addr: Cc128Cap, val: Cc128Cap) -> MemoryResult<()> {
-        <Self as MemoryOf<SafeTaggedCap, Cc128Cap>>::write(self, addr, SafeTaggedCap::from_cap(val))
     }
 
     pub fn get_full_range_cap(&self) -> Cc128Cap {
@@ -139,12 +101,12 @@ impl CheriAggregateMemory {
 /// for every TData in {u8,u16,u32,u64}
 impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMemory: MemoryOf<TData, u64> {
     fn read(&mut self, cap: Cc128Cap) -> MemoryResult<TData> {
-        self.check_capability::<TData>(cap, Cc128::PERM_LOAD)?;
+        check_capability::<TData>(cap, Cc128::PERM_LOAD)?;
 
         self.base_mem.read(cap.address())
     }
     fn write(&mut self, cap: Cc128Cap, val: TData) -> MemoryResult<()> {
-        self.check_capability::<TData>(cap, Cc128::PERM_STORE)?;
+        check_capability::<TData>(cap, Cc128::PERM_STORE)?;
 
         // Do the write, which also does an alignment check
         self.base_mem.write(cap.address(), val)?;
@@ -167,6 +129,8 @@ impl Memory<Cc128Cap> for CheriAggregateMemory {
     }
     fn as_any(&self) -> &dyn Any { self }
 }
+/// Combine MemoryOf<u8,u16,u32,u64> with MemoryOf<SafeTaggedCap>
+impl CheriMemory<Cc128Cap> for CheriAggregateMemory {}
 /// Impl a capability-aware view of memory for CHERI instructions
 /// e.g. a CHERI Load instruction, which is allowed to load capabilities, would use this version.
 impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
@@ -174,7 +138,7 @@ impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
     fn read(&mut self, cap: Cc128Cap) -> MemoryResult<SafeTaggedCap> {
         // We don't require PERM_LOAD_CAP, because if it isn't set we just clear the tag (see below).
         // Spec = TR951$8.4, [C]LC
-        self.check_capability::<u128>(cap, Cc128::PERM_LOAD)?;
+        check_capability::<u128>(cap, Cc128::PERM_LOAD)?;
         let addr = cap.address();
 
         check_alignment_range::<u128>(addr, &self.base_mem.range())?;
@@ -188,7 +152,7 @@ impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
         Ok(SafeTaggedCap::from_tagged_mem(data_top, data_bot, tag))
     }
     fn write(&mut self, cap: Cc128Cap, val: SafeTaggedCap) -> MemoryResult<()> {
-        self.check_capability::<u128>(cap, Cc128::PERM_STORE | Cc128::PERM_STORE_CAP)?;
+        check_capability::<u128>(cap, Cc128::PERM_STORE | Cc128::PERM_STORE_CAP)?;
         let addr = cap.address();
 
         check_alignment_range::<u128>(addr, &self.base_mem.range())?;
@@ -245,3 +209,5 @@ impl<'a> Memory for IntegerModeCheriAggregateMemory<'a> {
     }
     fn as_any(&self) -> &dyn Any { unreachable!("Should never try to devirtualize an IntegerMode wrapper") }
 }
+/// Combine MemoryOf<u8,u16,u32,u64> with MemoryOf<SafeTaggedCap>
+impl<'a> CheriMemory<u64> for IntegerModeCheriAggregateMemory<'a> {}
