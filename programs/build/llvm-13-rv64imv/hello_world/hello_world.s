@@ -164,9 +164,10 @@ main:
 	call	fib_memo_test
 	slli	a0, a0, 2
 	or	a0, s0, a0
-	sext.w	a0, a0
 	lui	a1, %hi(outputAttempted)
-	sd	a0, %lo(outputAttempted)(a1)
+	addi	a2, zero, 7
+	sd	a2, %lo(outputAttempted)(a1)
+	sext.w	a0, a0
 	lui	a1, %hi(outputSucceeded)
 	sd	a0, %lo(outputSucceeded)(a1)
 	ld	s0, 0(sp)

@@ -76,7 +76,7 @@ int main(void)
   volatile int64_t* __capability data = &outputAttempted;
   *data = ran;
   #else 
-  *(&outputAttempted) = result;
+  *(&outputAttempted) = ran;
   #endif
 
   *(&outputSucceeded) = result;

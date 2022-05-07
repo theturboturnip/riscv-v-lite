@@ -159,10 +159,11 @@ main:
 	call	fib_memo_test
 	slli	a0, a0, 2
 	or	a0, s0, a0
+	lui	a1, %hi(outputAttempted)
+	sw	zero, %lo(outputAttempted+4)(a1)
+	addi	a2, zero, 7
+	sw	a2, %lo(outputAttempted)(a1)
 	srai	a1, a0, 31
-	lui	a2, %hi(outputAttempted)
-	sw	a0, %lo(outputAttempted)(a2)
-	sw	a1, %lo(outputAttempted+4)(a2)
 	lui	a2, %hi(outputSucceeded)
 	sw	a0, %lo(outputSucceeded)(a2)
 	sw	a1, %lo(outputSucceeded+4)(a2)
