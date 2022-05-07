@@ -10,7 +10,7 @@ class Sew(Enum):
     e8 = 8
     e16 = 16
     e32 = 32
-    # e64 = 64
+    e64 = 64
 
     def get_ecode(x: 'Sew') -> str:
         return f"e{str(x.value)}"

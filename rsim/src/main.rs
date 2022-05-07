@@ -57,9 +57,9 @@ fn load_cheri_elf(elf_path: &str, mode: CheriExecMode) -> Result<(u64, CheriAggr
     let agg_mem = AggregateMemory::from_mappings(vec![
         // Allocate 4KB for the program
         // Load in the code+data sections
-        Box::new(MemoryBacking::from_vec(code_data, 0x0..0x2000)),
+        Box::new(MemoryBacking::from_vec(code_data, 0x0..0x3000)),
         // Allocate ~96KB for RAM
-        Box::new(MemoryBacking::zeros(0x2000..0x25_000)),
+        Box::new(MemoryBacking::zeros(0x3000..0x25_000)),
         // Add two I/O memory addresses: tests_ran, tests_suceeded
         Box::new(IOMemory::return_address(0x0100_0000, false)),
         Box::new(IOMemory::return_address(0x0100_0008, true)),
@@ -230,9 +230,9 @@ fn main() -> Result<()> {
                     // Create the memory map
                     let mem = AggregateMemory::from_mappings(vec![
                         // Allocate 4KB for the program
-                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
+                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x3000)),
                         // Allocate ~96KB for RAM
-                        Box::new(MemoryBacking::zeros(0x0_2000..0x2_5000)),
+                        Box::new(MemoryBacking::zeros(0x0_3000..0x2_5000)),
                         // Add two I/O memory addresses: tests_ran, tests_suceeded
                         Box::new(IOMemory::return_address(0x0100_0000, false)),
                         Box::new(IOMemory::return_address(0x0100_0008, true)),
@@ -245,9 +245,9 @@ fn main() -> Result<()> {
                     // Create the memory map
                     let mem = AggregateMemory::from_mappings(vec![
                         // Allocate 4KB for the program
-                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x2000)),
+                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x3000)),
                         // Allocate ~96KB for RAM
-                        Box::new(MemoryBacking::zeros(0x0_2000..0x2_5000)),
+                        Box::new(MemoryBacking::zeros(0x0_3000..0x2_5000)),
                         // Add two I/O memory addresses: tests_ran, tests_suceeded
                         Box::new(IOMemory::return_address(0x0100_0000, false)),
                         Box::new(IOMemory::return_address(0x0100_0008, true)),

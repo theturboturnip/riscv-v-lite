@@ -398,7 +398,7 @@ class VectorTestsCpp(VectorCppBuilder_NoCHERI):
                 pass
 
 def generate_vanilla_harnesses(b: VectorTestsCpp):
-    for width in [8, 16, 32]:
+    for width in [8, 16, 32, 64]:
         val_t = f"uint{width}_t"
 
         harness = Harness(
@@ -441,7 +441,7 @@ return 1;
 """)
 
 def generate_masked_harnesses(b: VectorTestsCpp):
-    for width in [8, 16, 32]:
+    for width in [8, 16, 32, 64]:
         val_t = f"uint{width}_t"
 
         harness = Harness(
@@ -489,7 +489,7 @@ return 1;
 """)
 
 def generate_segmented_harnesses(b: VectorTestsCpp):
-    for width in [8, 16, 32]:
+    for width in [8, 16, 32, 64]:
         val_t = f"uint{width}_t"
 
         harness = Harness(
@@ -809,6 +809,7 @@ def generate_tests() -> str:
         VType(Sew.e32, Lmul.e8),
         # Test fractional lmul
         VType(Sew.e32, Lmul.eHalf),
+        VType(Sew.e64, Lmul.e2),
     ]
     generate_unit_tests(b, vtypes)
     generate_strided_tests(b, vtypes)
@@ -823,6 +824,7 @@ def generate_tests() -> str:
         VType(Sew.e32, Lmul.e2),
         # Test fractional lmul
         VType(Sew.e32, Lmul.eHalf),
+        VType(Sew.e64, Lmul.e2),
     ])
 
     # Make main
