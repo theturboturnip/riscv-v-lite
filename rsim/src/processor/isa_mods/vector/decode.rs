@@ -312,7 +312,7 @@ impl DecodedMemOp {
     }
     /// Decode a Load/Store opcode into an DecodedMemOp structure.
     /// Performs all checks to ensure the instruction is a valid RISC-V V vector load/store.
-    pub fn decode_load_store<uXLEN: PossibleXlen>(opcode: Opcode, inst: InstructionBits, current_vtype: VType, current_vl: u32, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<DecodedMemOp> {
+    pub fn decode_load_store<uXLEN: PossibleXlen, TElem>(opcode: Opcode, inst: InstructionBits, current_vtype: VType, current_vl: u32, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> Result<DecodedMemOp> {
         if let InstructionBits::FLdStType{rs2, mop, ..} = inst {
             let dir = match opcode {
                 Opcode::LoadFP => MemOpDir::Load,
@@ -423,11 +423,15 @@ impl DecodedMemOp {
                 RvvMopType::Strided(stride) => DecodedMemOp::Strided{
                     stride, dir, eew, emul, nf, evl: current_vl,
                 },
-                RvvMopType::Indexed{ordered} => DecodedMemOp::Indexed{
-                    ordered,
-                    index_ew: eew, index_emul: emul,
-                    eew: current_vtype.vsew, emul: current_vtype.vlmul,
-                    dir, evl: current_vl, nf,
+                RvvMopType::Indexed{ordered} => if eew != Sew::e128 {
+                    DecodedMemOp::Indexed{
+                        ordered,
+                        index_ew: eew, index_emul: emul,
+                        eew: current_vtype.vsew, emul: current_vtype.vlmul,
+                        dir, evl: current_vl, nf,
+                    }
+                } else {
+                    bail!("Indexed operations with 128-bit elements not tested, may not make sense (what happens if >64-bits on a 64-bit machine?)")
                 }
             };
             return Ok(decoded_mop);

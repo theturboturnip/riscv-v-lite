@@ -29,7 +29,7 @@ pub struct Provenance {
 }
 
 /// Common trait for interfaces to memory
-pub trait VecMemInterface<uXLEN> where uXLEN: PossibleXlen {
+pub trait VecMemInterface<uXLEN: PossibleXlen, TElem> {
     /// Read a value XLEN from a register, not an address
     fn sreg_read_xlen(&mut self, reg: u8) -> Result<uXLEN>;
     /// Write a value XLEN to a register, not an address
@@ -46,11 +46,12 @@ pub trait VecMemInterface<uXLEN> where uXLEN: PossibleXlen {
     fn check_elem_bounds_against_provenance(&mut self, eew: Sew, addr_provenance: (u64, Provenance), dir: MemOpDir) -> Result<()>;
 
     /// Use an address, provenance pair to read a vector element from memory
-    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<uELEN>;
+    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<TElem>;
     /// Use an address, provenance pair to write a vector element to memory
-    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()>;
+    fn store_to_memory(&mut self, eew: Sew, val: TElem, addr_provenance: (u64, Provenance)) -> Result<()>;
 }
-impl<'a, uXLEN: PossibleXlen> VecMemInterface<uXLEN> for RvvConn<'a, uXLEN> {
+/// Integer-mode
+impl<'a, uXLEN: PossibleXlen> VecMemInterface<uXLEN, u128> for RvvConn<'a, uXLEN> {
     fn sreg_read_xlen(&mut self, reg: u8) -> Result<uXLEN> {
         Ok(self.sreg.read(reg)?)
     }
@@ -68,7 +69,7 @@ impl<'a, uXLEN: PossibleXlen> VecMemInterface<uXLEN> for RvvConn<'a, uXLEN> {
         // Nothing to check
         Ok(())
     }
-    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<uELEN> {
+    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<u128> {
         let (addr, _) = addr_provenance;
         let val = match eew {
             Sew::e8 => {
@@ -83,10 +84,13 @@ impl<'a, uXLEN: PossibleXlen> VecMemInterface<uXLEN> for RvvConn<'a, uXLEN> {
             Sew::e64 => {
                 self.memory.load_u64(addr)? as u64
             }
+            Sew::e128 => {
+                bail!("Unsupported load width: 128");
+            }
         };
-        Ok(val)
+        Ok(val as u128)
     }
-    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()> {
+    fn store_to_memory(&mut self, eew: Sew, val: u128, addr_provenance: (u64, Provenance)) -> Result<()> {
         let (addr, _) = addr_provenance;
         match eew {
             Sew::e8 => {
@@ -99,13 +103,16 @@ impl<'a, uXLEN: PossibleXlen> VecMemInterface<uXLEN> for RvvConn<'a, uXLEN> {
                 self.memory.store_u32(addr, val.try_into()?)?
             }
             Sew::e64 => {
-                self.memory.store_u64(addr, val)?
+                self.memory.store_u64(addr, val.try_into()?)?
+            }
+            Sew::e128 => {
+                bail!("Unsupported store width: 128");
             }
         }
         Ok(())
     }
 }
-impl<'a> VecMemInterface<u64> for Rv64vCheriConn<'a> {
+impl<'a> VecMemInterface<u64, u128> for Rv64vCheriConn<'a> {
     fn sreg_read_xlen(&mut self, reg: u8) -> Result<u64> {
         Ok(self.sreg.read(reg)?)
     }
@@ -141,9 +148,12 @@ impl<'a> VecMemInterface<u64> for Rv64vCheriConn<'a> {
                 self.memory.check_obj_bounds_against_capability::<u32>(addr, cap, expected_perms)
             }
             Sew::e64 => { bail!("check_elem_bounds_against_provenance {:?} unsupported", eew) }
+            Sew::e128 => {
+                bail!("Unsupported check-bounds width: 128");
+            }
         }
     }
-    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<uELEN> {
+    fn load_from_memory(&mut self, eew: Sew, addr_provenance: (u64, Provenance)) -> Result<u128> {
         let (addr, prov) = addr_provenance;
         let mut cap = self.sreg.read_maybe_cap(prov.reg)?.to_cap();
         cap.set_address_unchecked(addr);
@@ -160,10 +170,13 @@ impl<'a> VecMemInterface<u64> for Rv64vCheriConn<'a> {
             Sew::e64 => {
                 self.memory.load_u64(cap)? as u64
             }
+            Sew::e128 => {
+                bail!("Unsupported load width: 128");
+            }
         };
-        Ok(val)
+        Ok(val as u128)
     }
-    fn store_to_memory(&mut self, eew: Sew, val: uELEN, addr_provenance: (u64, Provenance)) -> Result<()> {
+    fn store_to_memory(&mut self, eew: Sew, val: u128, addr_provenance: (u64, Provenance)) -> Result<()> {
         let (addr, prov) = addr_provenance;
         let mut cap = self.sreg.read_maybe_cap(prov.reg)?.to_cap();
         cap.set_address_unchecked(addr);
@@ -178,7 +191,10 @@ impl<'a> VecMemInterface<u64> for Rv64vCheriConn<'a> {
                 self.memory.store_u32(cap, val.try_into()?)?
             }
             Sew::e64 => {
-                self.memory.store_u64(cap, val)?
+                self.memory.store_u64(cap, val.try_into()?)?
+            }
+            Sew::e128 => {
+                bail!("Unsupported store width: 128");
             }
         }
         Ok(())

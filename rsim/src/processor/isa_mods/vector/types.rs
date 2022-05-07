@@ -3,25 +3,13 @@
 use std::mem::size_of;
 use anyhow::Result;
 
-
-pub type uELEN = u64;
-
-
 /// Unsigned type of length [VLEN]
 /// 
 /// Used for storing vector registers
-/// 
-/// ```
-/// use rsim::processor::vector::{uVLEN, VLEN};
-/// use std::mem::size_of;
-/// 
-/// assert_eq!(size_of::<uVLEN>() * 8, VLEN);
-/// ```
 pub type uVLEN = u128;
 
 /// Vector register length in bits
-pub const VLEN: usize = size_of::<uVLEN>() * 8; // ELEN * 4
-const_assert!(size_of::<uVLEN>() % size_of::<uELEN>() == 0);
+pub const VLEN: usize = size_of::<uVLEN>() * 8;
 
 /// Vector type information
 /// 
@@ -102,6 +90,8 @@ impl VType {
             Sew::e16 => 0b001,
             Sew::e32 => 0b010,
             Sew::e64 => 0b011,
+
+            Sew::e128 => todo!("encoding for 128 or capability bits")
         };
         val |= sew_bits << 3;
 
@@ -198,7 +188,9 @@ pub enum Sew {
     e8,
     e16,
     e32,
-    e64
+    e64,
+    /// On CHERI, used to load/store capabilities.
+    e128,
 }
 impl Sew {
     pub fn width_in_bytes(&self) -> u64 {
@@ -207,6 +199,7 @@ impl Sew {
             Sew::e16 => 2,
             Sew::e32 => 4,
             Sew::e64 => 8,
+            Sew::e128 => 16,
         }
     }
 }
@@ -278,15 +271,11 @@ pub fn val_times_lmul_over_sew(x: u32, s: Sew, l: Lmul) -> u32 {
         },
     };
     
-    bits_per_group / match s {
-        Sew::e8 => 8,
-        Sew::e16 => 16,
-        Sew::e32 => 32,
-        Sew::e64 => 64,
-    }
+    bits_per_group / (s.width_in_bytes() as u32 * 8)
 }
 
 /// A struct describing an element of a vector register group
+#[derive(Debug)]
 pub struct VectorElem {
     /// The first register of the group.
     /// Should be a multiple of emul.num_registers_consumed()

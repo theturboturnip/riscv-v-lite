@@ -7,7 +7,6 @@ use crate::processor::exceptions::IllegalInstructionException::*;
 use super::csrs::CSRProvider;
 use std::cmp::min;
 use anyhow::{Context, Result};
-use std::convert::{TryInto};
 
 use crate::processor::decode::{Opcode,InstructionBits};
 
@@ -21,13 +20,16 @@ pub use conns::{Rv32vConn,Rv64vConn,Rv64vCheriConn};
 mod decode;
 use decode::*;
 
+mod registers;
+pub use registers::*;
+
 /// The Vector Unit for the processor.
 /// Stores all vector state, including registers.
 /// Call [Rv32v::exec_inst()] on it when you encounter a vector instruction.
 /// This requires a [VecMemInterface<uXLEN>] to access other resources.
-pub struct Rvv<uXLEN: PossibleXlen> {
+pub struct Rvv<uXLEN: PossibleXlen, TElem> {
     // TODO use a RegisterFile for this?
-    vreg: [uVLEN; 32],
+    vreg: Box<dyn VectorRegisterFile<TElem>>,
 
     vtype: VType,
     vl: u32,
@@ -43,15 +45,14 @@ pub struct Rvv<uXLEN: PossibleXlen> {
 
     _phantom_xlen: PhantomData<uXLEN>,
 }
-pub type Rv32v = Rvv<u32>;
-pub type Rv64v = Rvv<u64>;
+pub type Rv32v = Rvv<u32, u128>;
+pub type Rv64v = Rvv<u64, u128>;
 
-
-impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
+impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
     /// Returns an initialized vector unit.
-    pub fn new() -> Self {
+    pub fn new(vreg: Box<dyn VectorRegisterFile<TElem>>) -> Self {
         Rvv {
-            vreg: [0; 32],
+            vreg,
 
             vtype: VType::illegal(),
             vl: 0,
@@ -63,7 +64,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
 
     /// Reset the vector unit's state
     pub fn reset(&mut self) {
-        self.vreg = [0; 32];
+        self.vreg.reset();
         self.vtype = VType::illegal();
         self.vl = 0;
         self.vstart = 0;
@@ -77,7 +78,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     /// * `inst_kind` - Which kind of configuration instruction to execute
     /// * `inst` - Decoded instruction bits
     /// * `conn` - Connection to external resources
-    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
+    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> Result<()> {
         if let InstructionBits::VType{rd, funct3, rs1, rs2, zimm11, zimm10, ..} = inst {
             assert_eq!(funct3, 0b111);
 
@@ -162,7 +163,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     ///   - A tolerable fast-path failure = fault-only-first, which might absorb the exception,
     ///     or masked operations that might mask out the offending element.
     /// - Err() if the fast-path check failed in a not-tolerable manner
-    fn fast_check_load_store(&mut self, addr_provenance: (u64, Provenance), rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> (Result<bool>, Range<u64>) {
+    fn fast_check_load_store(&mut self, addr_provenance: (u64, Provenance), rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> (Result<bool>, Range<u64>) {
         let (base_addr, provenance) = addr_provenance;
 
         use DecodedMemOp::*;
@@ -203,7 +204,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
             Indexed{evl, nf, eew, index_ew, ..} => {
                 let mut offsets = vec![];
                 for i_segment in self.vstart..evl {
-                    offsets.push(self.load_vreg_elem(index_ew, rs2, i_segment).unwrap());
+                    offsets.push(self.vreg.load_vreg_elem_int(index_ew, rs2, i_segment).unwrap());
                 }
 
                 let offset_range = Range::<u64> {
@@ -275,7 +276,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     let seg_addr = base_addr + (i_segment as u64 * stride);
 
                     // If we aren't masked out...
-                    if !self.seg_masked_out(vm, i_segment as usize) {
+                    if !self.vreg.seg_masked_out(vm, i_segment as usize) {
                         // For each field
                         let mut field_addr = seg_addr;
                         for i_field in 0..nf {
@@ -303,7 +304,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     let seg_addr = base_addr + (i_segment as u64 * stride);
 
                     // If we aren't masked out...
-                    if !self.seg_masked_out(vm, i_segment as usize) {
+                    if !self.vreg.seg_masked_out(vm, i_segment as usize) {
                         // For each field
                         let mut field_addr = seg_addr;
                         for i_field in 0..nf {
@@ -324,11 +325,11 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                 // i = element index in logical vector (which includes groups)
                 for i_segment in self.vstart..evl {
                     // Get our index
-                    let seg_idx = self.load_vreg_elem(index_ew, rs2, i_segment)?;
+                    let seg_idx = self.vreg.load_vreg_elem_int(index_ew, rs2, i_segment)?;
                     let seg_addr = base_addr + (seg_idx as u64);
 
                     // If we aren't masked out...
-                    if !self.seg_masked_out(vm, seg_idx as usize) {
+                    if !self.vreg.seg_masked_out(vm, seg_idx as usize) {
                         // For each field
                         let mut field_addr = seg_addr;
                         for i_field in 0..nf {
@@ -382,7 +383,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
     }
 
     /// Execute a decoded memory access, assuming all access checks have already been performed.
-    fn exec_load_store(&mut self, expected_addr_range: Range<u64>, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN>) -> Result<()> {
+    fn exec_load_store(&mut self, expected_addr_range: Range<u64>, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> Result<()> {
         // Determine which accesses we need to do
         let addr_p = conn.get_addr_provenance(rs1)?;
         let accesses = self.get_load_store_accesses(rd, addr_p, rs2, vm, op)?;
@@ -454,103 +455,27 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
 
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
-    fn load_to_vreg(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn load_to_vreg(&mut self, conn: &mut dyn VecMemInterface<uXLEN, TElem>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
         let val = conn.load_from_memory(eew, addr_provenance)?;
-        self.store_vreg_elem(eew, vd_base, idx_from_base, val as uELEN)?;
+        self.vreg.store_vreg_elem(eew, vd_base, idx_from_base, val)?;
         Ok(())
     }
     /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
     /// vector register group starting at `vd_base` into a given address `addr` 
-    fn store_to_mem(&mut self, conn: &mut dyn VecMemInterface<uXLEN>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
-        let val = self.load_vreg_elem(eew, vd_base, idx_from_base)?;
+    fn store_to_mem(&mut self, conn: &mut dyn VecMemInterface<uXLEN, TElem>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+        let val = self.vreg.load_vreg_elem(eew, vd_base, idx_from_base)?;
         conn.store_to_memory(eew, val, addr_provenance)?;
         Ok(())
     }
 
-    /// Store a value in an element in a vertex register group, with specified EEW.
-    /// Requires the type of the value to store matches the EEW.
-    /// 
-    /// Example: if EEW=32bits, VLEN=128bits (4 32-bit elements per register), `vd_base` = 3, `idx_from_base` = 5,
-    /// the actual `vd` = 3 + (idx_from_base / 4) = 4, and
-    /// the actual `idx` = idx_from_base % 4 = 1.
-    /// This would store `val` into v4\[64:32\] (element 1 of v4)
-    fn store_vreg_elem(&mut self, eew: Sew, vd_base: u8, idx_from_base: u32, val: uELEN) -> Result<()> {
-        let (elem_width_mask, elem_width) : (uELEN, u32) = match eew {
-            Sew::e8  => (0xFF, 8),
-            Sew::e16 => (0xFFFF, 16),
-            Sew::e32 => (0xFFFF_FFFF, 32),
-            Sew::e64 => (0xFFFF_FFFF_FFFF_FFFF, 64)
-        };
-        // Assert the value doesn't have more data
-        assert_eq!(val & (!elem_width_mask), 0);
-
-        // TODO refactor to use shifting
-        let elems_per_v: u32 = (VLEN as u32)/elem_width;
-        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
-            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
-        let idx = idx_from_base % elems_per_v;
-
-        // Get the previous value for the vector
-        let old_value = self.vreg[vd as usize];
-        // Mask off the element we want to write
-        let mask = (elem_width_mask as uVLEN) << (elem_width*idx);
-        let old_value_with_element_removed = old_value & (!mask);
-        // Create a uVLEN value with just the new element, shifted into the right place
-        let new_element_shifted = (val as uVLEN) << (elem_width*idx);
-        // Combine (old value sans element) with (new element)
-        let new_value = old_value_with_element_removed | new_element_shifted;
-
-        self.vreg[vd as usize] = new_value;
-
-        Ok(())
-    }
-
-    /// Load a value from an element in a vertex register group, with specified EEW
-    /// Requires the type of the value to store matches the EEW.
-    /// 
-    /// Example: if EEW=32bits, VLEN=128bits (4 32-bit elements per register), `vd` = 3, `idx` = 5,
-    /// the actual `vd` = 3 + (idx_from_base / 4) = 4, and
-    /// the actual `idx` = idx_from_base % 4 = 1.
-    /// this would return v4\[64:32\] (element 1 of v4)
-    fn load_vreg_elem(&self, eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<uELEN> {
-        let (elem_width_mask, elem_width) : (uELEN, u32) = match eew {
-            Sew::e8  => (0xFF, 8),
-            Sew::e16 => (0xFFFF, 16),
-            Sew::e32 => (0xFFFF_FFFF, 32),
-            Sew::e64 => (0xFFFF_FFFF_FFFF_FFFF, 64)
-        };
-
-        // TODO refactor to use shifting
-        let elems_per_v: u32 = (VLEN as u32)/elem_width;
-        let vd: u8 = (vd_base as u32 + (idx_from_base / elems_per_v)).try_into()
-            .context(format!("calculating destination register for vd_base={},idx_from_base={},eew={:?}", vd_base, idx_from_base, eew))?;
-        let idx = idx_from_base % elems_per_v;
-
-        let full_reg = self.vreg[vd as usize];
-        // Shift the register down so the new element is at the bottom,
-        // and mask off the other elements
-        let individual_elem = (full_reg >> (elem_width*idx)) & (elem_width_mask as uVLEN);
-
-        // Convert the element to the expected type and return
-        Ok(individual_elem as uELEN)
-    }
-
-    /// Returns true if the mask is enabled and element `i` has been masked *out*, e.g. that it should not be touched.
-    fn seg_masked_out(&self, vm: bool, i: usize) -> bool {
-        // vm == 1 for mask disabled, 0 for mask enabled
-        (!vm) && (bits!(self.vreg[0], i:i) == 0)
-    }
-
     /// Dump vector unit state to standard output.
     pub fn dump(&self) {
-        for i in 0..32 {
-            println!("v{} = 0x{:032x}", i, self.vreg[i]);
-        }
+        self.vreg.dump();
         println!("vl: {}\nvtype: {:?}", self.vl, self.vtype);
     }
 }
 
-impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN> {
+impl<uXLEN: PossibleXlen, TElem> IsaMod<&mut dyn VecMemInterface<uXLEN, TElem>> for Rvv<uXLEN, TElem> {
     type Pc = ();
     fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
         use crate::processor::decode::Opcode::*;
@@ -582,7 +507,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
     /// * `inst` - Decoded instruction bits
     /// * `inst_bits` - Raw instruction bits (TODO - we shouldn't need this)
     /// * `conn` - Connection to external resources
-    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: &mut dyn VecMemInterface<uXLEN>) -> ProcessorResult<Option<()>> {
+    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> ProcessorResult<Option<()>> {
         use Opcode::*;
         match (opcode, inst) {
             (Vector, InstructionBits::VType{funct3, funct6, rs1, rs2, rd, vm, ..}) => {
@@ -612,8 +537,8 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                 }
 
                                 for i in self.vstart..self.vl {
-                                    let val = self.load_vreg_elem(self.vtype.vsew, vs1, i)?;
-                                    self.store_vreg_elem(self.vtype.vsew, vd, i, val)?;
+                                    let val = self.vreg.load_vreg_elem(self.vtype.vsew, vs1, i)?;
+                                    self.vreg.store_vreg_elem(self.vtype.vsew, vd, i, val)?;
                                 }
                             }
                             _ => bail!("Unsupported OPIVV funct6 {:b}", funct6)
@@ -627,7 +552,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                     0b011 => {
                         // Vector-immediate
                         // TODO - this assumes no sign extending?
-                        let imm = rs1 as u64;
+                        let imm = rs1 as u128;
 
                         match funct6 {
                             0b011000 => {
@@ -636,12 +561,12 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                 // This cannot itself be masked
                                 let mut val: uVLEN = 0;
                                 for i in self.vstart..self.vl {
-                                    let reg_val = self.load_vreg_elem(self.vtype.vsew, rs2, i)?;
+                                    let reg_val = self.vreg.load_vreg_elem_int(self.vtype.vsew, rs2, i)?;
                                     if reg_val == imm {
                                         val |= (1 as uVLEN) << i;
                                     }
                                 }
-                                self.vreg[rd as usize] = val;
+                                self.vreg.store_vreg_int(rd, val)?;
                             }
                             0b011001 => {
                                 // VMSNE
@@ -649,11 +574,11 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                 // This cannot itself be masked
                                 let mut val: uVLEN = 0;
                                 for i in self.vstart..self.vl {
-                                    if self.load_vreg_elem(self.vtype.vsew, rs2, i)? != imm {
+                                    if self.vreg.load_vreg_elem_int(self.vtype.vsew, rs2, i)? != imm {
                                         val |= (1 as uVLEN) << i;
                                     }
                                 }
-                                self.vreg[rd as usize] = val;
+                                self.vreg.store_vreg_int(rd, val)?;
                             }
 
                             0b010111 => {
@@ -664,15 +589,15 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                 // vmerge or vmv
                                 // if masked, vmerge, else vmv
                                 for i in self.vstart..self.vl {
-                                    let val = if self.seg_masked_out(vm, i as usize) {
+                                    let val = if self.vreg.seg_masked_out(vm, i as usize) {
                                         // if masked out, this must be vmerge, write new value in
-                                        self.load_vreg_elem(self.vtype.vsew, rs2, i)?
+                                        self.vreg.load_vreg_elem_int(self.vtype.vsew, rs2, i)?
                                     } else {
                                         // either vmerge + not masked, or vmv
                                         // either way, write immediate
                                         imm
                                     };
-                                    self.store_vreg_elem(self.vtype.vsew, rd, i, val)?;
+                                    self.vreg.store_vreg_elem_int(self.vtype.vsew, rd, i, val)?;
                                 }
                             }
 
@@ -685,7 +610,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                     // No such field, but section 11.8  mentions it.
                                     // I imagine it's a leftover from a previous draft.
                                     // rs1 looks right for this case, but need to double check.
-                                    let nr = rs1 as usize + 1;
+                                    let nr = rs1 + 1;
                                     let emul = match nr {
                                         1 => Lmul::e1,
                                         2 => Lmul::e2,
@@ -707,7 +632,8 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
                                     }
 
                                     for vx in 0..nr {
-                                        self.vreg[rd as usize + vx] = self.vreg[rs2 as usize + vx];
+                                        let val = self.vreg.load_vreg(rs2 + vx)?;
+                                        self.vreg.store_vreg(rd + vx, val)?;
                                     }
                                 } else {
                                     bail!(UnimplementedInstruction("vsmul"));
@@ -775,7 +701,7 @@ impl<uXLEN: PossibleXlen> IsaMod<&mut dyn VecMemInterface<uXLEN>> for Rvv<uXLEN>
     }
 }
 
-impl<uXLEN: PossibleXlen> CSRProvider<uXLEN> for Rvv<uXLEN> {
+impl<uXLEN: PossibleXlen, TElem> CSRProvider<uXLEN> for Rvv<uXLEN, TElem> {
     fn has_csr(&self, csr: u32) -> bool {
         match csr {
             // Should be implemented, aren't yet

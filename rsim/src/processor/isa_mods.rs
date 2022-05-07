@@ -47,6 +47,6 @@ pub use rv64im::Rv64im;
 mod csrs;
 pub use csrs::{Zicsr32, Zicsr32Conn, Zicsr64, Zicsr64Conn, CSRProvider};
 mod vector;
-pub use vector::{Rv32v,Rv32vConn,Rv64v,Rv64vConn,Rv64vCheriConn};
+pub use vector::{Rv32v,Rv32vConn,Rv64v,Rv64vConn,Rv64vCheriConn,IntVectorRegisterFile};
 mod cheri;
 pub use cheri::{XCheri64,Rv64imCapabilityMode,XCheri64Conn};

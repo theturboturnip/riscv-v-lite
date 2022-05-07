@@ -7,7 +7,7 @@ use crate::processor::exceptions::{IllegalInstructionException,MemoryException};
 use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::cheri::{Cc128Cap,CheriRV64RegisterFile,CheriAggregateMemory};
-use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64imCapabilityMode, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64v, Rv64vCheriConn, Rv64vConn, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64imCapabilityMode, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64v, Rv64vCheriConn, Rv64vConn, IntVectorRegisterFile, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
@@ -79,7 +79,7 @@ impl Rv64imvXCheriProcessor {
             rv64im: Rv64im{},
             rv64im_cap: Rv64imCapabilityMode{},
             xcheri: XCheri64{},
-            rvv: Rv64v::new(),
+            rvv: Rv64v::new(Box::new(IntVectorRegisterFile::default())),
             zicsr: Some(Zicsr64::default())
         };
 

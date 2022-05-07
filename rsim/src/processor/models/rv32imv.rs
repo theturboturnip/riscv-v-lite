@@ -7,7 +7,7 @@ use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::memory::{AggregateMemory,Memory};
 use crate::processor::elements::registers::RvRegisterFile;
-use crate::processor::isa_mods::{IsaMod, Rv32im, Rv32imConn, Rv32v, Rv32vConn, Zicsr32, Zicsr32Conn, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv32im, Rv32imConn, Rv32v, Rv32vConn, IntVectorRegisterFile, Zicsr32, Zicsr32Conn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
@@ -51,7 +51,7 @@ impl Processor32 {
         };
         let mut mods = ProcessorModules32 {
             rv32im: Rv32im{},
-            rvv: Some(Rv32v::new()),
+            rvv: Some(Rv32v::new(Box::new(IntVectorRegisterFile::default()))),
             zicsr: Some(Zicsr32::default())
         };
 
