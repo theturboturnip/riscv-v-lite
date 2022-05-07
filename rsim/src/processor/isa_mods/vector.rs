@@ -1,5 +1,6 @@
 #![allow(non_camel_case_types)]
 
+use crate::processor::elements::cheri::SafeTaggedCap;
 use std::ops::Range;
 use std::marker::PhantomData;
 use crate::processor::isa_mods::*;
@@ -15,7 +16,6 @@ use types::*;
 
 mod conns;
 use conns::*;
-pub use conns::{Rv32vConn,Rv64vConn,Rv64vCheriConn};
 
 mod decode;
 use decode::*;
@@ -47,6 +47,7 @@ pub struct Rvv<uXLEN: PossibleXlen, TElem> {
 }
 pub type Rv32v = Rvv<u32, u128>;
 pub type Rv64v = Rvv<u64, u128>;
+pub type Rv64Cheriv = Rvv<u64, SafeTaggedCap>;
 
 impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
     /// Returns an initialized vector unit.
@@ -78,7 +79,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
     /// * `inst_kind` - Which kind of configuration instruction to execute
     /// * `inst` - Decoded instruction bits
     /// * `conn` - Connection to external resources
-    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> Result<()> {
+    fn exec_config(&mut self, inst_kind: ConfigKind, inst: InstructionBits, sreg: &mut dyn VecRegInterface<uXLEN>) -> Result<()> {
         if let InstructionBits::VType{rd, funct3, rs1, rs2, zimm11, zimm10, ..} = inst {
             assert_eq!(funct3, 0b111);
 
@@ -91,7 +92,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                     // Read AVL from a register
                     if rs1 != 0 {
                         // default case, just read it out
-                        conn.sreg_read_xlen(rs1)?.into()
+                        sreg.sreg_read_xlen(rs1)?.into()
                     } else {
                         if rd != 0 {
                             // rs1 == 0, rd != 0
@@ -122,7 +123,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                     zimm10 as u64
                 },
                 ConfigKind::vsetvl => {
-                    conn.sreg_read_xlen(rs2)?.into()
+                    sreg.sreg_read_xlen(rs2)?.into()
                 },
             };
             // Try to parse vtype bits
@@ -139,7 +140,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                 // TODO - section 6.3 shows more constraints on setting VL
                 self.vl = min(elems_per_group, avl as u32);
 
-                conn.sreg_write_xlen(rd, self.vl.into())?;
+                sreg.sreg_write_xlen(rd, self.vl.into())?;
             } else {
                 self.vtype = VType::illegal();
                 // TODO - move this bail to the next vector instruction that executes
@@ -163,7 +164,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
     ///   - A tolerable fast-path failure = fault-only-first, which might absorb the exception,
     ///     or masked operations that might mask out the offending element.
     /// - Err() if the fast-path check failed in a not-tolerable manner
-    fn fast_check_load_store(&mut self, addr_provenance: (u64, Provenance), rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> (Result<bool>, Range<u64>) {
+    fn fast_check_load_store(&mut self, addr_provenance: (u64, Provenance), rs2: u8, vm: bool, op: DecodedMemOp, sreg: &mut dyn VecRegInterface<uXLEN>) -> (Result<bool>, Range<u64>) {
         let (base_addr, provenance) = addr_provenance;
 
         use DecodedMemOp::*;
@@ -240,7 +241,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
             }
         };
 
-        let check_result = conn.check_addr_range_against_provenance(addr_range.clone(), provenance, op.dir());
+        let check_result = sreg.check_addr_range_against_provenance(addr_range.clone(), provenance, op.dir());
         match check_result {
             Ok(()) => {
                 // if that range check succeeded, we can return true
@@ -383,9 +384,9 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
     }
 
     /// Execute a decoded memory access, assuming all access checks have already been performed.
-    fn exec_load_store(&mut self, expected_addr_range: Range<u64>, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> Result<()> {
+    fn exec_load_store(&mut self, expected_addr_range: Range<u64>, rd: u8, rs1: u8, rs2: u8, vm: bool, op: DecodedMemOp, sreg: &mut dyn VecRegInterface<uXLEN>, mem: &mut dyn VecMemInterface<uXLEN, TElem>) -> Result<()> {
         // Determine which accesses we need to do
-        let addr_p = conn.get_addr_provenance(rs1)?;
+        let addr_p = sreg.get_addr_provenance(rs1)?;
         let accesses = self.get_load_store_accesses(rd, addr_p, rs2, vm, op)?;
         let (_, provenance) = addr_p;
 
@@ -405,8 +406,8 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                     let addr_p = (addr, provenance);
                     // Perform the access!
                     match dir {
-                        MemOpDir::Load => self.load_to_vreg(conn, eew, addr_p, base_reg, elem_within_group)?,
-                        MemOpDir::Store => self.store_to_mem(conn, eew, addr_p, base_reg, elem_within_group)?
+                        MemOpDir::Load => self.load_to_vreg(mem, eew, addr_p, base_reg, elem_within_group)?,
+                        MemOpDir::Store => self.store_to_mem(mem, eew, addr_p, base_reg, elem_within_group)?
                     }
                 }
             }
@@ -416,7 +417,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                     let addr_p = (addr, provenance);
                     // Perform the access
                     let load_fault: Result<()> = 
-                        self.load_to_vreg(conn, eew, addr_p, base_reg, elem_within_group);
+                        self.load_to_vreg(mem, eew, addr_p, base_reg, elem_within_group);
                     
                     // Check for faults
                     if elem_within_group == 0 {
@@ -455,16 +456,16 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
 
     /// Load a value of width `eew` from a given address `addr` 
     /// into a specific element `idx_from_base` of a vector register group starting at `vd_base`
-    fn load_to_vreg(&mut self, conn: &mut dyn VecMemInterface<uXLEN, TElem>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
-        let val = conn.load_from_memory(eew, addr_provenance)?;
+    fn load_to_vreg(&mut self, mem: &mut dyn VecMemInterface<uXLEN, TElem>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+        let val = mem.load_from_memory(eew, addr_provenance)?;
         self.vreg.store_vreg_elem(eew, vd_base, idx_from_base, val)?;
         Ok(())
     }
     /// Stores a value of width `eew` from a specific element `idx_from_base` of a 
     /// vector register group starting at `vd_base` into a given address `addr` 
-    fn store_to_mem(&mut self, conn: &mut dyn VecMemInterface<uXLEN, TElem>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
+    fn store_to_mem(&mut self, mem: &mut dyn VecMemInterface<uXLEN, TElem>, eew: Sew, addr_provenance: (u64, Provenance), vd_base: u8, idx_from_base: u32) -> Result<()> {
         let val = self.vreg.load_vreg_elem(eew, vd_base, idx_from_base)?;
-        conn.store_to_memory(eew, val, addr_provenance)?;
+        mem.store_to_memory(eew, val, addr_provenance)?;
         Ok(())
     }
 
@@ -475,7 +476,12 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
     }
 }
 
-impl<uXLEN: PossibleXlen, TElem> IsaMod<&mut dyn VecMemInterface<uXLEN, TElem>> for Rvv<uXLEN, TElem> {
+pub type VecInterface<'a, uXLEN, TElem> = (
+    &'a mut dyn VecRegInterface<uXLEN>,
+    &'a mut dyn VecMemInterface<uXLEN, TElem>
+);
+
+impl<uXLEN: PossibleXlen, TElem> IsaMod<VecInterface<'_, uXLEN, TElem>> for Rvv<uXLEN, TElem> {
     type Pc = ();
     fn will_handle(&self, opcode: Opcode, inst: InstructionBits) -> bool {
         use crate::processor::decode::Opcode::*;
@@ -507,7 +513,8 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<&mut dyn VecMemInterface<uXLEN, TElem>> 
     /// * `inst` - Decoded instruction bits
     /// * `inst_bits` - Raw instruction bits (TODO - we shouldn't need this)
     /// * `conn` - Connection to external resources
-    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> ProcessorResult<Option<()>> {
+    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, inst_bits: u32, conn: VecInterface<'_, uXLEN, TElem>) -> ProcessorResult<Option<()>> {
+        let (sreg, mem) = conn;
         use Opcode::*;
         match (opcode, inst) {
             (Vector, InstructionBits::VType{funct3, funct6, rs1, rs2, rd, vm, ..}) => {
@@ -521,7 +528,7 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<&mut dyn VecMemInterface<uXLEN, TElem>> 
 
                             invalid => panic!("impossible top 2 bits {:2b}", invalid)
                         };
-                        self.exec_config(inst_kind, inst, conn)?
+                        self.exec_config(inst_kind, inst, sreg)?
                     }
 
                     0b000 => {
@@ -651,7 +658,7 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<&mut dyn VecMemInterface<uXLEN, TElem>> 
             }
 
             (LoadFP | StoreFP, InstructionBits::FLdStType{rd, rs1, rs2, vm, ..}) => {
-                let op = DecodedMemOp::decode_load_store(opcode, inst, self.vtype, self.vl, conn)?;
+                let op = DecodedMemOp::decode_load_store(opcode, inst, self.vtype, self.vl, sreg)?;
 
                 // Pre-check that the mem-op doesn't do anything dumb
                 if op.dir() == MemOpDir::Load && (!vm) && rd == 0 {
@@ -664,16 +671,16 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<&mut dyn VecMemInterface<uXLEN, TElem>> 
                     return Ok(None)
                 }
 
-                let addr_provenance = conn.get_addr_provenance(rs1)?;
+                let addr_provenance = sreg.get_addr_provenance(rs1)?;
 
                 // TODO - set vstart in exec_load_store
 
                 // Pre-check capability access
-                let (fast_check_result, addr_range) = self.fast_check_load_store(addr_provenance, rs2, vm, op, conn);
+                let (fast_check_result, addr_range) = self.fast_check_load_store(addr_provenance, rs2, vm, op, sreg);
                 match fast_check_result {
                     // There was a fast path that didn't raise an exception
                     Ok(true) => {
-                        self.exec_load_store(addr_range, rd, rs1, rs2, vm, op, conn)
+                        self.exec_load_store(addr_range, rd, rs1, rs2, vm, op, sreg, mem)
                             .context("Executing pre-checked vector access - shouldn't throw CapabilityExceptions under any circumstances")?;
                     },
                     // There was a fast path that raised an exception, re-raise it
@@ -684,7 +691,7 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<&mut dyn VecMemInterface<uXLEN, TElem>> 
                     }
                     // There was no fast path, or it was uncertain if a CapabilityException would actually be raised
                     Ok(false) => {
-                        self.exec_load_store(addr_range, rd, rs1, rs2, vm, op, conn)
+                        self.exec_load_store(addr_range, rd, rs1, rs2, vm, op, sreg, mem)
                             .context("Executing not-pre-checked vector access - may throw CapabilityException")?;
                     },
                 }

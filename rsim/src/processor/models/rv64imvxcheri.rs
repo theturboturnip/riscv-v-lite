@@ -7,7 +7,7 @@ use crate::processor::exceptions::{IllegalInstructionException,MemoryException};
 use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::cheri::{Cc128Cap,CheriRV64RegisterFile,CheriAggregateMemory};
-use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64imCapabilityMode, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64v, Rv64vCheriConn, Rv64vConn, IntVectorRegisterFile, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64imCapabilityMode, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64Cheriv, CheriVectorRegisterFile, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
@@ -27,7 +27,7 @@ pub struct Rv64imvXCheriProcessorModules {
     rv64im: Rv64im,
     rv64im_cap: Rv64imCapabilityMode,
     xcheri: XCheri64,
-    rvv: Rv64v,
+    rvv: Rv64Cheriv,
     zicsr: Option<Zicsr64>
 }
 
@@ -79,7 +79,7 @@ impl Rv64imvXCheriProcessor {
             rv64im: Rv64im{},
             rv64im_cap: Rv64imCapabilityMode{},
             xcheri: XCheri64{},
-            rvv: Rv64v::new(Box::new(IntVectorRegisterFile::default())),
+            rvv: Rv64Cheriv::new(Box::new(CheriVectorRegisterFile::default())),
             zicsr: Some(Zicsr64::default())
         };
 
@@ -88,7 +88,7 @@ impl Rv64imvXCheriProcessor {
         (p, mods)
     }
 
-    fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Rv64v) -> Zicsr64Conn<'b> where 'a: 'b {
+    fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Rv64Cheriv) -> Zicsr64Conn<'b> where 'a: 'b {
         let csr_providers = vec![
             &mut self.csrs as &mut dyn CSRProvider<u64>,
             rvv as &mut dyn CSRProvider<u64>,
@@ -164,16 +164,16 @@ impl Rv64imvXCheriProcessor {
         // Vector, CSR instructions are always handled, regardless of mode
         if mods.rvv.will_handle(opcode, inst) {
             let requested_pc = match mode {
-                CheriExecMode::Capability => mods.rvv.execute(opcode, inst, inst_bits, &mut Rv64vCheriConn {
-                    sreg: &mut self.sreg,
-                    memory: &mut self.memory,
-                })?,
+                CheriExecMode::Capability => mods.rvv.execute(opcode, inst, inst_bits, (
+                    &mut self.sreg,
+                    &mut self.memory,
+                ))?,
                 CheriExecMode::Integer => {
                     let mut mem_wrap = IntegerModeCheriAggregateMemory::wrap(&mut self.memory, self.ddc);
-                    mods.rvv.execute(opcode, inst, inst_bits, &mut Rv64vConn {
-                        sreg: &mut self.sreg,
-                        memory: &mut mem_wrap,
-                    })?
+                    mods.rvv.execute(opcode, inst, inst_bits, (
+                        &mut self.sreg,
+                        &mut mem_wrap,
+                    ))?
                 }
             };
             if let Some(_) = requested_pc {

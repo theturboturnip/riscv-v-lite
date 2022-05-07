@@ -7,7 +7,7 @@ use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::memory::{AggregateMemory,Memory};
 use crate::processor::elements::registers::RvRegisterFile;
-use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64v, Rv64vConn, IntVectorRegisterFile, Zicsr64, Zicsr64Conn, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64v, IntVectorRegisterFile, Zicsr64, Zicsr64Conn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=64-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [Rv64imvProcessorModules]
@@ -60,13 +60,6 @@ impl Rv64imvProcessor {
         (p, mods)
     }
 
-    fn vector_conn<'a,'b>(&'a mut self) -> Rv64vConn<'b> where 'a: 'b {
-        Rv64vConn {
-            sreg: &mut self.sreg,
-            memory: &mut self.memory,
-        }
-    }
-
     fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Option<Rv64v>) -> Zicsr64Conn<'b> where 'a: 'b {
         let mut csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider<u64>];
         if let Some(rvv) = rvv.as_mut() {
@@ -115,7 +108,10 @@ impl Rv64imvProcessor {
         }
         if let Some(rvv) = mods.rvv.as_mut() {
             if rvv.will_handle(opcode, inst) {
-                rvv.execute(opcode, inst, inst_bits, &mut self.vector_conn())?;
+                rvv.execute(opcode, inst, inst_bits, (
+                    &mut self.sreg,
+                    &mut self.memory,
+                ))?;
                 return Ok(next_pc);
             }
         }

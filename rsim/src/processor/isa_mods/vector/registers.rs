@@ -1,3 +1,4 @@
+use crate::processor::elements::cheri::SafeTaggedCap;
 use std::ops::Range;
 use super::types::*;
 use std::convert::TryInto;
@@ -29,11 +30,11 @@ fn bit_range_for_element(eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<(u
 /// 
 /// ```
 /// assert_eq!(
-///     replace_bits(0, 0xf, 12:15),
+///     replace_bits(0, 0xf, 12..15),
 ///     0xf000
 /// );
 /// assert_eq!(
-///     replace_bits(0xffff_ffff, 0b1011, 28:31),
+///     replace_bits(0xffff_ffff, 0b1011, 28..31),
 ///     0xbfff_ffff
 /// );
 /// ```
@@ -55,11 +56,11 @@ fn replace_bits(original: u128, new_data: u128, bits: Range<usize>) -> u128 {
 /// Expects a Verilog-style i.e. all-inclusive bits range.
 ///```
 /// assert_eq!(
-///     extract_bits(0xf000, 12:15),
+///     extract_bits(0xf000, 12..15),
 ///     0xf
 /// );
 /// assert_eq!(
-///     extract_bits(0xbfff_ffff, 28:31),
+///     extract_bits(0xbfff_ffff, 28..31),
 ///     0b1011
 /// );
 /// ```
@@ -98,6 +99,7 @@ pub trait VectorRegisterFile<TElem> {
     fn store_vreg_elem_int(&mut self, eew: Sew, vd_base: u8, idx_from_base: u32, val: u128) -> Result<()>;
 
     fn load_vreg(&mut self, vs: u8) -> Result<TElem>;
+    fn load_vreg_int(&mut self, vs: u8) -> Result<u128>;
     fn store_vreg(&mut self, vs: u8, val: TElem) -> Result<()>;
     fn store_vreg_int(&mut self, vs: u8, val: u128) -> Result<()>;
 
@@ -139,6 +141,9 @@ impl VectorRegisterFile<u128> for IntVectorRegisterFile {
     fn load_vreg(&mut self, vs: u8) -> Result<u128> {
         Ok(self.vreg[vs as usize])
     }
+    fn load_vreg_int(&mut self, vd: u8) -> Result<u128> {
+        Ok(self.vreg[vd as usize])
+    }
     fn store_vreg(&mut self, vd: u8, val: u128) -> Result<()> {
         self.vreg[vd as usize] = val;
         Ok(())
@@ -171,17 +176,93 @@ impl Default for IntVectorRegisterFile {
     }
 }
 
-// pub struct CheriVectorRegisterFile {
-//     vreg: [SafeTaggedCap; 32]
-// }
-// impl VectorRegisterFile<SafeTaggedCap> for CheriVectorRegisterFile {
-//     fn load_vreg(&mut self, vs: u8) -> Result<SafeTaggedCap> {
-//         Ok(self.vreg[vs as usize])
-//     }
-//     fn store_vreg(&mut self, vd: u8, val: SafeTaggedCap) -> Result<()> {
-//         self.vreg[vd as usize] = val;
-//         Ok(())
-//     }
+pub struct CheriVectorRegisterFile {
+    vreg: [SafeTaggedCap; 32]
+}
+impl VectorRegisterFile<SafeTaggedCap> for CheriVectorRegisterFile {
+    fn load_vreg(&mut self, vs: u8) -> Result<SafeTaggedCap> {
+        Ok(self.vreg[vs as usize])
+    }
+    fn load_vreg_int(&mut self, vs: u8) -> Result<u128> {
+        Ok(self.vreg[vs as usize].to_integer())
+    }
+    fn store_vreg(&mut self, vd: u8, val: SafeTaggedCap) -> Result<()> {
+        self.vreg[vd as usize] = val;
+        Ok(())
+    }
+    fn store_vreg_int(&mut self, vd: u8, val: u128) -> Result<()> {
+        self.vreg[vd as usize] = SafeTaggedCap::from_integer(val);
+        Ok(())
+    }
 
+    fn load_vreg_elem(&self, eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<SafeTaggedCap> {
+        let (vd, bits) = bit_range_for_element(eew, vd_base, idx_from_base)?;
 
-// }
+        match eew {
+            Sew::e128 => {
+                // Load the full register, which may be a capability
+                // bits should take up the full range of the register
+                assert_eq!(bits, 0..127);
+                Ok(self.vreg[vd as usize])
+            }
+            _ => {
+                let full_reg = self.vreg[vd as usize].to_integer();
+
+                // Convert the element to the expected type and return
+                Ok(SafeTaggedCap::from_integer(extract_bits(full_reg, bits)))
+            }
+        }
+    }
+    fn load_vreg_elem_int(&self, eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<u128> {
+        Ok(self.load_vreg_elem(eew, vd_base, idx_from_base)?.to_integer())
+    }
+
+    fn store_vreg_elem(&mut self, eew: Sew, vd_base: u8, idx_from_base: u32, val: SafeTaggedCap) -> Result<()> {
+        let (vd, bits) = bit_range_for_element(eew, vd_base, idx_from_base)?;
+
+        match eew {
+            Sew::e128 => {
+                // Store the full register, which may be a capability
+                // bits should take up the full range of the register
+                assert_eq!(bits, 0..127);
+                self.vreg[vd as usize] = val;
+            }
+            _ => {
+                let full_reg = self.vreg[vd as usize].to_integer();
+
+                self.vreg[vd as usize] = SafeTaggedCap::from_integer(
+                    replace_bits(
+                        full_reg, val.to_integer(), bits
+                    )
+                );
+            }
+        };
+
+        Ok(())
+    }
+    fn store_vreg_elem_int(&mut self, eew: Sew, vd_base: u8, idx_from_base: u32, val: u128) -> Result<()> {
+        self.store_vreg_elem(eew, vd_base, idx_from_base, SafeTaggedCap::from_integer(val))
+    }
+
+    fn seg_masked_out(&self, vm: bool, i: usize) -> bool {
+        // vm == 1 for mask disabled, 0 for mask enabled
+        (!vm) && (bits!(self.vreg[0].to_integer(), i:i) == 0)
+    }
+
+    fn dump(&self) {
+        for i in 0..32 {
+            println!("v{} = 0x{:?}", i, self.vreg[i]);
+        }
+    }
+
+    fn reset(&mut self) {
+        self.vreg = [Default::default(); 32];
+    }
+}
+impl Default for CheriVectorRegisterFile {
+    fn default() -> Self {
+        CheriVectorRegisterFile {
+            vreg: [Default::default(); 32]
+        }
+    }
+}

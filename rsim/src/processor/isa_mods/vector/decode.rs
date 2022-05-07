@@ -1,6 +1,6 @@
+use crate::processor::isa_mods::vector::VecRegInterface;
 use crate::processor::isa_mods::PossibleXlen;
 use super::types::*;
-use super::conns::VecMemInterface;
 use crate::processor::decode::{Opcode,InstructionBits};
 
 use anyhow::Result;
@@ -312,7 +312,7 @@ impl DecodedMemOp {
     }
     /// Decode a Load/Store opcode into an DecodedMemOp structure.
     /// Performs all checks to ensure the instruction is a valid RISC-V V vector load/store.
-    pub fn decode_load_store<uXLEN: PossibleXlen, TElem>(opcode: Opcode, inst: InstructionBits, current_vtype: VType, current_vl: u32, conn: &mut dyn VecMemInterface<uXLEN, TElem>) -> Result<DecodedMemOp> {
+    pub fn decode_load_store<uXLEN: PossibleXlen>(opcode: Opcode, inst: InstructionBits, current_vtype: VType, current_vl: u32, sreg: &mut dyn VecRegInterface<uXLEN>) -> Result<DecodedMemOp> {
         if let InstructionBits::FLdStType{rs2, mop, ..} = inst {
             let dir = match opcode {
                 Opcode::LoadFP => MemOpDir::Load,
@@ -335,7 +335,7 @@ impl DecodedMemOp {
             // Determines indexing mode
             let mop = match mop {
                 0b00 => RvvMopType::UnitStride,
-                0b10 => RvvMopType::Strided(conn.sreg_read_xlen(rs2)?.into()),
+                0b10 => RvvMopType::Strided(sreg.sreg_read_xlen(rs2)?.into()),
                 0b01 => RvvMopType::Indexed{ordered: false},
                 0b11 => RvvMopType::Indexed{ordered: true},
 

@@ -7,7 +7,7 @@ use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::memory::{AggregateMemory,Memory};
 use crate::processor::elements::registers::RvRegisterFile;
-use crate::processor::isa_mods::{IsaMod, Rv32im, Rv32imConn, Rv32v, Rv32vConn, IntVectorRegisterFile, Zicsr32, Zicsr32Conn, CSRProvider};
+use crate::processor::isa_mods::{IsaMod, Rv32im, Rv32imConn, Rv32v, IntVectorRegisterFile, Zicsr32, Zicsr32Conn, CSRProvider};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
@@ -60,29 +60,6 @@ impl Processor32 {
         (p, mods)
     }
 
-    /// Get a short-lived connection to scalar resources, usable by the vector unit.
-    /// This connection holds mutable references to fields in the Processor32.
-    /// 
-    /// # Associated Lifetimes
-    /// 
-    /// * `'a` - The lifetime of the Processor32
-    /// * `'b` - The lifetime of the references held in the RvvConn
-    /// 
-    /// `'a : 'b` => `'a` outlives `'b`, e.g. the Processor32 will live longer than the references to its fields.
-    /// Rust needs this guarantee.
-    /// 
-    /// Because Rust isn't smart enough to understand *which* fields in the processor are referenced,
-    /// and the references inside the [RvvConn] are mutable,
-    /// holding a [RvvConn] is equivalent to holding a *mutable reference to the Processor32 and all its fields*.
-    /// This means you couldn't, say, store the [VectorUnit] inside the Processor32 and do `processor.v_unit.exec_inst(connection)`,
-    /// because [VectorUnit::exec_inst()] tries to take a mutable reference to [VectorUnit], but the `connection` holds that reference already.
-    fn vector_conn<'a,'b>(&'a mut self) -> Rv32vConn<'b> where 'a: 'b {
-        Rv32vConn {
-            sreg: &mut self.sreg,
-            memory: &mut self.memory,
-        }
-    }
-
     fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Option<Rv32v>) -> Zicsr32Conn<'b> where 'a: 'b {
         let mut csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider<u32>];
         if let Some(rvv) = rvv.as_mut() {
@@ -131,7 +108,10 @@ impl Processor32 {
         }
         if let Some(rvv) = mods.rvv.as_mut() {
             if rvv.will_handle(opcode, inst) {
-                rvv.execute(opcode, inst, inst_bits, &mut self.vector_conn())?;
+                rvv.execute(opcode, inst, inst_bits, (
+                    &mut self.sreg,
+                    &mut self.memory,
+                ))?;
                 return Ok(next_pc);
             }
         }

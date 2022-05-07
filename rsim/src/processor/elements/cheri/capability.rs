@@ -5,7 +5,7 @@ use crate::processor::exceptions::{CapabilityException,CapOrRegister};
 use std::convert::TryInto;
 
 /// Enumeration that stores either raw data or a valid capability.
-/// The [Cc128Cap] struct has its own tag bit - this will always be True *as long as [SafeTaggedCap::ValidCap] is not created manually*.
+/// The capability inside ValidCap(Cc128Cap) will always have its tag bit = True *as long as [SafeTaggedCap::ValidCap] is not created manually*.
 #[derive(Debug,Copy,Clone,PartialEq,Eq)]
 pub enum SafeTaggedCap {
     RawData{ top: u64, bot: u64 },
@@ -57,6 +57,20 @@ impl SafeTaggedCap {
             SafeTaggedCap::ValidCap(cap) => *cap,
             SafeTaggedCap::RawData{ top, bot } => Cc128::decompress_raw(*top, *bot, false)
         }
+    }
+
+    /// Converts a SafeTaggedCap to a Cc128Cap with tag bit = true.
+    /// Panics if the SafeTaggedCap is not a ValidCap.
+    pub fn unwrap_cap(&self) -> Cc128Cap {
+        match self {
+            SafeTaggedCap::ValidCap(cap) => *cap,
+            SafeTaggedCap::RawData{..} => panic!("unwrap_cap called on RawData")
+        }
+    }
+}
+impl Default for SafeTaggedCap {
+    fn default() -> Self {
+        SafeTaggedCap::RawData{ top: 0, bot: 0 }
     }
 }
 
