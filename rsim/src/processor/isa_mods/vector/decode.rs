@@ -248,12 +248,14 @@ impl DecodedMemOp {
             // EEW = Effective Element Width
             let eew_num = match width {
                 0b0001 | 0b0010 | 0b0011 | 0b0100 => bail!("LoadFP uses width for normal floats, not vectors"),
-                0b1000..=0b1111 => bail!("LoadFP using reserved width {}", width),
+                0b1001..=0b1111 => bail!("LoadFP using reserved width {}", width),
     
                 0b0000 => 8,
                 0b0101 => 16,
                 0b0110 => 32,
                 0b0111 => 64,
+                // Reserved by the spec, 128-bit identifier has not been explicitly identified
+                0b1000 => 128,
     
                 _ => bail!("LoadFP has impossible width {}", width)
             };
@@ -292,6 +294,7 @@ impl DecodedMemOp {
                 16 => Sew::e16,
                 32 => Sew::e32,
                 64 => Sew::e64,
+                128 => Sew::e128,
                 _ => bail!("Impossible EEW {}", eew_num)
             };
             let emul = match emul_times_8 {

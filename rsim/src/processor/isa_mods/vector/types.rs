@@ -91,7 +91,9 @@ impl VType {
             Sew::e32 => 0b010,
             Sew::e64 => 0b011,
 
-            Sew::e128 => todo!("encoding for 128 or capability bits")
+            // Not explicitly specified by the spec, but it's what Clang defaults to
+            // and likely what the spec would use anyway
+            Sew::e128 => 0b100,
         };
         val |= sew_bits << 3;
 
@@ -117,6 +119,8 @@ impl VType {
             0b001 => Sew::e16,
             0b010 => Sew::e32,
             0b011 => Sew::e64,
+            // This is a reserved encoding, but it's what Clang uses and it's likely what would be used for this anyway
+            0b100 => Sew::e128,
 
             // can't have >2bits
             invalid => unreachable!("Bad vtype - invalid SEW selected {:b}", invalid)
