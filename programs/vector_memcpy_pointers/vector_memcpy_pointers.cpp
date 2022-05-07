@@ -141,25 +141,25 @@ typedef struct {
 } Element;
 
 #if __has_feature(capabilities)
-static_assert(alignof(Base* CAPABILITY_IF_SUPPORTED) == 128/8, "Base* capability should be 128-bit aligned");
-static_assert(alignof(Element) == 128/8, "Element should be 128-bit aligned");
+static_assert(alignof(Base* CAPABILITY_IF_SUPPORTED) == 16, "Base* capability should be 128-bit aligned");
+static_assert(alignof(Element) == 16, "Element should be 128-bit aligned");
 #endif
 
 void vector_memcpy(uint8_t __attribute__((aligned(16)))* dst, const uint8_t __attribute__((aligned(16)))* src, size_t num_bytes) {
     // 128-bit instructions are only present on our modified version of CHERI-Clang
     #if __has_feature(capabilities)
-    while (num_bytes >= 128) {
-        size_t num_elements = num_bytes / 128;
-        size_t copied_128byte_elems_per_iter;
+    while (num_bytes >= 16) {
+        size_t num_elements = num_bytes / 16;
+        size_t copied_128bit_elems_per_iter;
         
         // Do the copy in assembly - didn't have enough time to add intrinsics
-        asm volatile ("vsetvli %0, %1, e128, m8, tu, mu" : "=r"(copied_128byte_elems_per_iter) : "r"(num_elements));
+        asm volatile ("vsetvli %0, %1, e128, m8, tu, mu" : "=r"(copied_128bit_elems_per_iter) : "r"(num_elements));
         asm volatile ("vle128.v v8, (%0)" :: ASM_PREG(src));
         asm volatile ("vse128.v v8, (%0)" :: ASM_PREG(dst));
 
-        src += copied_128byte_elems_per_iter * 128;
-        dst += copied_128byte_elems_per_iter * 128;
-        num_bytes -= copied_128byte_elems_per_iter * 128;
+        src += copied_128bit_elems_per_iter * 16;
+        dst += copied_128bit_elems_per_iter * 16;
+        num_bytes -= copied_128bit_elems_per_iter * 16;
     }
     #endif
     // Remainder copy

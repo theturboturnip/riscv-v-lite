@@ -40,11 +40,11 @@ memcpy:
 	.p2align	2
 	.type	_Z13vector_memcpyPhPKhm,@function
 _Z13vector_memcpyPhPKhm:
-	addi	a3, zero, 128
+	addi	a3, zero, 16
 	bltu	a2, a3, .LBB2_3
-	addi	a3, zero, 127
+	addi	a3, zero, 15
 .LBB2_2:
-	srli	a4, a2, 7
+	srli	a4, a2, 4
 	#APP
 	vsetvli	a4, a4, e128, m8, tu, mu
 	#NO_APP
@@ -54,7 +54,7 @@ _Z13vector_memcpyPhPKhm:
 	#APP
 	vse128.v	v8, (a0)
 	#NO_APP
-	slli	a4, a4, 7
+	slli	a4, a4, 4
 	add	a1, a1, a4
 	sub	a2, a2, a4
 	add	a0, a0, a4
@@ -326,7 +326,7 @@ main:
 	.word	0
 	.size	.L__const._Z13run_base_testv.indices, 512
 
-	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project 301572a8ceabc9f61065cd0a63c32f0ea3319656)"
+	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 88213dcf1e9bc454f471b9e9a8b2ede325dc5e24)"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
 	.addrsig_sym outputAttempted

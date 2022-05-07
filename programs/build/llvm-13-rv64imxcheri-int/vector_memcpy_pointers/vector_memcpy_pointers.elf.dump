@@ -1,5 +1,5 @@
 
-/home/samuel/Desktop/Cambs/Project/riscv-v-lite/programs/build/llvm-13-rv64imxcheri-int/vector_memcpy_pointers/vector_memcpy_pointers.elf:	file format elf64-littleriscv
+/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-13-rv64imxcheri-int/vector_memcpy_pointers/vector_memcpy_pointers.elf:	file format elf64-littleriscv
 Contents of section .text.init:
  0000 17010100 13010102 97000000 e780801d  ................
  0010 6f000000                             o...
@@ -8,8 +8,8 @@ Contents of section .text:
  0024 93861600 e31a06fe 67800000 63000602  ........g...c...
  0034 93060500 03870500 2380e600 93861600  ........#.......
  0044 1306f6ff 93851500 e31606fe 67800000  ............g...
- 0054 93060008 6366d602 9306f007 13577600  ....cf.......Wv.
- 0064 57773702 07840512 27040512 13177700  Ww7.....'.....w.
+ 0054 93060001 6366d602 9306f000 13574600  ....cf.......WF.
+ 0064 57773702 07840512 27040512 13174700  Ww7.....'.....G.
  0074 b385e500 3306e640 3305e500 e3e0c6fe  ....3..@3.......
  0084 63000602 d7763604 07840502 27040502  c....v6.....'...
  0094 b385d500 3306d640 3305d500 e31406fe  ....3..@3.......
@@ -72,21 +72,21 @@ Contents of section .data:
  0410 00000000 03000000 01000000 00000000  ................
  0420 03000000 02000000 01000000 00000000  ................
 Contents of section .comment:
- 0000 4c696e6b 65723a20 4c4c4420 31332e30  Linker: LLD 13.0
- 0010 2e302028 7373683a 2f2f6769 74406769  .0 (ssh://git@gi
- 0020 74687562 2e636f6d 2f746865 74757262  thub.com/theturb
- 0030 6f747572 6e69702f 6c6c766d 2d70726f  oturnip/llvm-pro
- 0040 6a656374 20333031 35373261 38636561  ject 301572a8cea
- 0050 62633966 36313036 35636430 61363363  bc9f61065cd0a63c
- 0060 33326630 65613333 31393635 36290063  32f0ea3319656).c
- 0070 6c616e67 20766572 73696f6e 2031332e  lang version 13.
- 0080 302e3020 28737368 3a2f2f67 69744067  0.0 (ssh://git@g
- 0090 69746875 622e636f 6d2f7468 65747572  ithub.com/thetur
- 00a0 626f7475 726e6970 2f6c6c76 6d2d7072  boturnip/llvm-pr
- 00b0 6f6a6563 74203330 31353732 61386365  oject 301572a8ce
- 00c0 61626339 66363130 36356364 30613633  abc9f61065cd0a63
- 00d0 63333266 30656133 33313936 35362900  c32f0ea3319656).
- 00e0 00                                   .
+ 0000 636c616e 67207665 7273696f 6e203133  clang version 13
+ 0010 2e302e30 20287373 683a2f2f 67697440  .0.0 (ssh://git@
+ 0020 67697468 75622e63 6f6d2f74 68657475  github.com/thetu
+ 0030 72626f74 75726e69 702f6c6c 766d2d70  rboturnip/llvm-p
+ 0040 726f6a65 63742e67 69742038 38323133  roject.git 88213
+ 0050 64636631 65396263 34353466 34373162  dcf1e9bc454f471b
+ 0060 39653961 38623265 64653332 35646335  9e9a8b2ede325dc5
+ 0070 65323429 00004c69 6e6b6572 3a204c4c  e24)..Linker: LL
+ 0080 44203133 2e302e30 20287373 683a2f2f  D 13.0.0 (ssh://
+ 0090 67697440 67697468 75622e63 6f6d2f74  git@github.com/t
+ 00a0 68657475 72626f74 75726e69 702f6c6c  heturboturnip/ll
+ 00b0 766d2d70 726f6a65 63742e67 69742038  vm-project.git 8
+ 00c0 38323133 64636631 65396263 34353466  8213dcf1e9bc454f
+ 00d0 34373162 39653961 38623265 64653332  471b9e9a8b2ede32
+ 00e0 35646335 65323429 00                 5dc5e24).
 Contents of section .riscv.attributes:
  0000 413c0000 00726973 63760001 32000000  A<...riscv..2...
  0010 04100572 76363469 3270305f 6d327030  ...rv64i2p0_m2p0
@@ -168,14 +168,14 @@ Disassembly of section .text:
       50: 67 80 00 00  	ret
 
 0000000000000054 <_Z13vector_memcpyPhPKhm>:
-      54: 93 06 00 08  	addi	a3, zero, 128
+      54: 93 06 00 01  	addi	a3, zero, 16
       58: 63 66 d6 02  	bltu	a2, a3, 0x84 <_Z13vector_memcpyPhPKhm+0x30>
-      5c: 93 06 f0 07  	addi	a3, zero, 127
-      60: 13 57 76 00  	srli	a4, a2, 7
+      5c: 93 06 f0 00  	addi	a3, zero, 15
+      60: 13 57 46 00  	srli	a4, a2, 4
       64: 57 77 37 02  	<unknown>
       68: 07 84 05 12  	<unknown>
       6c: 27 04 05 12  	<unknown>
-      70: 13 17 77 00  	slli	a4, a4, 7
+      70: 13 17 47 00  	slli	a4, a4, 4
       74: b3 85 e5 00  	add	a1, a1, a4
       78: 33 06 e6 40  	sub	a2, a2, a4
       7c: 33 05 e5 00  	add	a0, a0, a4

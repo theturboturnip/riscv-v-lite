@@ -178,7 +178,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                     // The index of the final segment = (evl - 1)
                     // The start of the final segment = (evl - 1) * stride
                     // The end of the final segment = (evl - 1) * stride + (nf * eew)
-                    end: (evl as u64) * stride + (nf as u64) * eew.width_in_bytes()
+                    end: (evl as u64 - 1) * stride + (nf as u64) * eew.width_in_bytes()
                 };
                 Range::<u64> {
                     start: base_addr + offset_range.start,

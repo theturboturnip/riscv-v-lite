@@ -243,7 +243,11 @@ impl DecodedMemOp {
     }
 
     fn _get_encoded_emul_eew_nf(inst: InstructionBits, current_vtype: VType) -> Result<(Lmul, Sew, u8)> {
-        if let InstructionBits::FLdStType{width, nf, ..} = inst {
+        if let InstructionBits::FLdStType{width, nf, mew, ..} = inst {
+
+            // The full width = the mew bit + original width
+            let width = if mew { 1 << 3 } else { 0 } | width;
+
             // Get the element width we want to use (which is NOT the same as the one encoded in vtype)
             // EEW = Effective Element Width
             let eew_num = match width {
