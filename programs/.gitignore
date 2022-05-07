@@ -2,6 +2,8 @@
 build/*/*
 # except the project directories
 !build/*/vector_memcpy/
+!build/*/vector_memcpy_old/
+!build/*/vector_memcpy_pointers/
 !build/*/hello_world/
 
 # Ignore all files *within* vector_memcpy
