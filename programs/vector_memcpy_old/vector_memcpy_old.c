@@ -634,61 +634,57 @@ int vector_unit_faultonlyfirst_test_under_fault(void) {
 }
 #endif // ENABLE_FAULTONLYFIRST
 
+// Magical output devices, set by linker
+volatile extern int outputAttempted;
+volatile extern int outputSucceeded;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 int main(void)
 {
-  int *outputDevice = (int*) 0xf0000000; // magic output device
   int result = 0;
+  int attempted = 0;
 
-
-  result |= vector_memcpy_harness(vector_memcpy_8m8) << 0;
-  result |= vector_memcpy_harness(vector_memcpy_16m8) << 1;
-  result |= vector_memcpy_harness(vector_memcpy_32m8) << 2;
+  attempted |= 1 << 0; result |= vector_memcpy_harness(vector_memcpy_8m8) << 0;
+  attempted |= 1 << 1; result |= vector_memcpy_harness(vector_memcpy_16m8) << 1;
+  attempted |= 1 << 2; result |= vector_memcpy_harness(vector_memcpy_32m8) << 2;
   #if ENABLE_FRAC
-  result |= vector_memcpy_harness(vector_memcpy_32mf2) << 3;
-  #else
-  result |= 0 << 3;
+  attempted |= 1 << 3; result |= vector_memcpy_harness(vector_memcpy_32mf2) << 3;
   #endif // ENABLE_FRAC
 
   #if ENABLE_STRIDED
-  result |= vector_memcpy_harness(vector_memcpy_8strided) << 4;
-  result |= vector_memcpy_harness(vector_memcpy_16strided) << 5;
-  result |= vector_memcpy_harness(vector_memcpy_32strided) << 6;
+  attempted |= 1 << 4; result |= vector_memcpy_harness(vector_memcpy_8strided) << 4;
+  attempted |= 1 << 5; result |= vector_memcpy_harness(vector_memcpy_16strided) << 5;
+  attempted |= 1 << 6; result |= vector_memcpy_harness(vector_memcpy_32strided) << 6;
   #endif // ENABLE_STRIDED
 
   #if ENABLE_INDEXED
-  result |= vector_memcpy_harness(vector_memcpy_indexed) << 7;
+  attempted |= 1 << 7; result |= vector_memcpy_harness(vector_memcpy_indexed) << 7;
   #endif // ENABLE_INDEXED
 
   #if ENABLE_MASKED
-  result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 8;
+  attempted |= 1 << 8; result |= vector_memcpy_masked_harness(vector_memcpy_masked) << 8;
   #endif // ENABLE_MASKED
 
   #if ENABLE_SEG
-  result |= vector_memcpy_segmented_harness_i32(vector_memcpy_32m2_seg4load) << 9;
-  #else
-  result |= 0 << 9;
+  attempted |= 1 << 9; result |= vector_memcpy_segmented_harness_i32(vector_memcpy_32m2_seg4load) << 9;
   #endif // ENABLE_SEG
   #if ENABLE_BYTEMASKLOAD
-  result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 10;
-  #else
-  result |= 0 << 10;
+  attempted |= 1 << 10; result |= vector_memcpy_masked_harness(vector_memcpy_masked_bytemaskload) << 10;
   #endif // ENABLE_BYTEMASKLOAD
 
   #if ENABLE_FAULTONLYFIRST
-  result |= vector_memcpy_harness(vector_memcpy_32m8_faultonlyfirst) << 11;
-  result |= vector_unit_faultonlyfirst_test_under_fault() << 12;
+  attempted |= 1 << 11; result |= vector_memcpy_harness(vector_memcpy_32m8_faultonlyfirst) << 11;
+  attempted |= 1 << 12; result |= vector_unit_faultonlyfirst_test_under_fault() << 12;
   #endif // ENABLE_FAULTONLYFIRST
 
   #if ENABLE_ASM_WHOLEREG
-  result |= vector_memcpy_harness(vector_memcpy_32m1_wholereg) << 13;
-  #else
-  result |= 0 << 13;
+  attempted |= 1 << 13; result |= vector_memcpy_harness(vector_memcpy_32m1_wholereg) << 13;
   #endif // ENABLE_ASM_WHOLEREG
 
-  outputDevice[0] = result;
+  *(&outputAttempted) = attempted;
+  *(&outputSucceeded) = result;
   return result;
 }
 #ifdef __cplusplus

@@ -13,3 +13,8 @@ endif()
 
 add_subdirectory(hello_world)
 add_subdirectory(vector_memcpy)
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "xcheri")
+else()
+    # Only compile vector_memcpy_old on not-CHERI settings
+    add_subdirectory(vector_memcpy_old)
+endif()

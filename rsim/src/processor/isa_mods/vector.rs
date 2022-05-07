@@ -176,8 +176,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     // The index of the final segment = (evl - 1)
                     // The start of the final segment = (evl - 1) * stride
                     // The end of the final segment = (evl - 1) * stride + (nf * eew)
-                    // subtract 1 to get the final byte accessed
-                    end: (evl as u64) * stride + (nf as u64) * eew.width_in_bytes() - 1
+                    end: (evl as u64) * stride + (nf as u64) * eew.width_in_bytes()
                 };
                 Range::<u64> {
                     start: base_addr + offset_range.start,
@@ -194,7 +193,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                     // stride = eew * nf
                     // => The end of the final segment = (evl - 1) * eew * nf + eew * nf
                     // = evl * eew * nf
-                    end: (evl as u64) * (nf as u64) * eew.width_in_bytes() - 1
+                    end: (evl as u64) * (nf as u64) * eew.width_in_bytes()
                 };
                 Range::<u64> {
                     start: base_addr + index_range.start ,
@@ -209,7 +208,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
 
                 let offset_range = Range::<u64> {
                     start: *offsets.iter().min().unwrap() as u64,
-                    end: *offsets.iter().max().unwrap() as u64 + (nf as u64 * eew.width_in_bytes()) - 1,
+                    end: *offsets.iter().max().unwrap() as u64 + (nf as u64 * eew.width_in_bytes()),
                 };
                 Range::<u64> {
                     start: base_addr + offset_range.start,
@@ -220,7 +219,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                 // op.evl() accounts for the number of registers
                 let index_range = Range::<u64> {
                     start: 0,
-                    end: (op.evl() as u64) - 1
+                    end: (op.evl() as u64)
                 };
                 Range::<u64> {
                     start: base_addr + index_range.start * eew.width_in_bytes(),
@@ -231,7 +230,7 @@ impl<uXLEN: PossibleXlen> Rvv<uXLEN> {
                 // bytemask does not have segment support
                 let index_range = Range::<u64> {
                     start: self.vstart as u64,
-                    end: (evl as u64) - 1
+                    end: (evl as u64)
                 };
                 Range::<u64> {
                     start: base_addr + index_range.start,
