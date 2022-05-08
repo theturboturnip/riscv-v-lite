@@ -28,10 +28,12 @@ void* memset(void* dest, int ch, size_t count) {
 // Clang 14+ has the correct intrinsics for bytemask loads,
 // and Clang has been tested with wholereg ASM
 
+    // Use intrinsics for BYTEMASK in newer Clangs, otherwise the intrinsics don't exist
     #if __clang_major__ >= 14
-        #define ENABLE_BYTEMASKLOAD 1
+        #define ENABLE_BYTEMASK 1
+        #define USE_ASM_FOR_BYTEMASK 0
     #else
-        #define ENABLE_BYTEMASKLOAD 0
+        #define ENABLE_BYTEMASK 0
     #endif
 
     #if __has_feature(capabilities)
@@ -92,6 +94,7 @@ void* memset(void* dest, int ch, size_t count) {
     #define ENABLE_MASKED 1
     #define ENABLE_SEGMENTED 1
     #define ENABLE_FRAC_LMUL 0
+    #define ENABLE_BYTEMASK 1
 
     // Use intrinsics for all except segmented loads and bytemask
     #define USE_ASM_FOR_UNIT 0
@@ -99,8 +102,9 @@ void* memset(void* dest, int ch, size_t count) {
     #define USE_ASM_FOR_INDEXED 0
     #define USE_ASM_FOR_MASKED 0
     #define USE_ASM_FOR_SEGMENTED 1
+    #define USE_ASM_FOR_BYTEMASK 1
 
-#define ENABLE_BYTEMASKLOAD 0
+
 // it doesn't seem to compile fault-only-first correctly
 #define ENABLE_FAULTONLYFIRST 0
 // it has been tested with the inline asm whole-register loads
@@ -1081,6 +1085,43 @@ void vector_memcpy_masked_e32m8(size_t n, const uint32_t* __restrict__ in, uint3
     }
 }
 #endif // ENABLE_MASKED
+#if ENABLE_BYTEMASK
+void vector_memcpy_masked_bytemask_load_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    uint64_t mask_int = 0;
+    const size_t VLMAX = vsetvlmax_e32m8();
+    if (VLMAX > 64) return;
+    for (size_t i = 0; i < VLMAX; i++) {
+        mask_int |= (i & 1) << i;
+    }
+    vbool4_t mask;
+    #if USE_ASM_FOR_BYTEMASK
+    asm volatile ("vlm.v %0, (%1)" : "=vr"(mask) : ASM_PREG(&mask_int));
+    #else
+    mask = vlm_v_b4(&mask_int, VLMAX);
+    #endif // USE_ASM_FOR_BYTEMASK
+    #if USE_ASM_FOR_MASKED
+    size_t mask_vlen = vsetvlmax_e8m1();
+    asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));
+    #endif // USE_ASM_FOR_MASKED
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32m8(n);
+            if (copied_per_iter == 0) break;
+            vuint32m8_t data;
+            #if USE_ASM_FOR_MASKED
+            asm volatile ("vle32.v %0, (%1), v0.t" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("vse32.v %0, (%1), v0.t" :: "vr"(data),  ASM_PREG(out));
+            #else
+            data = vle32_v_u32m8_m(mask, data, in, copied_per_iter);
+            vse32_v_u32m8_m(mask, out, data, copied_per_iter);
+            #endif // USE_ASM_FOR_MASKED
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_BYTEMASK
 #if ENABLE_SEGMENTED
 void vector_memcpy_segmented_e8m2(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out[4]) {
     while (1) {
@@ -1319,29 +1360,34 @@ int main(void) {
     successful |= vector_memcpy_masked_harness_uint32_t(vector_memcpy_masked_e32m8) << 15;
     #endif // ENABLE_MASKED
     
-    #if ENABLE_SEGMENTED
+    #if ENABLE_BYTEMASK
     attempted  |= 1 << 16;
-    successful |= vector_memcpy_segmented_harness_uint8_t(vector_memcpy_segmented_e8m2) << 16;
-    #endif // ENABLE_SEGMENTED
+    successful |= vector_memcpy_masked_harness_uint32_t(vector_memcpy_masked_bytemask_load_e32m8) << 16;
+    #endif // ENABLE_BYTEMASK
     
     #if ENABLE_SEGMENTED
     attempted  |= 1 << 17;
-    successful |= vector_memcpy_segmented_harness_uint16_t(vector_memcpy_segmented_e16m2) << 17;
+    successful |= vector_memcpy_segmented_harness_uint8_t(vector_memcpy_segmented_e8m2) << 17;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED
     attempted  |= 1 << 18;
-    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32m2) << 18;
+    successful |= vector_memcpy_segmented_harness_uint16_t(vector_memcpy_segmented_e16m2) << 18;
+    #endif // ENABLE_SEGMENTED
+    
+    #if ENABLE_SEGMENTED
+    attempted  |= 1 << 19;
+    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32m2) << 19;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
-    attempted  |= 1 << 19;
-    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32mf2) << 19;
+    attempted  |= 1 << 20;
+    successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32mf2) << 20;
     #endif // ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
     
     #if ENABLE_SEGMENTED
-    attempted  |= 1 << 20;
-    successful |= vector_memcpy_segmented_harness_uint64_t(vector_memcpy_segmented_e64m2) << 20;
+    attempted  |= 1 << 21;
+    successful |= vector_memcpy_segmented_harness_uint64_t(vector_memcpy_segmented_e64m2) << 21;
     #endif // ENABLE_SEGMENTED
     
     *(&outputAttempted) = attempted;

@@ -11,6 +11,7 @@ cargo run direct rv32imv ../programs/build/llvm-13-rv32imv/vector_memcpy_pointer
 
 cargo run direct rv64imv ../programs/build/llvm-13-rv64imv/vector_memcpy_old/mem.bin
 cargo run direct rv64imv ../programs/build/llvm-13-rv64imv/vector_memcpy/mem.bin
+cargo run direct rv64imv ../programs/build/llvm-trunk-rv64imv/vector_memcpy/mem.bin
 cargo run direct rv64imv ../programs/build/llvm-13-rv64imv/hello_world/mem.bin
 cargo run direct rv64imv ../programs/build/llvm-13-rv64imv/vector_memcpy_pointers/mem.bin
 

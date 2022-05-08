@@ -4,13 +4,13 @@
 # The Generic system name is used for embedded targets (targets without OS) in
 # CMake
 set( CMAKE_SYSTEM_NAME          Generic )
-set( CMAKE_SYSTEM_PROCESSOR     rv32imv   )
+set( CMAKE_SYSTEM_PROCESSOR     rv64imv   )
 set( CMAKE_EXECUTABLE_SUFFIX    ".elf" )
 set( CMAKE_EXECUTABLE_SUFFIX_C    ".elf" )
 set( CMAKE_EXECUTABLE_SUFFIX_CXX    ".elf" )
 
 # Look for RISC-V CLANG
-SET(RISCV_CLANG_COMPILER_MAYBE "~/repos/llvm-project/build/bin/clang")
+SET(RISCV_CLANG_COMPILER_MAYBE "$ENV{HOME}/repos/llvm-project/build/bin/clang")
 
 # Select which is found
 if (EXISTS ${RISCV_CLANG_COMPILER_MAYBE})

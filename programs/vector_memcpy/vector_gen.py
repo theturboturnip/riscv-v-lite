@@ -201,12 +201,14 @@ STRIDED_ASM_DEF = "USE_ASM_FOR_STRIDED"
 INDEXED_ASM_DEF = "USE_ASM_FOR_INDEXED"
 MASKED_ASM_DEF = "USE_ASM_FOR_MASKED"
 SEGMENTED_ASM_DEF = "USE_ASM_FOR_SEGMENTED"
+BYTEMASK_ASM_DEF = "USE_ASM_FOR_BYTEMASK"
 
 ENABLE_UNIT_DEF = "ENABLE_UNIT"
 ENABLE_STRIDED_DEF = "ENABLE_STRIDED"
 ENABLE_INDEXED_DEF = "ENABLE_INDEXED"
 ENABLE_MASKED_DEF = "ENABLE_MASKED"
 ENABLE_SEGMENTED_DEF = "ENABLE_SEGMENTED"
+ENABLE_BYTEMASK_DEF = "ENABLE_BYTEMASK"
 
 ENABLE_FRAC_LMUL_DEF = "ENABLE_FRAC_LMUL"
 
@@ -240,10 +242,12 @@ void* memset(void* dest, int ch, size_t count) {
 // Clang 14+ has the correct intrinsics for bytemask loads,
 // and Clang has been tested with wholereg ASM
 
+    // Use intrinsics for BYTEMASK in newer Clangs, otherwise the intrinsics don't exist
     #if __clang_major__ >= 14
-        #define ENABLE_BYTEMASKLOAD 1
+        #define {ENABLE_BYTEMASK_DEF} 1
+        #define {BYTEMASK_ASM_DEF} 0
     #else
-        #define ENABLE_BYTEMASKLOAD 0
+        #define {ENABLE_BYTEMASK_DEF} 0
     #endif
 
     #if __has_feature(capabilities)
@@ -304,6 +308,7 @@ void* memset(void* dest, int ch, size_t count) {
     #define {ENABLE_MASKED_DEF} 1
     #define {ENABLE_SEGMENTED_DEF} 1
     #define {ENABLE_FRAC_LMUL_DEF} 0
+    #define {ENABLE_BYTEMASK_DEF} 1
 
     // Use intrinsics for all except segmented loads and bytemask
     #define {UNIT_ASM_DEF} 0
@@ -311,8 +316,9 @@ void* memset(void* dest, int ch, size_t count) {
     #define {INDEXED_ASM_DEF} 0
     #define {MASKED_ASM_DEF} 0
     #define {SEGMENTED_ASM_DEF} 1
+    #define {BYTEMASK_ASM_DEF} 1
 
-#define ENABLE_BYTEMASKLOAD 0
+
 // it doesn't seem to compile fault-only-first correctly
 #define ENABLE_FAULTONLYFIRST 0
 // it has been tested with the inline asm whole-register loads
@@ -754,6 +760,62 @@ def generate_masked_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     b.write_code(f"n -= copied_per_iter;")
 
 
+def generate_bytemask_tests(b: VectorTestsCpp, vtypes: List[VType]):
+    # Create tests
+    for vtype in vtypes:
+        test = Test(
+            f"vector_memcpy_masked_bytemask_load_{vtype.get_code()}",
+            required_def = ENABLE_BYTEMASK_DEF + (f" && {ENABLE_FRAC_LMUL_DEF}" if vtype.lmul.is_frac() else "")
+        )
+        vtype_type = vtype.get_unsigned_type()
+        vtype_elem_type = vtype.get_unsigned_elem_type()
+        vtype_mask_type = vtype.get_mask_type()
+        vtype_sew_lmul_ratio = vtype.get_sew_lmul_ratio()
+        if vtype_sew_lmul_ratio < 1:
+            raise RuntimeError(f"vtype {vtype} has a SEW/LMUL ratio smaller than 1, so won't have relevant intrinsics")
+        if 128 * vtype.lmul.get_num_regs_consumed() / vtype.sew.value > 64:
+            raise RuntimeError(f"vtype {vtype} uses >64 elements for VLEN=128. The test doesn't account for this")
+        vtype_unit_load_asm = f"vle{vtype.sew.value}.v"
+        vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+        vtype_masked_load = f"vle{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}_m"
+        vtype_masked_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}_m"
+        with b.new_test(test, b.harnesses[f"vector_memcpy_masked_harness_{vtype_elem_type}"]):
+            # Generate mask - make a 64-bit value, set every other bit
+            b.write_code(f"uint64_t mask_int = 0")
+            b.write_code(f"const size_t VLMAX = vsetvlmax_e{vtype.sew.value}{vtype.lmul.get_code()}();")
+            b.write_code(f"if (VLMAX > 64) return;")
+            with b.block("for (size_t i = 0; i < VLMAX; i++)"):
+                b.write_code("mask_int |= (i & 1) << i;")
+            # Load a mask from that integer
+            b.write_code(f"{vtype_mask_type} mask")
+            with b.preproc_guard(BYTEMASK_ASM_DEF):
+                b.write_code(f'asm volatile ("vlm.v %0, (%1)" : "=vr"(mask) : ASM_PREG(&mask_int));')
+                b.write_line("#else")
+                b.write_code(f"mask = vlm_v_b{vtype_sew_lmul_ratio}(&mask_int, VLMAX);")
+            # If we're using ASM for masked instructions, load it into v0 manually
+            with b.preproc_guard(MASKED_ASM_DEF):
+                # Set VLEN, vtype to the same vtype as the mask - i.e. as many 8-bit elements that fit into 1 register
+                b.write_code("size_t mask_vlen = vsetvlmax_e8m1();")
+                b.write_code(f'asm volatile ("vmv.v.v v0, %0" :: "vr"(mask));')
+
+
+            with b.block("while (1)"):
+                with b.with_vlen("n", "copied_per_iter", vtype):
+                    b.write_code(f"if (copied_per_iter == 0) break;")
+                    b.write_code(f"{vtype_type} data;")
+
+                    with b.preproc_guard(MASKED_ASM_DEF):
+                        # Masked load = unit load with extra argument
+                        b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1), v0.t" : "=vr"(data) : ASM_PREG(in));')
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1), v0.t" :: "vr"(data),  ASM_PREG(out));')
+                        b.write_line("#else")
+                        b.write_code(f"data = {vtype_masked_load}(mask, data, in, copied_per_iter);")
+                        b.write_code(f"{vtype_masked_store}(mask, out, data, copied_per_iter)")
+
+                    b.write_code(f"in += copied_per_iter;")
+                    b.write_code(f"out += copied_per_iter;")
+                    b.write_code(f"n -= copied_per_iter;")
+
 def generate_segmented_tests(b: VectorTestsCpp, vtypes: List[VType]):
     # Create tests
     for vtype in vtypes:
@@ -816,6 +878,7 @@ def generate_tests() -> Tuple[str, str]:
     generate_indexed_tests(b, vtypes)
     # emulator doesn't support non-32-bit-aritmnetic
     generate_masked_tests(b, [VType(Sew.e32, Lmul.e8)])
+    generate_bytemask_tests(b, [VType(Sew.e32, Lmul.e8)])
     # Can't use m8 for 4x segmented loads
     # At most can use 2x, so that total number of registers = 8
     generate_segmented_tests(b, [
