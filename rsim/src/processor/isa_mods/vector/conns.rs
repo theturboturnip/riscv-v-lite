@@ -1,3 +1,4 @@
+use crate::processor::elements::cheri::IntegerModeCheriRV64RegisterFile;
 use crate::memory::AggregateMemory;
 use crate::processor::elements::registers::RvRegisterFile;
 use crate::processor::elements::cheri::IntegerModeCheriAggregateMemory;
@@ -32,6 +33,9 @@ pub trait VecRegInterface<uXLEN: PossibleXlen> {
     /// The address can be changed, and then [load_from_memory] and [store_to_memory] 
     /// can reuse the providence with the modified address
     fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)>;
+
+    // TODO move the below into VecMemInterface
+
     /// Check if the provenance `p` allows accesses to the specified address range in the specified direction (load or store).
     /// Note: This addr_range is at the 1-byte level - if you want to access a range of u64s,
     /// make sure the range includes the end of the last u64
@@ -121,6 +125,49 @@ impl<'a> VecRegInterface<u64> for CheriRV64RegisterFile {
     }
     fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)> {
         let cap = self.read_maybe_cap(reg)?.to_cap();
+        Ok((cap.address(), Some(cap)))
+    }
+    fn check_addr_range_against_provenance(&mut self, addr_range: Range<u64>, prov: Provenance, dir: MemOpDir) -> Result<()> {
+        let cap = prov.unwrap();
+        let expected_perms = match dir {
+            MemOpDir::Load => Cc128::PERM_LOAD,
+            MemOpDir::Store => Cc128::PERM_STORE,
+        };
+        check_bounds_against_capability(addr_range, cap, expected_perms)
+    }
+    fn check_elem_bounds_against_provenance(&mut self, eew: Sew, addr_provenance: (u64, Provenance), dir: MemOpDir) -> Result<()> {
+        let (addr, prov) = addr_provenance;
+        let cap = prov.unwrap();
+        let expected_perms = match dir {
+            MemOpDir::Load => Cc128::PERM_LOAD,
+            MemOpDir::Store => Cc128::PERM_STORE,
+        };
+        match eew {
+            Sew::e8 => {
+                check_obj_bounds_against_capability::<u8>(addr, cap, expected_perms)
+            }
+            Sew::e16 => {
+                check_obj_bounds_against_capability::<u16>(addr, cap, expected_perms)
+            }
+            Sew::e32 => {
+                check_obj_bounds_against_capability::<u32>(addr, cap, expected_perms)
+            }
+            Sew::e64 => { bail!("check_elem_bounds_against_provenance {:?} unsupported", eew) }
+            Sew::e128 => {
+                bail!("Unsupported check-bounds width: 128");
+            }
+        }
+    }
+}
+impl<'a> VecRegInterface<u64> for IntegerModeCheriRV64RegisterFile<'a> {
+    fn sreg_read_xlen(&mut self, reg: u8) -> Result<u64> {
+        Ok(self.read(reg)?)
+    }
+    fn sreg_write_xlen(&mut self, reg: u8, val: u64) -> Result<()> {
+        Ok(self.write(reg, val)?)
+    }
+    fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)> {
+        let cap = self.read_ddc_offset_cap(reg)?;
         Ok((cap.address(), Some(cap)))
     }
     fn check_addr_range_against_provenance(&mut self, addr_range: Range<u64>, prov: Provenance, dir: MemOpDir) -> Result<()> {

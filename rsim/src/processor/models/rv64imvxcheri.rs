@@ -1,4 +1,4 @@
-use crate::processor::elements::cheri::IntegerModeCheriAggregateMemory;
+use crate::processor::elements::cheri::{IntegerModeCheriAggregateMemory,IntegerModeCheriRV64RegisterFile};
 use crate::models::Processor;
 use crate::processor::exceptions::IllegalInstructionException::MiscDecodeException;
 use anyhow::{Context,Result};
@@ -169,9 +169,10 @@ impl Rv64imvXCheriProcessor {
                     &mut self.memory,
                 ))?,
                 CheriExecMode::Integer => {
+                    let mut reg_wrap = IntegerModeCheriRV64RegisterFile::wrap(&mut self.sreg, self.ddc);
                     let mut mem_wrap = IntegerModeCheriAggregateMemory::wrap(&mut self.memory, self.ddc);
                     mods.rvv.execute(opcode, inst, inst_bits, (
-                        &mut self.sreg,
+                        &mut reg_wrap,
                         &mut mem_wrap,
                     ))?
                 }
@@ -259,7 +260,7 @@ impl Processor<Rv64imvXCheriProcessorModules> for Rv64imvXCheriProcessor {
 
     /// Dump processor and vector unit state to standard output.
     fn dump(&self, mods: &Rv64imvXCheriProcessorModules) {
-        println!("running: {:?}\npc: {:x?}", self.running, self.pcc);
+        println!("running: {:?}\npc: {:x?}\nddc: {:x?}", self.running, self.pcc, self.ddc);
         self.sreg.dump();
         mods.rvv.dump();
     }

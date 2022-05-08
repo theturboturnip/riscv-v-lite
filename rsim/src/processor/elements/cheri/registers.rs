@@ -1,5 +1,6 @@
 use crate::processor::elements::registers::*;
 use super::capability::*;
+use crate::processor::elements::cheri::CheriRVFuncs;
 
 /// Register file for 64-bit RISC-V that can hold tagged 128-bit capabilities.
 /// 
@@ -113,6 +114,36 @@ impl Default for CheriRV64RegisterFile {
     fn default() -> Self {
         CheriRV64RegisterFile {
             regs: [SafeTaggedCap::RawData{ top: 0, bot: 0 }; 31],
+        }
+    }
+}
+
+pub struct IntegerModeCheriRV64RegisterFile<'a> {
+    base_reg: &'a mut CheriRV64RegisterFile,
+    base_cap: Cc128Cap
+}
+impl<'a> RegisterFile<u64> for IntegerModeCheriRV64RegisterFile<'a> {
+    fn read(&mut self, idx: u8) -> Result<u64, RegisterFileError> {
+        self.base_reg.read_u64(idx)
+    }
+    fn write(&mut self, idx: u8, val: u64) -> Result<(), RegisterFileError> {
+        self.base_reg.write_u64(idx, val)
+    }
+}
+impl<'a> IntegerModeCheriRV64RegisterFile<'a> {
+    pub fn read_ddc_offset_cap(&mut self, idx: u8) -> anyhow::Result<Cc128Cap> {
+        let addr = self.read(idx)?;
+        let cap = self.base_cap.clone();
+        let (success, new_cap) = Cc128::setCapOffset(&cap, addr);
+        if !success {
+            bail!("Setting offset of DDC failed");
+        }
+        Ok(new_cap)
+    }
+    pub fn wrap(base_reg: &'a mut CheriRV64RegisterFile, base_cap: Cc128Cap) -> Self {
+        IntegerModeCheriRV64RegisterFile {
+            base_reg,
+            base_cap
         }
     }
 }
