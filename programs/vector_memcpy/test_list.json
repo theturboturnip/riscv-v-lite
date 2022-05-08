@@ -91,5 +91,20 @@
     },
     "30": {
         "test": "vector_memcpy_unit_stride_faultonlyfirst_e64m2"
+    },
+    "31": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e8m8"
+    },
+    "32": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e16m8"
+    },
+    "33": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e32m8"
+    },
+    "34": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e32mf2"
+    },
+    "35": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e64m2"
     }
 }

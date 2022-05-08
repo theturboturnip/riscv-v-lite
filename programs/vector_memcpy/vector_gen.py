@@ -326,6 +326,10 @@ void* memset(void* dest, int ch, size_t count) {
     // Wholereg is always ASM
     #define {FAULTONLYFIRST_ASM_DEF} 1
 #endif
+
+volatile extern int64_t outputAttempted; // magic output device
+volatile extern int64_t outputSucceeded; // magic output device
+volatile extern int64_t ramBoundary; // edge of writable memory
 """
 
 @dataclass(frozen=True)
@@ -378,20 +382,25 @@ class VectorTestsCpp(VectorCppBuilder_NoCHERI):
 
     @contextlib.contextmanager
     def new_test(self, test: Test, harness: Harness):
-        if harness.name not in self.harnesses:
+        if harness is not None and harness.name not in self.harnesses:
             raise RuntimeError(f"Harness {harness} not added")
             
         self.tests[test] = harness
+
+        if harness:
+            decl = harness.get_test_func_decl(test.name)
+        else:
+            decl = f"int64_t {test.name}()"
         
         if test.required_def:
             with self.preproc_guard(test.required_def):
-                with self.block(harness.get_test_func_decl(test.name)):
+                with self.block(decl):
                     try:
                         yield
                     finally:
                         pass
         else:
-            with self.block(harness.get_test_func_decl(test.name)):
+            with self.block(decl):
                 try:
                     yield
                 finally:
@@ -936,6 +945,46 @@ def generate_unit_fof_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     b.write_code(f"out += copied_per_iter;")
                     b.write_code(f"n -= copied_per_iter;")
 
+def generate_boundary_fof_tests(b: VectorTestsCpp, vtypes: List[VType]):
+    # Create tests
+    for vtype in vtypes:
+        test = Test(
+            f"vector_memcpy_boundary_faultonlyfirst_{vtype.get_code()}",
+            required_def = ENABLE_FAULTONLYFIRST_DEF + (f" && {ENABLE_FRAC_LMUL_DEF}" if vtype.lmul.is_frac() else "")
+        )
+        vtype_type = vtype.get_unsigned_type()
+        vtype_elem_type = vtype.get_unsigned_elem_type()
+        vtype_unit_load_fof = f"vle{vtype.sew.value}ff_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_load_fof_asm = f"vle{vtype.sew.value}.v"
+        vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+        with b.new_test(test, None):
+            b.write_code(f"{vtype_elem_type}* unmapped_ptr = ({vtype_elem_type}*)&ramBoundary")
+
+            # Find the number of elements in a single vector register group
+            b.write_code(f"const size_t VLMAX = vsetvlmax_e{vtype.sew.value}{vtype.lmul.get_code()}();")
+
+            # Write values to the edge of memory
+            with b.block("for (size_t i = 0; i < VLMAX; i++)"):
+                b.write_code("*(unmapped_ptr - VLMAX + i) = i")
+
+            # Foreach N in [1, vlmax]
+            #     run a test case that reads N elements before hitting the edge of memory
+            #     assert the resulting vlen = N
+            with b.block("for (size_t expected_num_copied = 1; expected_num_copied <= VLMAX; expected_num_copied++)"):
+                b.write_code(f"const {vtype_elem_type}* in = unmapped_ptr - expected_num_copied")
+                # Reset the length
+                b.write_code(f"vsetvlmax_e{vtype.sew.value}{vtype.lmul.get_code()}();")
+                # See how the length changes
+                b.write_code(f"size_t new_vl;")
+                with b.preproc_guard(FAULTONLYFIRST_ASM_DEF):
+                    b.write_code(f'asm volatile ("{vtype_unit_load_fof_asm} v8, (%0)" :: ASM_PREG(in));')
+                    b.write_code(f'asm volatile ("csrr %0, vl" : "=r"(new_vl));')
+                    b.write_line("#else")
+                    b.write_code(f"{vtype_unit_load_fof}(in, &new_vl, VLMAX);")
+                b.write_code(f"if (new_vl != VLMAX) return 0;")
+            b.write_code("return 1")
+
 def generate_tests() -> Tuple[str, Dict[Any, Any]]:
     b = VectorTestsCpp()
 
@@ -976,14 +1025,11 @@ def generate_tests() -> Tuple[str, Dict[Any, Any]]:
         VType(Sew.e64, Lmul.e8),
     ])
     generate_unit_fof_tests(b, vtypes)
+    generate_boundary_fof_tests(b, vtypes)
 
     test_json = {}
 
     # Make main
-    b.write_line("")
-    b.write_line("")
-    b.write_code("volatile extern int64_t outputAttempted; // magic output device")
-    b.write_code("volatile extern int64_t outputSucceeded; // magic output device")
     b.write_line("")
     b.write_line("#ifdef __cplusplus")
     b.write_code('extern "C" {')
@@ -995,8 +1041,11 @@ def generate_tests() -> Tuple[str, Dict[Any, Any]]:
         for i, (test, harness) in enumerate(b.tests.items()):
             if test.required_def:
                 b.write_line(f"#if {test.required_def}")
-            b.write_code(f"attempted  |= 1 << {i};")
-            b.write_code(f"successful |= {harness.name}({test.name}) << {i};")
+            b.write_code(f"attempted  |= 1ll << {i};")
+            if harness:
+                b.write_code(f"successful |= {harness.name}({test.name}) << {i};")
+            else:
+                b.write_code(f"successful |= {test.name}() << {i};")
             if test.required_def:
                 b.write_line(f"#endif // {test.required_def}")
             b.write_line("")

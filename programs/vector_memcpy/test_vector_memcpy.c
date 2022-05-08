@@ -109,6 +109,10 @@ void* memset(void* dest, int ch, size_t count) {
     // Wholereg is always ASM
     #define USE_ASM_FOR_FAULTONLYFIRST 1
 #endif
+
+volatile extern int64_t outputAttempted; // magic output device
+volatile extern int64_t outputSucceeded; // magic output device
+volatile extern int64_t ramBoundary; // edge of writable memory
 int64_t vector_memcpy_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
     uint8_t data[128] = {0};
     uint8_t out_data[128] = {0};
@@ -1503,12 +1507,116 @@ void vector_memcpy_unit_stride_faultonlyfirst_e64m2(size_t n, const uint64_t* __
     }
 }
 #endif // ENABLE_FAULTONLYFIRST
-
-
-volatile extern int64_t outputAttempted;
-// magic output device;
-volatile extern int64_t outputSucceeded;
-// magic output device;
+#if ENABLE_FAULTONLYFIRST
+int64_t vector_memcpy_boundary_faultonlyfirst_e8m8() {
+    uint8_t* unmapped_ptr = (uint8_t*)&ramBoundary;
+    const size_t VLMAX = vsetvlmax_e8m8();
+    for (size_t i = 0; i < VLMAX; i++) {
+        *(unmapped_ptr - VLMAX + i) = i;
+    }
+    for (size_t expected_num_copied = 1; expected_num_copied <= VLMAX; expected_num_copied++) {
+        const uint8_t* in = unmapped_ptr - expected_num_copied;
+        vsetvlmax_e8m8();
+        size_t new_vl;
+        #if USE_ASM_FOR_FAULTONLYFIRST
+        asm volatile ("vle8.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("csrr %0, vl" : "=r"(new_vl));
+        #else
+        vle8ff_v_u8m8(in, &new_vl, VLMAX);
+        #endif // USE_ASM_FOR_FAULTONLYFIRST
+        if (new_vl != VLMAX) return 0;
+    }
+    return 1;
+}
+#endif // ENABLE_FAULTONLYFIRST
+#if ENABLE_FAULTONLYFIRST
+int64_t vector_memcpy_boundary_faultonlyfirst_e16m8() {
+    uint16_t* unmapped_ptr = (uint16_t*)&ramBoundary;
+    const size_t VLMAX = vsetvlmax_e16m8();
+    for (size_t i = 0; i < VLMAX; i++) {
+        *(unmapped_ptr - VLMAX + i) = i;
+    }
+    for (size_t expected_num_copied = 1; expected_num_copied <= VLMAX; expected_num_copied++) {
+        const uint16_t* in = unmapped_ptr - expected_num_copied;
+        vsetvlmax_e16m8();
+        size_t new_vl;
+        #if USE_ASM_FOR_FAULTONLYFIRST
+        asm volatile ("vle16.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("csrr %0, vl" : "=r"(new_vl));
+        #else
+        vle16ff_v_u16m8(in, &new_vl, VLMAX);
+        #endif // USE_ASM_FOR_FAULTONLYFIRST
+        if (new_vl != VLMAX) return 0;
+    }
+    return 1;
+}
+#endif // ENABLE_FAULTONLYFIRST
+#if ENABLE_FAULTONLYFIRST
+int64_t vector_memcpy_boundary_faultonlyfirst_e32m8() {
+    uint32_t* unmapped_ptr = (uint32_t*)&ramBoundary;
+    const size_t VLMAX = vsetvlmax_e32m8();
+    for (size_t i = 0; i < VLMAX; i++) {
+        *(unmapped_ptr - VLMAX + i) = i;
+    }
+    for (size_t expected_num_copied = 1; expected_num_copied <= VLMAX; expected_num_copied++) {
+        const uint32_t* in = unmapped_ptr - expected_num_copied;
+        vsetvlmax_e32m8();
+        size_t new_vl;
+        #if USE_ASM_FOR_FAULTONLYFIRST
+        asm volatile ("vle32.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("csrr %0, vl" : "=r"(new_vl));
+        #else
+        vle32ff_v_u32m8(in, &new_vl, VLMAX);
+        #endif // USE_ASM_FOR_FAULTONLYFIRST
+        if (new_vl != VLMAX) return 0;
+    }
+    return 1;
+}
+#endif // ENABLE_FAULTONLYFIRST
+#if ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
+int64_t vector_memcpy_boundary_faultonlyfirst_e32mf2() {
+    uint32_t* unmapped_ptr = (uint32_t*)&ramBoundary;
+    const size_t VLMAX = vsetvlmax_e32mf2();
+    for (size_t i = 0; i < VLMAX; i++) {
+        *(unmapped_ptr - VLMAX + i) = i;
+    }
+    for (size_t expected_num_copied = 1; expected_num_copied <= VLMAX; expected_num_copied++) {
+        const uint32_t* in = unmapped_ptr - expected_num_copied;
+        vsetvlmax_e32mf2();
+        size_t new_vl;
+        #if USE_ASM_FOR_FAULTONLYFIRST
+        asm volatile ("vle32.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("csrr %0, vl" : "=r"(new_vl));
+        #else
+        vle32ff_v_u32mf2(in, &new_vl, VLMAX);
+        #endif // USE_ASM_FOR_FAULTONLYFIRST
+        if (new_vl != VLMAX) return 0;
+    }
+    return 1;
+}
+#endif // ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
+#if ENABLE_FAULTONLYFIRST
+int64_t vector_memcpy_boundary_faultonlyfirst_e64m2() {
+    uint64_t* unmapped_ptr = (uint64_t*)&ramBoundary;
+    const size_t VLMAX = vsetvlmax_e64m2();
+    for (size_t i = 0; i < VLMAX; i++) {
+        *(unmapped_ptr - VLMAX + i) = i;
+    }
+    for (size_t expected_num_copied = 1; expected_num_copied <= VLMAX; expected_num_copied++) {
+        const uint64_t* in = unmapped_ptr - expected_num_copied;
+        vsetvlmax_e64m2();
+        size_t new_vl;
+        #if USE_ASM_FOR_FAULTONLYFIRST
+        asm volatile ("vle64.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("csrr %0, vl" : "=r"(new_vl));
+        #else
+        vle64ff_v_u64m2(in, &new_vl, VLMAX);
+        #endif // USE_ASM_FOR_FAULTONLYFIRST
+        if (new_vl != VLMAX) return 0;
+    }
+    return 1;
+}
+#endif // ENABLE_FAULTONLYFIRST
 
 #ifdef __cplusplus
 extern "C" {;
@@ -1517,158 +1625,183 @@ int main(void) {
     int64_t attempted = 0;
     int64_t successful = 0;
     #if ENABLE_UNIT
-    attempted  |= 1 << 0;
+    attempted  |= 1ll << 0;
     successful |= vector_memcpy_harness_uint8_t(vector_memcpy_unit_stride_e8m8) << 0;
     #endif // ENABLE_UNIT
     
     #if ENABLE_UNIT
-    attempted  |= 1 << 1;
+    attempted  |= 1ll << 1;
     successful |= vector_memcpy_harness_uint16_t(vector_memcpy_unit_stride_e16m8) << 1;
     #endif // ENABLE_UNIT
     
     #if ENABLE_UNIT
-    attempted  |= 1 << 2;
+    attempted  |= 1ll << 2;
     successful |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_e32m8) << 2;
     #endif // ENABLE_UNIT
     
     #if ENABLE_UNIT && ENABLE_FRAC_LMUL
-    attempted  |= 1 << 3;
+    attempted  |= 1ll << 3;
     successful |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_e32mf2) << 3;
     #endif // ENABLE_UNIT && ENABLE_FRAC_LMUL
     
     #if ENABLE_UNIT
-    attempted  |= 1 << 4;
+    attempted  |= 1ll << 4;
     successful |= vector_memcpy_harness_uint64_t(vector_memcpy_unit_stride_e64m2) << 4;
     #endif // ENABLE_UNIT
     
     #if ENABLE_STRIDED
-    attempted  |= 1 << 5;
+    attempted  |= 1ll << 5;
     successful |= vector_memcpy_harness_uint8_t(vector_memcpy_strided_e8m8) << 5;
     #endif // ENABLE_STRIDED
     
     #if ENABLE_STRIDED
-    attempted  |= 1 << 6;
+    attempted  |= 1ll << 6;
     successful |= vector_memcpy_harness_uint16_t(vector_memcpy_strided_e16m8) << 6;
     #endif // ENABLE_STRIDED
     
     #if ENABLE_STRIDED
-    attempted  |= 1 << 7;
+    attempted  |= 1ll << 7;
     successful |= vector_memcpy_harness_uint32_t(vector_memcpy_strided_e32m8) << 7;
     #endif // ENABLE_STRIDED
     
     #if ENABLE_STRIDED && ENABLE_FRAC_LMUL
-    attempted  |= 1 << 8;
+    attempted  |= 1ll << 8;
     successful |= vector_memcpy_harness_uint32_t(vector_memcpy_strided_e32mf2) << 8;
     #endif // ENABLE_STRIDED && ENABLE_FRAC_LMUL
     
     #if ENABLE_STRIDED
-    attempted  |= 1 << 9;
+    attempted  |= 1ll << 9;
     successful |= vector_memcpy_harness_uint64_t(vector_memcpy_strided_e64m2) << 9;
     #endif // ENABLE_STRIDED
     
     #if ENABLE_INDEXED
-    attempted  |= 1 << 10;
+    attempted  |= 1ll << 10;
     successful |= vector_memcpy_harness_uint8_t(vector_memcpy_indexed_e8m8) << 10;
     #endif // ENABLE_INDEXED
     
     #if ENABLE_INDEXED
-    attempted  |= 1 << 11;
+    attempted  |= 1ll << 11;
     successful |= vector_memcpy_harness_uint16_t(vector_memcpy_indexed_e16m8) << 11;
     #endif // ENABLE_INDEXED
     
     #if ENABLE_INDEXED
-    attempted  |= 1 << 12;
+    attempted  |= 1ll << 12;
     successful |= vector_memcpy_harness_uint32_t(vector_memcpy_indexed_e32m8) << 12;
     #endif // ENABLE_INDEXED
     
     #if ENABLE_INDEXED && ENABLE_FRAC_LMUL
-    attempted  |= 1 << 13;
+    attempted  |= 1ll << 13;
     successful |= vector_memcpy_harness_uint32_t(vector_memcpy_indexed_e32mf2) << 13;
     #endif // ENABLE_INDEXED && ENABLE_FRAC_LMUL
     
     #if ENABLE_INDEXED
-    attempted  |= 1 << 14;
+    attempted  |= 1ll << 14;
     successful |= vector_memcpy_harness_uint64_t(vector_memcpy_indexed_e64m2) << 14;
     #endif // ENABLE_INDEXED
     
     #if ENABLE_MASKED
-    attempted  |= 1 << 15;
+    attempted  |= 1ll << 15;
     successful |= vector_memcpy_masked_harness_uint32_t(vector_memcpy_masked_e32m8) << 15;
     #endif // ENABLE_MASKED
     
     #if ENABLE_BYTEMASK
-    attempted  |= 1 << 16;
+    attempted  |= 1ll << 16;
     successful |= vector_memcpy_masked_harness_uint32_t(vector_memcpy_masked_bytemask_load_e32m8) << 16;
     #endif // ENABLE_BYTEMASK
     
     #if ENABLE_SEGMENTED
-    attempted  |= 1 << 17;
+    attempted  |= 1ll << 17;
     successful |= vector_memcpy_segmented_harness_uint8_t(vector_memcpy_segmented_e8m2) << 17;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED
-    attempted  |= 1 << 18;
+    attempted  |= 1ll << 18;
     successful |= vector_memcpy_segmented_harness_uint16_t(vector_memcpy_segmented_e16m2) << 18;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED
-    attempted  |= 1 << 19;
+    attempted  |= 1ll << 19;
     successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32m2) << 19;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
-    attempted  |= 1 << 20;
+    attempted  |= 1ll << 20;
     successful |= vector_memcpy_segmented_harness_uint32_t(vector_memcpy_segmented_e32mf2) << 20;
     #endif // ENABLE_SEGMENTED && ENABLE_FRAC_LMUL
     
     #if ENABLE_SEGMENTED
-    attempted  |= 1 << 21;
+    attempted  |= 1ll << 21;
     successful |= vector_memcpy_segmented_harness_uint64_t(vector_memcpy_segmented_e64m2) << 21;
     #endif // ENABLE_SEGMENTED
     
     #if ENABLE_ASM_WHOLEREG
-    attempted  |= 1 << 22;
+    attempted  |= 1ll << 22;
     successful |= vector_memcpy_harness_uint64_t(vector_memcpy_wholereg_e64m1) << 22;
     #endif // ENABLE_ASM_WHOLEREG
     
     #if ENABLE_ASM_WHOLEREG
-    attempted  |= 1 << 23;
+    attempted  |= 1ll << 23;
     successful |= vector_memcpy_harness_uint64_t(vector_memcpy_wholereg_e64m2) << 23;
     #endif // ENABLE_ASM_WHOLEREG
     
     #if ENABLE_ASM_WHOLEREG
-    attempted  |= 1 << 24;
+    attempted  |= 1ll << 24;
     successful |= vector_memcpy_harness_uint64_t(vector_memcpy_wholereg_e64m4) << 24;
     #endif // ENABLE_ASM_WHOLEREG
     
     #if ENABLE_ASM_WHOLEREG
-    attempted  |= 1 << 25;
+    attempted  |= 1ll << 25;
     successful |= vector_memcpy_harness_uint64_t(vector_memcpy_wholereg_e64m8) << 25;
     #endif // ENABLE_ASM_WHOLEREG
     
     #if ENABLE_FAULTONLYFIRST
-    attempted  |= 1 << 26;
+    attempted  |= 1ll << 26;
     successful |= vector_memcpy_harness_uint8_t(vector_memcpy_unit_stride_faultonlyfirst_e8m8) << 26;
     #endif // ENABLE_FAULTONLYFIRST
     
     #if ENABLE_FAULTONLYFIRST
-    attempted  |= 1 << 27;
+    attempted  |= 1ll << 27;
     successful |= vector_memcpy_harness_uint16_t(vector_memcpy_unit_stride_faultonlyfirst_e16m8) << 27;
     #endif // ENABLE_FAULTONLYFIRST
     
     #if ENABLE_FAULTONLYFIRST
-    attempted  |= 1 << 28;
+    attempted  |= 1ll << 28;
     successful |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_faultonlyfirst_e32m8) << 28;
     #endif // ENABLE_FAULTONLYFIRST
     
     #if ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
-    attempted  |= 1 << 29;
+    attempted  |= 1ll << 29;
     successful |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_faultonlyfirst_e32mf2) << 29;
     #endif // ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
     
     #if ENABLE_FAULTONLYFIRST
-    attempted  |= 1 << 30;
+    attempted  |= 1ll << 30;
     successful |= vector_memcpy_harness_uint64_t(vector_memcpy_unit_stride_faultonlyfirst_e64m2) << 30;
+    #endif // ENABLE_FAULTONLYFIRST
+    
+    #if ENABLE_FAULTONLYFIRST
+    attempted  |= 1ll << 31;
+    successful |= vector_memcpy_boundary_faultonlyfirst_e8m8() << 31;
+    #endif // ENABLE_FAULTONLYFIRST
+    
+    #if ENABLE_FAULTONLYFIRST
+    attempted  |= 1ll << 32;
+    successful |= vector_memcpy_boundary_faultonlyfirst_e16m8() << 32;
+    #endif // ENABLE_FAULTONLYFIRST
+    
+    #if ENABLE_FAULTONLYFIRST
+    attempted  |= 1ll << 33;
+    successful |= vector_memcpy_boundary_faultonlyfirst_e32m8() << 33;
+    #endif // ENABLE_FAULTONLYFIRST
+    
+    #if ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
+    attempted  |= 1ll << 34;
+    successful |= vector_memcpy_boundary_faultonlyfirst_e32mf2() << 34;
+    #endif // ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
+    
+    #if ENABLE_FAULTONLYFIRST
+    attempted  |= 1ll << 35;
+    successful |= vector_memcpy_boundary_faultonlyfirst_e64m2() << 35;
     #endif // ENABLE_FAULTONLYFIRST
     
     *(&outputAttempted) = attempted;
