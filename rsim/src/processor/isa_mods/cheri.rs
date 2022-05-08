@@ -413,6 +413,7 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                     (0x7d, 0) => match rs2 {
                         0xb => {
                             // LC.CAP (RV32??)
+                            // Load Capability with Cap
                             let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
                             // The memory will clear the tag if cs1_val doesn't have a Load_Capability permission
                             let loaded_cap = conn.memory.load_maybe_cap(cs1_val)?;
