@@ -50,6 +50,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define ENABLE_MASKED 1
         #define ENABLE_SEGMENTED 1
         #define ENABLE_FRAC_LMUL 1
+        #define ENABLE_ASM_WHOLEREG 1
 
         // Use ASM for everything
         #define USE_ASM_FOR_UNIT 1
@@ -57,10 +58,9 @@ void* memset(void* dest, int ch, size_t count) {
         #define USE_ASM_FOR_INDEXED 1
         #define USE_ASM_FOR_MASKED 1
         #define USE_ASM_FOR_SEGMENTED 1
+        // WHOLEREG is always ASM - there are no whole reg intrinsics
 
         #define ENABLE_FAULTONLYFIRST 0
-        // This *should* work but LLVM complains about "invalid operand for instruction"
-        #define ENABLE_ASM_WHOLEREG 0
     #else
         // Enable everything
         #define ENABLE_UNIT 1
@@ -69,6 +69,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define ENABLE_MASKED 1
         #define ENABLE_SEGMENTED 1
         #define ENABLE_FRAC_LMUL 1
+        #define ENABLE_ASM_WHOLEREG 1
 
         // Use intrinsics for everything
         #define USE_ASM_FOR_UNIT 0
@@ -76,9 +77,9 @@ void* memset(void* dest, int ch, size_t count) {
         #define USE_ASM_FOR_INDEXED 0
         #define USE_ASM_FOR_MASKED 0
         #define USE_ASM_FOR_SEGMENTED 0
+        // Wholereg has no intrinsics, always ASM
 
         #define ENABLE_FAULTONLYFIRST 1
-        #define ENABLE_ASM_WHOLEREG 1
     #endif
 #elif defined(__GNUC__) && !defined(__INTEL_COMPILER)
 // GNU exts enabled, not in LLVM or Intel, => in GCC
@@ -95,6 +96,7 @@ void* memset(void* dest, int ch, size_t count) {
     #define ENABLE_SEGMENTED 1
     #define ENABLE_FRAC_LMUL 0
     #define ENABLE_BYTEMASK 1
+    #define ENABLE_ASM_WHOLEREG 1
 
     // Use intrinsics for all except segmented loads and bytemask
     #define USE_ASM_FOR_UNIT 0
@@ -103,12 +105,11 @@ void* memset(void* dest, int ch, size_t count) {
     #define USE_ASM_FOR_MASKED 0
     #define USE_ASM_FOR_SEGMENTED 1
     #define USE_ASM_FOR_BYTEMASK 1
+    // Wholereg is always ASM
 
 
 // it doesn't seem to compile fault-only-first correctly
 #define ENABLE_FAULTONLYFIRST 0
-// it has been tested with the inline asm whole-register loads
-#define ENABLE_ASM_WHOLEREG 1
 #endif
 int64_t vector_memcpy_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
     uint8_t data[128] = {0};
@@ -1267,6 +1268,118 @@ void vector_memcpy_segmented_e64m2(size_t n, const uint64_t* __restrict__ in, ui
     }
 }
 #endif // ENABLE_SEGMENTED
+#if ENABLE_ASM_WHOLEREG
+void vector_memcpy_wholereg_e64m1(size_t n, const uint64_t* __restrict__ in, uint64_t* __restrict__ out) {
+    const size_t VLMAX = vsetvlmax_e64m1();
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e64m1(n);
+            if (copied_per_iter == 0) break;
+            vuint64m1_t data;
+            if (copied_per_iter == VLMAX) {
+                asm volatile ("vl1r.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vs1r.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle64.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse64.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle64_v_u64m1(in, copied_per_iter);
+                vse64_v_u64m1(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+            }
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_ASM_WHOLEREG
+#if ENABLE_ASM_WHOLEREG
+void vector_memcpy_wholereg_e64m2(size_t n, const uint64_t* __restrict__ in, uint64_t* __restrict__ out) {
+    const size_t VLMAX = vsetvlmax_e64m2();
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e64m2(n);
+            if (copied_per_iter == 0) break;
+            vuint64m2_t data;
+            if (copied_per_iter == VLMAX) {
+                asm volatile ("vl2r.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vs2r.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle64.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse64.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle64_v_u64m2(in, copied_per_iter);
+                vse64_v_u64m2(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+            }
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_ASM_WHOLEREG
+#if ENABLE_ASM_WHOLEREG
+void vector_memcpy_wholereg_e64m4(size_t n, const uint64_t* __restrict__ in, uint64_t* __restrict__ out) {
+    const size_t VLMAX = vsetvlmax_e64m4();
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e64m4(n);
+            if (copied_per_iter == 0) break;
+            vuint64m4_t data;
+            if (copied_per_iter == VLMAX) {
+                asm volatile ("vl4r.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vs4r.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle64.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse64.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle64_v_u64m4(in, copied_per_iter);
+                vse64_v_u64m4(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+            }
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_ASM_WHOLEREG
+#if ENABLE_ASM_WHOLEREG
+void vector_memcpy_wholereg_e64m8(size_t n, const uint64_t* __restrict__ in, uint64_t* __restrict__ out) {
+    const size_t VLMAX = vsetvlmax_e64m8();
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e64m8(n);
+            if (copied_per_iter == 0) break;
+            vuint64m8_t data;
+            if (copied_per_iter == VLMAX) {
+                asm volatile ("vl8r.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vs8r.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            }
+            else {
+                #if USE_ASM_FOR_UNIT
+                asm volatile ("vle64.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+                asm volatile ("vse64.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+                #else
+                data = vle64_v_u64m8(in, copied_per_iter);
+                vse64_v_u64m8(out, data, copied_per_iter);
+                #endif // USE_ASM_FOR_UNIT
+            }
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_ASM_WHOLEREG
 
 
 volatile extern int64_t outputAttempted;
@@ -1389,6 +1502,26 @@ int main(void) {
     attempted  |= 1 << 21;
     successful |= vector_memcpy_segmented_harness_uint64_t(vector_memcpy_segmented_e64m2) << 21;
     #endif // ENABLE_SEGMENTED
+    
+    #if ENABLE_ASM_WHOLEREG
+    attempted  |= 1 << 22;
+    successful |= vector_memcpy_harness_uint64_t(vector_memcpy_wholereg_e64m1) << 22;
+    #endif // ENABLE_ASM_WHOLEREG
+    
+    #if ENABLE_ASM_WHOLEREG
+    attempted  |= 1 << 23;
+    successful |= vector_memcpy_harness_uint64_t(vector_memcpy_wholereg_e64m2) << 23;
+    #endif // ENABLE_ASM_WHOLEREG
+    
+    #if ENABLE_ASM_WHOLEREG
+    attempted  |= 1 << 24;
+    successful |= vector_memcpy_harness_uint64_t(vector_memcpy_wholereg_e64m4) << 24;
+    #endif // ENABLE_ASM_WHOLEREG
+    
+    #if ENABLE_ASM_WHOLEREG
+    attempted  |= 1 << 25;
+    successful |= vector_memcpy_harness_uint64_t(vector_memcpy_wholereg_e64m8) << 25;
+    #endif // ENABLE_ASM_WHOLEREG
     
     *(&outputAttempted) = attempted;
     *(&outputSucceeded) = successful;

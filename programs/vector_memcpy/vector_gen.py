@@ -209,6 +209,7 @@ ENABLE_INDEXED_DEF = "ENABLE_INDEXED"
 ENABLE_MASKED_DEF = "ENABLE_MASKED"
 ENABLE_SEGMENTED_DEF = "ENABLE_SEGMENTED"
 ENABLE_BYTEMASK_DEF = "ENABLE_BYTEMASK"
+ENABLE_ASM_WHOLEREG_DEF = "ENABLE_ASM_WHOLEREG"
 
 ENABLE_FRAC_LMUL_DEF = "ENABLE_FRAC_LMUL"
 
@@ -264,6 +265,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define {ENABLE_MASKED_DEF} 1
         #define {ENABLE_SEGMENTED_DEF} 1
         #define {ENABLE_FRAC_LMUL_DEF} 1
+        #define {ENABLE_ASM_WHOLEREG_DEF} 1
 
         // Use ASM for everything
         #define {UNIT_ASM_DEF} 1
@@ -271,10 +273,9 @@ void* memset(void* dest, int ch, size_t count) {
         #define {INDEXED_ASM_DEF} 1
         #define {MASKED_ASM_DEF} 1
         #define {SEGMENTED_ASM_DEF} 1
+        // WHOLEREG is always ASM - there are no whole reg intrinsics
 
         #define ENABLE_FAULTONLYFIRST 0
-        // This *should* work but LLVM complains about "invalid operand for instruction"
-        #define ENABLE_ASM_WHOLEREG 0
     #else
         // Enable everything
         #define {ENABLE_UNIT_DEF} 1
@@ -283,6 +284,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define {ENABLE_MASKED_DEF} 1
         #define {ENABLE_SEGMENTED_DEF} 1
         #define {ENABLE_FRAC_LMUL_DEF} 1
+        #define {ENABLE_ASM_WHOLEREG_DEF} 1
 
         // Use intrinsics for everything
         #define {UNIT_ASM_DEF} 0
@@ -290,9 +292,9 @@ void* memset(void* dest, int ch, size_t count) {
         #define {INDEXED_ASM_DEF} 0
         #define {MASKED_ASM_DEF} 0
         #define {SEGMENTED_ASM_DEF} 0
+        // Wholereg has no intrinsics, always ASM
 
         #define ENABLE_FAULTONLYFIRST 1
-        #define ENABLE_ASM_WHOLEREG 1
     #endif
 #elif defined(__GNUC__) && !defined(__INTEL_COMPILER)
 // GNU exts enabled, not in LLVM or Intel, => in GCC
@@ -309,6 +311,7 @@ void* memset(void* dest, int ch, size_t count) {
     #define {ENABLE_SEGMENTED_DEF} 1
     #define {ENABLE_FRAC_LMUL_DEF} 0
     #define {ENABLE_BYTEMASK_DEF} 1
+    #define {ENABLE_ASM_WHOLEREG_DEF} 1
 
     // Use intrinsics for all except segmented loads and bytemask
     #define {UNIT_ASM_DEF} 0
@@ -317,12 +320,11 @@ void* memset(void* dest, int ch, size_t count) {
     #define {MASKED_ASM_DEF} 0
     #define {SEGMENTED_ASM_DEF} 1
     #define {BYTEMASK_ASM_DEF} 1
+    // Wholereg is always ASM
 
 
 // it doesn't seem to compile fault-only-first correctly
 #define ENABLE_FAULTONLYFIRST 0
-// it has been tested with the inline asm whole-register loads
-#define ENABLE_ASM_WHOLEREG 1
 #endif
 """
 
@@ -856,6 +858,50 @@ def generate_segmented_tests(b: VectorTestsCpp, vtypes: List[VType]):
                         b.write_code(f"out[i] += copied_per_iter;")
                     b.write_code(f"n -= copied_per_iter;")
 
+def generate_wholereg_tests(b: VectorTestsCpp, vtypes: List[VType]):
+    # Create tests
+    for vtype in vtypes:
+        test = Test(
+            f"vector_memcpy_wholereg_{vtype.get_code()}",
+            required_def = ENABLE_ASM_WHOLEREG_DEF
+        )
+
+        if vtype.lmul.is_frac():
+            raise RuntimeError("Can't do whole-register test on fractional lmul")
+
+        vtype_type = vtype.get_unsigned_type()
+        vtype_elem_type = vtype.get_unsigned_elem_type()
+        vtype_unit_load = f"vle{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_load_asm = f"vle{vtype.sew.value}.v"
+        vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+
+        vtype_wholereg_load_asm = f"vl{vtype.lmul.get_num_regs_consumed()}r.v"
+        vtype_wholereg_store_asm = f"vs{vtype.lmul.get_num_regs_consumed()}r.v"
+
+        with b.new_test(test, b.harnesses[f"vector_memcpy_harness_{vtype_elem_type}"]):
+            b.write_code(f"const size_t VLMAX = vsetvlmax_e{vtype.sew.value}{vtype.lmul.get_code()}();")
+
+            with b.block("while (1)"):
+                with b.with_vlen("n", "copied_per_iter", vtype):
+                    b.write_code(f"if (copied_per_iter == 0) break;")
+                    b.write_code(f"{vtype_type} data;")
+
+                    with b.block("if (copied_per_iter == VLMAX)"):
+                        b.write_code(f'asm volatile ("{vtype_wholereg_load_asm} %0, (%1)" : "=vr"(data) : ASM_PREG(in));')
+                        b.write_code(f'asm volatile ("{vtype_wholereg_store_asm} %0, (%1)" :: "vr"(data),  ASM_PREG(out));')
+                    with b.block("else"):
+                        with b.preproc_guard(UNIT_ASM_DEF):
+                            b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(data) : ASM_PREG(in));')
+                            b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  ASM_PREG(out));')
+                            b.write_line("#else")
+                            b.write_code(f"data = {vtype_unit_load}(in, copied_per_iter);")
+                            b.write_code(f"{vtype_unit_store}(out, data, copied_per_iter)")
+
+                    b.write_code(f"in += copied_per_iter;")
+                    b.write_code(f"out += copied_per_iter;")
+                    b.write_code(f"n -= copied_per_iter;")
+
 def generate_tests() -> Tuple[str, Dict[Any, Any]]:
     b = VectorTestsCpp()
 
@@ -888,6 +934,12 @@ def generate_tests() -> Tuple[str, Dict[Any, Any]]:
         # Test fractional lmul
         VType(Sew.e32, Lmul.eHalf),
         VType(Sew.e64, Lmul.e2),
+    ])
+    generate_wholereg_tests(b, [
+        VType(Sew.e64, Lmul.e1),
+        VType(Sew.e64, Lmul.e2),
+        VType(Sew.e64, Lmul.e4),
+        VType(Sew.e64, Lmul.e8),
     ])
 
     test_json = {}
