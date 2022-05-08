@@ -647,6 +647,38 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<VecInterface<'_, uXLEN, TElem>> for Rvv<
                                 }
                             }
 
+                            0b000000 => {
+                                // vadd
+                                if (!vm) && rd == 0 {
+                                    bail!(UnsupportedParam("Can't handle vadd on the mask register, because it uses the mask register :)".to_string()));
+                                }
+
+                                for i in self.vstart..self.vl {
+                                    if !self.vreg.seg_masked_out(vm, i as usize) {
+                                        let val = self.vreg.load_vreg_elem_int(self.vtype.vsew, rs2, i)?;
+                                        // Cast the value down to the element type, do the wrapping addition, then cast it back up
+                                        let val = match self.vtype.vsew {
+                                            Sew::e8 => {
+                                                (val as u8).wrapping_add(imm as u8) as u128
+                                            }
+                                            Sew::e16 => {
+                                                (val as u16).wrapping_add(imm as u16) as u128
+                                            }
+                                            Sew::e32 => {
+                                                (val as u32).wrapping_add(imm as u32) as u128
+                                            }
+                                            Sew::e64 => {
+                                                (val as u64).wrapping_add(imm as u64) as u128
+                                            }
+                                            Sew::e128 => {
+                                                (val as u128).wrapping_add(imm as u128) as u128
+                                            }
+                                        };
+                                        self.vreg.store_vreg_elem_int(self.vtype.vsew, rd, i, val)?;
+                                    }
+                                }
+                            }
+
                             _ => bail!(MiscDecodeException(format!(
                                     "Vector arithmetic funct3 {:03b} funct6 {:06b} not yet handled", funct3, funct6)
                             ))

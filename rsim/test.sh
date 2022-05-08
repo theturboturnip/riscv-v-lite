@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-(cd ../programs/ && make)
+(cd ../programs/ && make) || exit 1
+
+cargo build || exit 1
 
 cargo run direct rv32imv ../programs/build/llvm-13-rv32imv/vector_memcpy_old/mem.bin
 cargo run direct rv32imv ../programs/build/llvm-13-rv32imv/vector_memcpy/mem.bin

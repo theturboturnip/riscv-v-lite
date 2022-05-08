@@ -200,7 +200,6 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         }
 
                         let (_, new_cap) = Cc128::setCapBounds(&cs1_val, new_base, new_top);
-                        dbg!(new_cap);
                         conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                     }
                     (0xb, 0x0) => {
@@ -336,7 +335,15 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         }
                         0x4 => {
                             // CGetTag
-                            bail!("Haven't implemented CGetTag")
+                            let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                            conn.sreg.write_u64(
+                                rd,
+                                if cs1_val.tag() {
+                                    1
+                                } else {
+                                    0
+                                }
+                            )?;
                         }
                         0x5 => {
                             // CGetSealed

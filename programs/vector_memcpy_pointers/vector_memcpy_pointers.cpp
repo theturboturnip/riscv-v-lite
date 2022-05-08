@@ -137,7 +137,7 @@ struct Element {
     // We check if the value contained in the Base is the same as it was before
     uint64_t expected_base_value;
     // Make sure the Base pointer is a capability if we're on a capability platform
-    const Base* CAPABILITY_IF_SUPPORTED __attribute__((__aligned__(16))) base_ptr;
+    Base* CAPABILITY_IF_SUPPORTED __attribute__((__aligned__(16))) base_ptr;
 } __attribute__((__aligned__(16)));
 
 #if __has_feature(capabilities)
@@ -187,12 +187,64 @@ void vector_memcpy(uint8_t __attribute__((aligned(16)))* dst, const uint8_t __at
     }
 }
 
-int run_base_test(void) {
+#if __has_feature(capabilities)
+#include <cheri.h>
 
+void vector_memcpy_invalidate(uint8_t __attribute__((aligned(16)))* dst, const uint8_t __attribute__((aligned(16)))* src, size_t num_bytes) {
+    // 128-bit instructions are only present on our modified version of CHERI-Clang
+    while (num_bytes >= 16) {
+        size_t num_elements = num_bytes / 16;
+        size_t copied_128bit_elems_per_iter;
+        
+        // Do the copy in assembly - didn't have enough time to add intrinsics
+        // Use m4 here so that we can use e64m8 to write all registers out in a single instruction
+        asm volatile ("vsetvli %0, %1, e128, m4, tu, mu" : "=r"(copied_128bit_elems_per_iter) : "r"(num_elements));
+        asm volatile ("vle128.v v8, (%0)" :: ASM_PREG(src));
+
+        
+        // Add 0 to all values in the 128-bit registers, writing to them in integer mode => capabilities are invalidated
+        // Change vtype to e64m8 because we have an insruction for that already - in a proper version we would do this at the 128-bit level
+        // Halving the element size => 2x the elements for the same size
+        size_t num_64bit_elements = 2 * copied_128bit_elems_per_iter;
+        asm volatile ("vsetvli x0, %0, e64, m8, tu, mu" :: "r"(num_64bit_elements));
+        // Add 0
+        asm volatile ("vadd.vi v8, v8, 0");
+
+        // Now write out the values as 128
+        // Change vtype back without changing vlen
+        asm volatile ("vsetvli x0, x0, e128, m4, tu, mu");
+        asm volatile ("vse128.v v8, (%0)" :: ASM_PREG(dst));
+
+        src += copied_128bit_elems_per_iter * 16;
+        dst += copied_128bit_elems_per_iter * 16;
+        num_bytes -= copied_128bit_elems_per_iter * 16;
+    }
+    // Remainder copy
+    // These parts will not copy capabilities!
+    while (num_bytes > 0) {
+        size_t copied_per_iter = vsetvl_e8m8(num_bytes);
+
+        vuint8m8_t data;
+        #if USE_ASM_FOR_UNIT
+        asm volatile ("vle8.v %0, (%1)" : "=vr"(data) : ASM_PREG(src));
+        asm volatile ("vse8.v %0, (%1)" :: "vr"(data),  ASM_PREG(dst));
+        #else
+        data = vle8_v_u8m8(src, copied_per_iter);
+        vse8_v_u8m8(dst, data, copied_per_iter);
+        #endif // USE_ASM_FOR_UNIT
+
+        src += copied_per_iter;
+        dst += copied_per_iter;
+        num_bytes -= copied_per_iter;
+    }
+}
+#endif
+
+int run_base_test(void) {
     // Random numbers
     // 746ef0f2a5b4975a 8ce7e0643a62b4a4 
     // 672799971c33ecde 94ff5c7c75ade697 
-    const Base bases[4] = {
+    Base bases[4] = {
         { .value = 0x746ef0f2a5b4975a },
         { .value = 0x8ce7e0643a62b4a4 },
         { .value = 0x672799971c33ecde },
@@ -225,7 +277,7 @@ int run_base_test(void) {
         int index = indices[i];
         source_array[i] = Element {
             .expected_base_value = bases[index].value,
-            .base_ptr = (const Base* CAPABILITY_IF_SUPPORTED) &bases[index]
+            .base_ptr = (Base* CAPABILITY_IF_SUPPORTED) &bases[index]
         };
     }
 
@@ -244,12 +296,75 @@ int run_base_test(void) {
         if (dest_array[i].base_ptr->value != dest_array[i].expected_base_value) {
             return 0; // Failure
         }
-        if (dest_array[i].base_ptr != (const Base* CAPABILITY_IF_SUPPORTED) &bases[indices[i]]) {
+        if (dest_array[i].base_ptr != (Base* CAPABILITY_IF_SUPPORTED) &bases[indices[i]]) {
             return 0;
         }
     }
     return 1;
 }
+
+#if __has_feature(capabilities)
+int run_invalidate_test(void) {
+    // Random numbers
+    // 746ef0f2a5b4975a 8ce7e0643a62b4a4 
+    // 672799971c33ecde 94ff5c7c75ade697 
+    Base bases[4] = {
+        { .value = 0x746ef0f2a5b4975a },
+        { .value = 0x8ce7e0643a62b4a4 },
+        { .value = 0x672799971c33ecde },
+        { .value = 0x94ff5c7c75ade697 },
+    };
+
+    // Randomly generated
+    // The index of the Base that each Element will point to
+    int indices[128] = {
+        1, 1, 1, 1, 2, 2, 3, 0,
+        1, 0, 3, 0, 0, 3, 3, 0,
+        1, 0, 0, 2, 2, 0, 2, 1,
+        0, 0, 0, 3, 2, 0, 1, 1,
+        3, 2, 3, 0, 2, 2, 0, 0,
+        0, 1, 1, 3, 0, 0, 1, 3,
+        1, 2, 3, 2, 2, 0, 2, 1,
+        0, 3, 1, 1, 3, 3, 2, 2,
+        0, 1, 3, 2, 2, 1, 1, 3,
+        2, 2, 0, 1, 1, 3, 0, 1,
+        0, 0, 3, 2, 2, 3, 3, 1,
+        1, 1, 1, 2, 1, 1, 2, 1,
+        2, 2, 1, 1, 3, 1, 1, 3,
+        0, 2, 3, 1, 1, 3, 2, 3,
+        2, 1, 2, 0, 2, 2, 2, 3,
+        0, 3, 1, 0, 3, 2, 1, 0
+    };
+
+    Element source_array[128];
+    for (size_t i = 0; i < 128; i++) {
+        int index = indices[i];
+        source_array[i] = Element {
+            .expected_base_value = bases[index].value,
+            .base_ptr = (Base* CAPABILITY_IF_SUPPORTED) &bases[index]
+        };
+    }
+
+    Element dest_array[128] = {0};
+
+    Element* src_ptr = &source_array[0];
+    Element* dst_ptr = &dest_array[0];
+
+    // Don't force the pointers to the elements to be capabilities
+    vector_memcpy_invalidate((uint8_t*)dst_ptr, (const uint8_t*)src_ptr, sizeof(Element) * 128);
+
+    // Check the resuls
+    for (size_t i = 0; i < 128; i++) {
+        // None of the capabilities should have tag bits
+        Base* CAPABILITY_IF_SUPPORTED ptr = dest_array[i].base_ptr;
+        if (cheri_tag_get(ptr)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+#endif
+
 
 // Magical output devices, set by linker
 volatile extern int outputAttempted;
@@ -265,6 +380,11 @@ int main(void)
 
     attempted |= 1 << 0;
     result |= run_base_test() << 0;
+
+    #if __has_feature(capabilities)
+    attempted |= 1 << 1;
+    result |= run_invalidate_test() << 1;
+    #endif
 
     *(&outputAttempted) = attempted;
     *(&outputSucceeded) = result;
