@@ -128,21 +128,26 @@ void* memcpy(void* dest, const void* src, size_t count) {
 // It consructs an array of small Element structures, which have a pointer to one of many Base structures
 // The Elements are copied into a second array, and the pointers they contain are tested to tell if they can still dereference the bases correctly
 
-typedef struct {
+struct Base {
     uint64_t value;
-} Base;
+} __attribute__((__aligned__(16)));
 
 
-typedef struct {
+struct Element {
     // We check if the value contained in the Base is the same as it was before
     uint64_t expected_base_value;
     // Make sure the Base pointer is a capability if we're on a capability platform
-    const Base* CAPABILITY_IF_SUPPORTED base_ptr;
-} Element;
+    const Base* CAPABILITY_IF_SUPPORTED __attribute__((__aligned__(16))) base_ptr;
+} __attribute__((__aligned__(16)));
 
 #if __has_feature(capabilities)
+// TODO - something about these checks is broken. They all pass on CHERI Capability and CHERI Integer,
+// but the alignment is still broken unless we have the __attribute__((__aligned__(16)))
 static_assert(alignof(Base* CAPABILITY_IF_SUPPORTED) == 16, "Base* capability should be 128-bit aligned");
 static_assert(alignof(Element) == 16, "Element should be 128-bit aligned");
+static_assert(alignof(Element[128]) == 16, "Element[128] should be 128-bit aligned");
+static_assert(offsetof(Element, base_ptr) == 16, "Base* pointer in the element structure should be 128-bit aligned");
+static_assert(sizeof(Element) == 32, "Element should be 8-byte value + 8-byte padding + 16-byte pointer");
 #endif
 
 void vector_memcpy(uint8_t __attribute__((aligned(16)))* dst, const uint8_t __attribute__((aligned(16)))* src, size_t num_bytes) {

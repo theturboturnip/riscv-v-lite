@@ -1,7 +1,7 @@
 add_executable(vector_memcpy_pointers ${INIT_S} vector_memcpy_pointers.cpp)
 set_target_properties(vector_memcpy_pointers PROPERTIES LINK_DEPENDS ${LINK_LD})
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${LINK_LD} -nostdlib")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -fno-inline-functions -ffreestanding -Werror=implicit-function-declaration")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g -fno-inline-functions -ffreestanding -Werror=implicit-function-declaration")
 
 # generate an assembly version of the vector_memcpy_pointers.c file
 # slight hack - CMake represents CMAKE_C_FLAGS as a string, but to pass the individual flags to the compiler we need them as a list.
