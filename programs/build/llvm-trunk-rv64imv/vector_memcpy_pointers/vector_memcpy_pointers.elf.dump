@@ -574,6 +574,8 @@ Contents of section .symtab:
  0f00 d2000000 1000f1ff 00000001 00000000  ................
  0f10 00000000 00000000 e2000000 1000f1ff  ................
  0f20 08000001 00000000 00000000 00000000  ................
+ 0f30 f2000000 1000f1ff 00500200 00000000  .........P......
+ 0f40 00000000 00000000                    ........
 Contents of section .shstrtab:
  0000 002e7465 78742e69 6e697400 2e746578  ..text.init..tex
  0010 74002e64 61746100 2e646562 75675f6c  t..data..debug_l
@@ -604,7 +606,7 @@ Contents of section .strtab:
  00c0 5a313372 756e5f62 6173655f 74657374  Z13run_base_test
  00d0 76006f75 74707574 41747465 6d707465  v.outputAttempte
  00e0 64006f75 74707574 53756363 65656465  d.outputSucceede
- 00f0 6400                                 d.
+ 00f0 64007261 6d426f75 6e646172 7900      d.ramBoundary.
 
 Disassembly of section .text.init:
 

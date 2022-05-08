@@ -73,6 +73,7 @@ Contents of section .symtab:
  0150 a7000000 68010000 30000000 12000200  ....h...0.......
  0160 b5000000 00000001 00000000 1000f1ff  ................
  0170 c5000000 08000001 00000000 1000f1ff  ................
+ 0180 d5000000 00500200 00000000 1000f1ff  .....P..........
 Contents of section .shstrtab:
  0000 002e7465 78742e69 6e697400 2e746578  ..text.init..tex
  0010 74002e63 6f6d6d65 6e74002e 72697363  t..comment..risc
@@ -93,7 +94,8 @@ Contents of section .strtab:
  00a0 625f6d65 6d6f0066 69625f6d 656d6f5f  b_memo.fib_memo_
  00b0 74657374 006f7574 70757441 7474656d  test.outputAttem
  00c0 70746564 006f7574 70757453 75636365  pted.outputSucce
- 00d0 65646564 00                          eded.
+ 00d0 65646564 0072616d 426f756e 64617279  eded.ramBoundary
+ 00e0 00                                   .
 
 Disassembly of section .text.init:
 

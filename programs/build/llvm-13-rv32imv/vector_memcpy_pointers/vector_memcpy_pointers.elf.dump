@@ -453,6 +453,7 @@ Contents of section .symtab:
  0920 eb000000 78000000 34020000 12000200  ....x...4.......
  0930 fe000000 00000001 00000000 1000f1ff  ................
  0940 0e010000 08000001 00000000 1000f1ff  ................
+ 0950 1e010000 00500200 00000000 1000f1ff  .....P..........
 Contents of section .shstrtab:
  0000 002e7465 78742e69 6e697400 2e746578  ..text.init..tex
  0010 74002e64 61746100 2e646562 75675f6c  t..data..debug_l
@@ -482,7 +483,8 @@ Contents of section .strtab:
  00e0 6d637079 5068504b 686a005f 5a313372  mcpyPhPKhj._Z13r
  00f0 756e5f62 6173655f 74657374 76006f75  un_base_testv.ou
  0100 74707574 41747465 6d707465 64006f75  tputAttempted.ou
- 0110 74707574 53756363 65656465 6400      tputSucceeded.
+ 0110 74707574 53756363 65656465 64007261  tputSucceeded.ra
+ 0120 6d426f75 6e646172 7900               mBoundary.
 
 Disassembly of section .text.init:
 

@@ -282,6 +282,7 @@ Contents of section .symtab:
  0600 22040000 84080000 7c000000 12000200  ".......|.......
  0610 4e040000 00000001 00000000 1000f1ff  N...............
  0620 5e040000 08000001 00000000 1000f1ff  ^...............
+ 0630 6e040000 00500200 00000000 1000f1ff  n....P..........
 Contents of section .shstrtab:
  0000 002e7465 78742e69 6e697400 2e746578  ..text.init..tex
  0010 74002e63 6f6d6d65 6e74002e 72697363  t..comment..risc
@@ -359,7 +360,8 @@ Contents of section .strtab:
  0430 756c746f 6e6c7966 69727374 5f746573  ultonlyfirst_tes
  0440 745f756e 6465725f 6661756c 74006f75  t_under_fault.ou
  0450 74707574 41747465 6d707465 64006f75  tputAttempted.ou
- 0460 74707574 53756363 65656465 6400      tputSucceeded.
+ 0460 74707574 53756363 65656465 64007261  tputSucceeded.ra
+ 0470 6d426f75 6e646172 7900               mBoundary.
 
 Disassembly of section .text.init:
 
