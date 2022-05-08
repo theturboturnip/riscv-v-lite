@@ -202,6 +202,7 @@ INDEXED_ASM_DEF = "USE_ASM_FOR_INDEXED"
 MASKED_ASM_DEF = "USE_ASM_FOR_MASKED"
 SEGMENTED_ASM_DEF = "USE_ASM_FOR_SEGMENTED"
 BYTEMASK_ASM_DEF = "USE_ASM_FOR_BYTEMASK"
+FAULTONLYFIRST_ASM_DEF = "USE_ASM_FOR_FAULTONLYFIRST"
 
 ENABLE_UNIT_DEF = "ENABLE_UNIT"
 ENABLE_STRIDED_DEF = "ENABLE_STRIDED"
@@ -210,6 +211,7 @@ ENABLE_MASKED_DEF = "ENABLE_MASKED"
 ENABLE_SEGMENTED_DEF = "ENABLE_SEGMENTED"
 ENABLE_BYTEMASK_DEF = "ENABLE_BYTEMASK"
 ENABLE_ASM_WHOLEREG_DEF = "ENABLE_ASM_WHOLEREG"
+ENABLE_FAULTONLYFIRST_DEF = "ENABLE_FAULTONLYFIRST"
 
 ENABLE_FRAC_LMUL_DEF = "ENABLE_FRAC_LMUL"
 
@@ -266,6 +268,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define {ENABLE_SEGMENTED_DEF} 1
         #define {ENABLE_FRAC_LMUL_DEF} 1
         #define {ENABLE_ASM_WHOLEREG_DEF} 1
+        #define {ENABLE_FAULTONLYFIRST_DEF} 1
 
         // Use ASM for everything
         #define {UNIT_ASM_DEF} 1
@@ -274,8 +277,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define {MASKED_ASM_DEF} 1
         #define {SEGMENTED_ASM_DEF} 1
         // WHOLEREG is always ASM - there are no whole reg intrinsics
-
-        #define ENABLE_FAULTONLYFIRST 0
+        #define {FAULTONLYFIRST_ASM_DEF} 1
     #else
         // Enable everything
         #define {ENABLE_UNIT_DEF} 1
@@ -285,6 +287,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define {ENABLE_SEGMENTED_DEF} 1
         #define {ENABLE_FRAC_LMUL_DEF} 1
         #define {ENABLE_ASM_WHOLEREG_DEF} 1
+        #define {ENABLE_FAULTONLYFIRST_DEF} 1
 
         // Use intrinsics for everything
         #define {UNIT_ASM_DEF} 0
@@ -293,8 +296,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define {MASKED_ASM_DEF} 0
         #define {SEGMENTED_ASM_DEF} 0
         // Wholereg has no intrinsics, always ASM
-
-        #define ENABLE_FAULTONLYFIRST 1
+        #define {FAULTONLYFIRST_ASM_DEF} 0
     #endif
 #elif defined(__GNUC__) && !defined(__INTEL_COMPILER)
 // GNU exts enabled, not in LLVM or Intel, => in GCC
@@ -312,6 +314,7 @@ void* memset(void* dest, int ch, size_t count) {
     #define {ENABLE_FRAC_LMUL_DEF} 0
     #define {ENABLE_BYTEMASK_DEF} 1
     #define {ENABLE_ASM_WHOLEREG_DEF} 1
+    #define {ENABLE_FAULTONLYFIRST_DEF} 0
 
     // Use intrinsics for all except segmented loads and bytemask
     #define {UNIT_ASM_DEF} 0
@@ -321,10 +324,7 @@ void* memset(void* dest, int ch, size_t count) {
     #define {SEGMENTED_ASM_DEF} 1
     #define {BYTEMASK_ASM_DEF} 1
     // Wholereg is always ASM
-
-
-// it doesn't seem to compile fault-only-first correctly
-#define ENABLE_FAULTONLYFIRST 0
+    #define {FAULTONLYFIRST_ASM_DEF} 1
 #endif
 """
 
@@ -902,6 +902,40 @@ def generate_wholereg_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     b.write_code(f"out += copied_per_iter;")
                     b.write_code(f"n -= copied_per_iter;")
 
+def generate_unit_fof_tests(b: VectorTestsCpp, vtypes: List[VType]):
+    # Create tests
+    for vtype in vtypes:
+        test = Test(
+            f"vector_memcpy_unit_stride_faultonlyfirst_{vtype.get_code()}",
+            required_def = ENABLE_FAULTONLYFIRST_DEF + (f" && {ENABLE_FRAC_LMUL_DEF}" if vtype.lmul.is_frac() else "")
+        )
+        vtype_type = vtype.get_unsigned_type()
+        vtype_elem_type = vtype.get_unsigned_elem_type()
+        vtype_unit_load_fof = f"vle{vtype.sew.value}ff_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
+        vtype_unit_load_fof_asm = f"vle{vtype.sew.value}.v"
+        vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+        with b.new_test(test, b.harnesses[f"vector_memcpy_harness_{vtype_elem_type}"]):
+            with b.block("while (1)"):
+                with b.with_vlen("n", "copied_per_iter", vtype):
+                    b.write_code(f"if (copied_per_iter == 0) break;")
+                    b.write_code(f"{vtype_type} data;")
+                    b.write_code(f"size_t new_vl;")
+
+                    with b.preproc_guard(FAULTONLYFIRST_ASM_DEF):
+                        b.write_code(f'asm volatile ("{vtype_unit_load_fof_asm} %0, (%1)" : "=vr"(data) : ASM_PREG(in));')
+                        b.write_code(f'asm volatile ("csrr %0, vl" : "=r"(new_vl));')
+                        b.write_code(f"if (new_vl != copied_per_iter) return;")
+                        b.write_code(f'asm volatile ("{vtype_unit_store_asm} %0, (%1)" :: "vr"(data),  ASM_PREG(out));')
+                        b.write_line("#else")
+                        b.write_code(f"data = {vtype_unit_load_fof}(in, &new_vl, copied_per_iter);")
+                        b.write_code(f"if (new_vl != copied_per_iter) return;")
+                        b.write_code(f"{vtype_unit_store}(out, data, copied_per_iter)")
+
+                    b.write_code(f"in += copied_per_iter;")
+                    b.write_code(f"out += copied_per_iter;")
+                    b.write_code(f"n -= copied_per_iter;")
+
 def generate_tests() -> Tuple[str, Dict[Any, Any]]:
     b = VectorTestsCpp()
 
@@ -941,6 +975,7 @@ def generate_tests() -> Tuple[str, Dict[Any, Any]]:
         VType(Sew.e64, Lmul.e4),
         VType(Sew.e64, Lmul.e8),
     ])
+    generate_unit_fof_tests(b, vtypes)
 
     test_json = {}
 

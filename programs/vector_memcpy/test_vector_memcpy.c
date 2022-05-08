@@ -51,6 +51,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define ENABLE_SEGMENTED 1
         #define ENABLE_FRAC_LMUL 1
         #define ENABLE_ASM_WHOLEREG 1
+        #define ENABLE_FAULTONLYFIRST 1
 
         // Use ASM for everything
         #define USE_ASM_FOR_UNIT 1
@@ -59,8 +60,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define USE_ASM_FOR_MASKED 1
         #define USE_ASM_FOR_SEGMENTED 1
         // WHOLEREG is always ASM - there are no whole reg intrinsics
-
-        #define ENABLE_FAULTONLYFIRST 0
+        #define USE_ASM_FOR_FAULTONLYFIRST 1
     #else
         // Enable everything
         #define ENABLE_UNIT 1
@@ -70,6 +70,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define ENABLE_SEGMENTED 1
         #define ENABLE_FRAC_LMUL 1
         #define ENABLE_ASM_WHOLEREG 1
+        #define ENABLE_FAULTONLYFIRST 1
 
         // Use intrinsics for everything
         #define USE_ASM_FOR_UNIT 0
@@ -78,8 +79,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define USE_ASM_FOR_MASKED 0
         #define USE_ASM_FOR_SEGMENTED 0
         // Wholereg has no intrinsics, always ASM
-
-        #define ENABLE_FAULTONLYFIRST 1
+        #define USE_ASM_FOR_FAULTONLYFIRST 0
     #endif
 #elif defined(__GNUC__) && !defined(__INTEL_COMPILER)
 // GNU exts enabled, not in LLVM or Intel, => in GCC
@@ -97,6 +97,7 @@ void* memset(void* dest, int ch, size_t count) {
     #define ENABLE_FRAC_LMUL 0
     #define ENABLE_BYTEMASK 1
     #define ENABLE_ASM_WHOLEREG 1
+    #define ENABLE_FAULTONLYFIRST 0
 
     // Use intrinsics for all except segmented loads and bytemask
     #define USE_ASM_FOR_UNIT 0
@@ -106,10 +107,7 @@ void* memset(void* dest, int ch, size_t count) {
     #define USE_ASM_FOR_SEGMENTED 1
     #define USE_ASM_FOR_BYTEMASK 1
     // Wholereg is always ASM
-
-
-// it doesn't seem to compile fault-only-first correctly
-#define ENABLE_FAULTONLYFIRST 0
+    #define USE_ASM_FOR_FAULTONLYFIRST 1
 #endif
 int64_t vector_memcpy_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
     uint8_t data[128] = {0};
@@ -1380,6 +1378,131 @@ void vector_memcpy_wholereg_e64m8(size_t n, const uint64_t* __restrict__ in, uin
     }
 }
 #endif // ENABLE_ASM_WHOLEREG
+#if ENABLE_FAULTONLYFIRST
+void vector_memcpy_unit_stride_faultonlyfirst_e8m8(size_t n, const uint8_t* __restrict__ in, uint8_t* __restrict__ out) {
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e8m8(n);
+            if (copied_per_iter == 0) break;
+            vuint8m8_t data;
+            size_t new_vl;
+            #if USE_ASM_FOR_FAULTONLYFIRST
+            asm volatile ("vle8.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("csrr %0, vl" : "=r"(new_vl));
+            if (new_vl != copied_per_iter) return;
+            asm volatile ("vse8.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            #else
+            data = vle8ff_v_u8m8(in, &new_vl, copied_per_iter);
+            if (new_vl != copied_per_iter) return;
+            vse8_v_u8m8(out, data, copied_per_iter);
+            #endif // USE_ASM_FOR_FAULTONLYFIRST
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_FAULTONLYFIRST
+#if ENABLE_FAULTONLYFIRST
+void vector_memcpy_unit_stride_faultonlyfirst_e16m8(size_t n, const uint16_t* __restrict__ in, uint16_t* __restrict__ out) {
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e16m8(n);
+            if (copied_per_iter == 0) break;
+            vuint16m8_t data;
+            size_t new_vl;
+            #if USE_ASM_FOR_FAULTONLYFIRST
+            asm volatile ("vle16.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("csrr %0, vl" : "=r"(new_vl));
+            if (new_vl != copied_per_iter) return;
+            asm volatile ("vse16.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            #else
+            data = vle16ff_v_u16m8(in, &new_vl, copied_per_iter);
+            if (new_vl != copied_per_iter) return;
+            vse16_v_u16m8(out, data, copied_per_iter);
+            #endif // USE_ASM_FOR_FAULTONLYFIRST
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_FAULTONLYFIRST
+#if ENABLE_FAULTONLYFIRST
+void vector_memcpy_unit_stride_faultonlyfirst_e32m8(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32m8(n);
+            if (copied_per_iter == 0) break;
+            vuint32m8_t data;
+            size_t new_vl;
+            #if USE_ASM_FOR_FAULTONLYFIRST
+            asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("csrr %0, vl" : "=r"(new_vl));
+            if (new_vl != copied_per_iter) return;
+            asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            #else
+            data = vle32ff_v_u32m8(in, &new_vl, copied_per_iter);
+            if (new_vl != copied_per_iter) return;
+            vse32_v_u32m8(out, data, copied_per_iter);
+            #endif // USE_ASM_FOR_FAULTONLYFIRST
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_FAULTONLYFIRST
+#if ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
+void vector_memcpy_unit_stride_faultonlyfirst_e32mf2(size_t n, const uint32_t* __restrict__ in, uint32_t* __restrict__ out) {
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e32mf2(n);
+            if (copied_per_iter == 0) break;
+            vuint32mf2_t data;
+            size_t new_vl;
+            #if USE_ASM_FOR_FAULTONLYFIRST
+            asm volatile ("vle32.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("csrr %0, vl" : "=r"(new_vl));
+            if (new_vl != copied_per_iter) return;
+            asm volatile ("vse32.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            #else
+            data = vle32ff_v_u32mf2(in, &new_vl, copied_per_iter);
+            if (new_vl != copied_per_iter) return;
+            vse32_v_u32mf2(out, data, copied_per_iter);
+            #endif // USE_ASM_FOR_FAULTONLYFIRST
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
+#if ENABLE_FAULTONLYFIRST
+void vector_memcpy_unit_stride_faultonlyfirst_e64m2(size_t n, const uint64_t* __restrict__ in, uint64_t* __restrict__ out) {
+    while (1) {
+         {
+            size_t copied_per_iter = vsetvl_e64m2(n);
+            if (copied_per_iter == 0) break;
+            vuint64m2_t data;
+            size_t new_vl;
+            #if USE_ASM_FOR_FAULTONLYFIRST
+            asm volatile ("vle64.v %0, (%1)" : "=vr"(data) : ASM_PREG(in));
+            asm volatile ("csrr %0, vl" : "=r"(new_vl));
+            if (new_vl != copied_per_iter) return;
+            asm volatile ("vse64.v %0, (%1)" :: "vr"(data),  ASM_PREG(out));
+            #else
+            data = vle64ff_v_u64m2(in, &new_vl, copied_per_iter);
+            if (new_vl != copied_per_iter) return;
+            vse64_v_u64m2(out, data, copied_per_iter);
+            #endif // USE_ASM_FOR_FAULTONLYFIRST
+            in += copied_per_iter;
+            out += copied_per_iter;
+            n -= copied_per_iter;
+        }
+    }
+}
+#endif // ENABLE_FAULTONLYFIRST
 
 
 volatile extern int64_t outputAttempted;
@@ -1522,6 +1645,31 @@ int main(void) {
     attempted  |= 1 << 25;
     successful |= vector_memcpy_harness_uint64_t(vector_memcpy_wholereg_e64m8) << 25;
     #endif // ENABLE_ASM_WHOLEREG
+    
+    #if ENABLE_FAULTONLYFIRST
+    attempted  |= 1 << 26;
+    successful |= vector_memcpy_harness_uint8_t(vector_memcpy_unit_stride_faultonlyfirst_e8m8) << 26;
+    #endif // ENABLE_FAULTONLYFIRST
+    
+    #if ENABLE_FAULTONLYFIRST
+    attempted  |= 1 << 27;
+    successful |= vector_memcpy_harness_uint16_t(vector_memcpy_unit_stride_faultonlyfirst_e16m8) << 27;
+    #endif // ENABLE_FAULTONLYFIRST
+    
+    #if ENABLE_FAULTONLYFIRST
+    attempted  |= 1 << 28;
+    successful |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_faultonlyfirst_e32m8) << 28;
+    #endif // ENABLE_FAULTONLYFIRST
+    
+    #if ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
+    attempted  |= 1 << 29;
+    successful |= vector_memcpy_harness_uint32_t(vector_memcpy_unit_stride_faultonlyfirst_e32mf2) << 29;
+    #endif // ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
+    
+    #if ENABLE_FAULTONLYFIRST
+    attempted  |= 1 << 30;
+    successful |= vector_memcpy_harness_uint64_t(vector_memcpy_unit_stride_faultonlyfirst_e64m2) << 30;
+    #endif // ENABLE_FAULTONLYFIRST
     
     *(&outputAttempted) = attempted;
     *(&outputSucceeded) = successful;

@@ -76,5 +76,20 @@
     },
     "25": {
         "test": "vector_memcpy_wholereg_e64m8"
+    },
+    "26": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e8m8"
+    },
+    "27": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e16m8"
+    },
+    "28": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e32m8"
+    },
+    "29": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e32mf2"
+    },
+    "30": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e64m2"
     }
 }

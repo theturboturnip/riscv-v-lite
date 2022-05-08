@@ -1,7 +1,7 @@
 
 /media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-trunk-rv64imv/vector_memcpy/vector_memcpy.elf:	file format elf64-littleriscv
 Contents of section .text.init:
- 0000 17010100 13010102 97200000 e780c0bc  ......... ......
+ 0000 17010100 13010102 97200000 e780c0d1  ......... ......
  0010 6f000000                             o...
 Contents of section .text:
  0014 630c0600 93060500 2380b600 1306f6ff  c.......#.......
@@ -448,49 +448,77 @@ Contents of section .text:
  1ba4 93173700 b385f500 3306f600 3305e540  ..7.....3...3..@
  1bb4 630e0700 5777b505 e30c07fe e31ed7fc  c...Ww..........
  1bc4 078485e2 270486e2 6ff09ffd 67800000  ....'...o...g...
- 1bd4 130101ff 23341100 23308100 37150000  ....#4..#0..7...
- 1be4 1305050e 97e0ffff e7808044 13040500  ...........D....
- 1bf4 37150000 1305c510 97e0ffff e7808052  7..............R
- 1c04 13151500 33648500 37150000 1305c513  ....3d..7.......
- 1c14 97e0ffff e780c061 13152500 3364a400  .......a..%.3d..
- 1c24 37150000 1305c516 97e0ffff e7804060  7.............@`
- 1c34 13153500 3364a400 37150000 1305c519  ..5.3d..7.......
- 1c44 97e0ffff e780006f 13154500 3364a400  .......o..E.3d..
- 1c54 37150000 1305c51c 97e0ffff e780403d  7.............@=
- 1c64 13155500 3364a400 37150000 13058522  ..U.3d..7......"
- 1c74 97e0ffff e780004b 13156500 3364a400  .......K..e.3d..
- 1c84 37150000 13058528 97e0ffff e780405a  7......(......@Z
- 1c94 13157500 3364a400 37150000 1305852e  ..u.3d..7.......
- 1ca4 97e0ffff e780c058 13158500 3364a400  .......X....3d..
- 1cb4 37150000 13058534 97e0ffff e7808067  7......4.......g
- 1cc4 13159500 3364a400 37150000 1305853a  ....3d..7......:
- 1cd4 97e0ffff e780c035 1315a500 3364a400  .......5....3d..
- 1ce4 37150000 13058546 97e0ffff e7808043  7......F.......C
- 1cf4 1315b500 3364a400 37150000 13050553  ....3d..7......S
- 1d04 97e0ffff e780c052 1315c500 3364a400  .......R....3d..
- 1d14 37150000 1305855f 97e0ffff e7804051  7......_......@Q
- 1d24 1315d500 3364a400 37150000 1305056c  ....3d..7......l
- 1d34 97e0ffff e7800060 1315e500 3364a400  .......`....3d..
- 1d44 37150000 13058578 97f0ffff e7808093  7......x........
- 1d54 1315f500 3364a400 37250000 1305c583  ....3d..7%......
- 1d64 97f0ffff e7800092 13150501 3364a400  ............3d..
- 1d74 37250000 1305458b 97f0ffff e78000b6  7%....E.........
- 1d84 13151501 3364a400 37250000 1305c591  ....3d..7%......
- 1d94 97f0ffff e78080d2 13152501 3364a400  ..........%.3d..
- 1da4 37250000 1305c598 97f0ffff e780c0f4  7%..............
- 1db4 13153501 3364a400 37250000 1305859f  ..5.3d..7%......
- 1dc4 97f0ffff e78040f3 13154501 3364a400  ......@...E.3d..
- 1dd4 37250000 130545a6 97f0ffff e780c013  7%....E.........
- 1de4 13155501 3364a400 37250000 130545ad  ..U.3d..7%....E.
- 1df4 97e0ffff e7800054 13156501 3364a400  .......T..e.3d..
- 1e04 37250000 130545b1 97e0ffff e7808052  7%....E........R
- 1e14 13157501 3364a400 37250000 130545b5  ..u.3d..7%....E.
- 1e24 97e0ffff e7800051 13158501 3364a400  .......Q....3d..
- 1e34 37250000 130545b9 97e0ffff e780804f  7%....E........O
- 1e44 13159501 3365a400 b7050001 37060004  ....3e......7...
- 1e54 1b06f6ff 23b0c500 b7050001 23b4a500  ....#.......#...
- 1e64 13050000 83308100 03340100 13010101  .....0...4......
- 1e74 67800000                             g...
+ 1bd4 6f00c000 93060000 638a0602 d7763504  o.......c....v5.
+ 1be4 e38a06fe 07840503 732700c2 e314d7fe  ........s'......
+ 1bf4 57f03604 27040602 b385d500 3306d600  W.6.'.......3...
+ 1c04 3305d540 93061000 e39a06fc 67800000  3..@........g...
+ 1c14 6f00c000 93060000 638c0602 d776b504  o.......c....v..
+ 1c24 e38a06fe 07d40503 732700c2 e314d7fe  ........s'......
+ 1c34 57f0b604 27540602 13971600 b385e500  W...'T..........
+ 1c44 3306e600 3305d540 93061000 e39806fc  3...3..@........
+ 1c54 67800000 6f00c000 93060000 638c0602  g...o.......c...
+ 1c64 d7763505 e38a06fe 07e40503 732700c2  .v5.........s'..
+ 1c74 e314d7fe 57f03605 27640602 13972600  ....W.6.'d....&.
+ 1c84 b385e500 3306e600 3305d540 93061000  ....3...3..@....
+ 1c94 e39806fc 67800000 6f00c000 93060000  ....g...o.......
+ 1ca4 638c0602 d7767505 e38a06fe 07e40503  c....vu.........
+ 1cb4 732700c2 e314d7fe 57f07605 27640602  s'......W.v.'d..
+ 1cc4 13972600 b385e500 3306e600 3305d540  ..&.....3...3..@
+ 1cd4 93061000 e39806fc 67800000 6f00c000  ........g...o...
+ 1ce4 93060000 638c0602 d7769505 e38a06fe  ....c....v......
+ 1cf4 07f40503 732700c2 e314d7fe 57f09605  ....s'......W...
+ 1d04 27740602 13973600 b385e500 3306e600  't....6.....3...
+ 1d14 3305d540 93061000 e39806fc 67800000  3..@........g...
+ 1d24 130101ff 23341100 23308100 37150000  ....#4..#0..7...
+ 1d34 1305050e 97e0ffff e780802f 13040500  .........../....
+ 1d44 37150000 1305c510 97e0ffff e780803d  7..............=
+ 1d54 13151500 33648500 37150000 1305c513  ....3d..7.......
+ 1d64 97e0ffff e780c04c 13152500 3364a400  .......L..%.3d..
+ 1d74 37150000 1305c516 97e0ffff e780404b  7.............@K
+ 1d84 13153500 3364a400 37150000 1305c519  ..5.3d..7.......
+ 1d94 97e0ffff e780005a 13154500 3364a400  .......Z..E.3d..
+ 1da4 37150000 1305c51c 97e0ffff e7804028  7.............@(
+ 1db4 13155500 3364a400 37150000 13058522  ..U.3d..7......"
+ 1dc4 97e0ffff e7800036 13156500 3364a400  .......6..e.3d..
+ 1dd4 37150000 13058528 97e0ffff e7804045  7......(......@E
+ 1de4 13157500 3364a400 37150000 1305852e  ..u.3d..7.......
+ 1df4 97e0ffff e780c043 13158500 3364a400  .......C....3d..
+ 1e04 37150000 13058534 97e0ffff e7808052  7......4.......R
+ 1e14 13159500 3364a400 37150000 1305853a  ....3d..7......:
+ 1e24 97e0ffff e780c020 1315a500 3364a400  ....... ....3d..
+ 1e34 37150000 13058546 97e0ffff e780802e  7......F........
+ 1e44 1315b500 3364a400 37150000 13050553  ....3d..7......S
+ 1e54 97e0ffff e780c03d 1315c500 3364a400  .......=....3d..
+ 1e64 37150000 1305855f 97e0ffff e780403c  7......_......@<
+ 1e74 1315d500 3364a400 37150000 1305056c  ....3d..7......l
+ 1e84 97e0ffff e780004b 1315e500 3364a400  .......K....3d..
+ 1e94 37150000 13058578 97e0ffff e780807e  7......x.......~
+ 1ea4 1315f500 3364a400 37250000 1305c583  ....3d..7%......
+ 1eb4 97e0ffff e780007d 13150501 3364a400  .......}....3d..
+ 1ec4 37250000 1305458b 97f0ffff e78000a1  7%....E.........
+ 1ed4 13151501 3364a400 37250000 1305c591  ....3d..7%......
+ 1ee4 97f0ffff e78080bd 13152501 3364a400  ..........%.3d..
+ 1ef4 37250000 1305c598 97f0ffff e780c0df  7%..............
+ 1f04 13153501 3364a400 37250000 1305859f  ..5.3d..7%......
+ 1f14 97f0ffff e78040de 13154501 3364a400  ......@...E.3d..
+ 1f24 37250000 130545a6 97f0ffff e780c0fe  7%....E.........
+ 1f34 13155501 3364a400 37250000 130545ad  ..U.3d..7%....E.
+ 1f44 97e0ffff e780003f 13156501 3364a400  .......?..e.3d..
+ 1f54 37250000 130545b1 97e0ffff e780803d  7%....E........=
+ 1f64 13157501 3364a400 37250000 130545b5  ..u.3d..7%....E.
+ 1f74 97e0ffff e780003c 13158501 3364a400  .......<....3d..
+ 1f84 37250000 130545b9 97e0ffff e780803a  7%....E........:
+ 1f94 13159501 3364a400 37250000 130545bd  ....3d..7%....E.
+ 1fa4 97e0ffff e780c008 1315a501 3364a400  ............3d..
+ 1fb4 37250000 130545c1 97e0ffff e7808016  7%....E.........
+ 1fc4 1315b501 3364a400 37250000 130585c5  ....3d..7%......
+ 1fd4 97e0ffff e780c025 1315c501 3364a400  .......%....3d..
+ 1fe4 37250000 1305c5c9 97e0ffff e7804024  7%............@$
+ 1ff4 1315d501 3364a400 37250000 130505ce  ....3d..7%......
+ 2004 97e0ffff e7800033 1315e501 3365a400  .......3....3e..
+ 2014 b7050001 37060080 1b06f6ff 23b0c500  ....7.......#...
+ 2024 b7050001 23b4a500 13050000 83308100  ....#........0..
+ 2034 03340100 13010101 67800000           .4......g...
 Contents of section .comment:
  0000 4c696e6b 65723a20 4c4c4420 31352e30  Linker: LLD 15.0
  0010 2e300000 636c616e 67207665 7273696f  .0..clang versio
@@ -516,8 +544,8 @@ Contents of section .symtab:
  0060 17000000 0400f1ff 00000000 00000000  ................
  0070 00000000 00000000 2c000000 1000f1ff  ........,.......
  0080 00000100 00000000 00000000 00000000  ................
- 0090 31000000 12000200 d41b0000 00000000  1...............
- 00a0 a4020000 00000000 36000000 12000200  ........6.......
+ 0090 31000000 12000200 241d0000 00000000  1.......$.......
+ 00a0 1c030000 00000000 36000000 12000200  ........6.......
  00b0 14000000 00000000 1c000000 00000000  ................
  00c0 3d000000 12000200 30000000 00000000  =.......0.......
  00d0 f4000000 00000000 5b000000 12000200  ........[.......
@@ -576,9 +604,17 @@ Contents of section .symtab:
  0420 be040000 12000200 541b0000 00000000  ........T.......
  0430 40000000 00000000 db040000 12000200  @...............
  0440 941b0000 00000000 40000000 00000000  ........@.......
- 0450 f8040000 1000f1ff 00000001 00000000  ................
- 0460 00000000 00000000 08050000 1000f1ff  ................
- 0470 08000001 00000000 00000000 00000000  ................
+ 0450 f8040000 12000200 d41b0000 00000000  ................
+ 0460 40000000 00000000 26050000 12000200  @.......&.......
+ 0470 141c0000 00000000 44000000 00000000  ........D.......
+ 0480 55050000 12000200 581c0000 00000000  U.......X.......
+ 0490 44000000 00000000 84050000 12000200  D...............
+ 04a0 9c1c0000 00000000 44000000 00000000  ........D.......
+ 04b0 b4050000 12000200 e01c0000 00000000  ................
+ 04c0 44000000 00000000 e3050000 1000f1ff  D...............
+ 04d0 00000001 00000000 00000000 00000000  ................
+ 04e0 f3050000 1000f1ff 08000001 00000000  ................
+ 04f0 00000000 00000000                    ........
 Contents of section .shstrtab:
  0000 002e7465 78742e69 6e697400 2e746578  ..text.init..tex
  0010 74002e63 6f6d6d65 6e74002e 72697363  t..comment..risc
@@ -665,9 +701,24 @@ Contents of section .strtab:
  04c0 63746f72 5f6d656d 6370795f 77686f6c  ctor_memcpy_whol
  04d0 65726567 5f653634 6d340076 6563746f  ereg_e64m4.vecto
  04e0 725f6d65 6d637079 5f77686f 6c657265  r_memcpy_wholere
- 04f0 675f6536 346d3800 6f757470 75744174  g_e64m8.outputAt
- 0500 74656d70 74656400 6f757470 75745375  tempted.outputSu
- 0510 63636565 64656400                    cceeded.
+ 04f0 675f6536 346d3800 76656374 6f725f6d  g_e64m8.vector_m
+ 0500 656d6370 795f756e 69745f73 74726964  emcpy_unit_strid
+ 0510 655f6661 756c746f 6e6c7966 69727374  e_faultonlyfirst
+ 0520 5f65386d 38007665 63746f72 5f6d656d  _e8m8.vector_mem
+ 0530 6370795f 756e6974 5f737472 6964655f  cpy_unit_stride_
+ 0540 6661756c 746f6e6c 79666972 73745f65  faultonlyfirst_e
+ 0550 31366d38 00766563 746f725f 6d656d63  16m8.vector_memc
+ 0560 70795f75 6e69745f 73747269 64655f66  py_unit_stride_f
+ 0570 61756c74 6f6e6c79 66697273 745f6533  aultonlyfirst_e3
+ 0580 326d3800 76656374 6f725f6d 656d6370  2m8.vector_memcp
+ 0590 795f756e 69745f73 74726964 655f6661  y_unit_stride_fa
+ 05a0 756c746f 6e6c7966 69727374 5f653332  ultonlyfirst_e32
+ 05b0 6d663200 76656374 6f725f6d 656d6370  mf2.vector_memcp
+ 05c0 795f756e 69745f73 74726964 655f6661  y_unit_stride_fa
+ 05d0 756c746f 6e6c7966 69727374 5f653634  ultonlyfirst_e64
+ 05e0 6d32006f 75747075 74417474 656d7074  m2.outputAttempt
+ 05f0 6564006f 75747075 74537563 63656564  ed.outputSucceed
+ 0600 656400                               ed.
 
 Disassembly of section .text.init:
 
@@ -675,7 +726,7 @@ Disassembly of section .text.init:
        0: 17 01 01 00  	auipc	sp, 16
        4: 13 01 01 02  	addi	sp, sp, 32
        8: 97 20 00 00  	auipc	ra, 2
-       c: e7 80 c0 bc  	jalr	-1076(ra)
+       c: e7 80 c0 d1  	jalr	-740(ra)
 
 0000000000000010 <end>:
       10: 6f 00 00 00  	j	0x10 <end>
@@ -2536,173 +2587,297 @@ Disassembly of section .text:
     1bcc: 6f f0 9f fd  	j	0x1ba4 <vector_memcpy_wholereg_e64m8+0x10>
     1bd0: 67 80 00 00  	ret
 
-0000000000001bd4 <main>:
-    1bd4: 13 01 01 ff  	addi	sp, sp, -16
-    1bd8: 23 34 11 00  	sd	ra, 8(sp)
-    1bdc: 23 30 81 00  	sd	s0, 0(sp)
-    1be0: 37 15 00 00  	lui	a0, 1
-    1be4: 13 05 05 0e  	addi	a0, a0, 224
-    1be8: 97 e0 ff ff  	auipc	ra, 1048574
-    1bec: e7 80 80 44  	jalr	1096(ra)
-    1bf0: 13 04 05 00  	mv	s0, a0
-    1bf4: 37 15 00 00  	lui	a0, 1
-    1bf8: 13 05 c5 10  	addi	a0, a0, 268
-    1bfc: 97 e0 ff ff  	auipc	ra, 1048574
-    1c00: e7 80 80 52  	jalr	1320(ra)
-    1c04: 13 15 15 00  	slli	a0, a0, 1
-    1c08: 33 64 85 00  	or	s0, a0, s0
-    1c0c: 37 15 00 00  	lui	a0, 1
-    1c10: 13 05 c5 13  	addi	a0, a0, 316
-    1c14: 97 e0 ff ff  	auipc	ra, 1048574
-    1c18: e7 80 c0 61  	jalr	1564(ra)
-    1c1c: 13 15 25 00  	slli	a0, a0, 2
-    1c20: 33 64 a4 00  	or	s0, s0, a0
-    1c24: 37 15 00 00  	lui	a0, 1
-    1c28: 13 05 c5 16  	addi	a0, a0, 364
-    1c2c: 97 e0 ff ff  	auipc	ra, 1048574
-    1c30: e7 80 40 60  	jalr	1540(ra)
-    1c34: 13 15 35 00  	slli	a0, a0, 3
-    1c38: 33 64 a4 00  	or	s0, s0, a0
-    1c3c: 37 15 00 00  	lui	a0, 1
-    1c40: 13 05 c5 19  	addi	a0, a0, 412
-    1c44: 97 e0 ff ff  	auipc	ra, 1048574
-    1c48: e7 80 00 6f  	jalr	1776(ra)
-    1c4c: 13 15 45 00  	slli	a0, a0, 4
-    1c50: 33 64 a4 00  	or	s0, s0, a0
-    1c54: 37 15 00 00  	lui	a0, 1
-    1c58: 13 05 c5 1c  	addi	a0, a0, 460
-    1c5c: 97 e0 ff ff  	auipc	ra, 1048574
-    1c60: e7 80 40 3d  	jalr	980(ra)
-    1c64: 13 15 55 00  	slli	a0, a0, 5
-    1c68: 33 64 a4 00  	or	s0, s0, a0
-    1c6c: 37 15 00 00  	lui	a0, 1
-    1c70: 13 05 85 22  	addi	a0, a0, 552
-    1c74: 97 e0 ff ff  	auipc	ra, 1048574
-    1c78: e7 80 00 4b  	jalr	1200(ra)
-    1c7c: 13 15 65 00  	slli	a0, a0, 6
-    1c80: 33 64 a4 00  	or	s0, s0, a0
-    1c84: 37 15 00 00  	lui	a0, 1
-    1c88: 13 05 85 28  	addi	a0, a0, 648
-    1c8c: 97 e0 ff ff  	auipc	ra, 1048574
-    1c90: e7 80 40 5a  	jalr	1444(ra)
-    1c94: 13 15 75 00  	slli	a0, a0, 7
-    1c98: 33 64 a4 00  	or	s0, s0, a0
-    1c9c: 37 15 00 00  	lui	a0, 1
-    1ca0: 13 05 85 2e  	addi	a0, a0, 744
-    1ca4: 97 e0 ff ff  	auipc	ra, 1048574
-    1ca8: e7 80 c0 58  	jalr	1420(ra)
-    1cac: 13 15 85 00  	slli	a0, a0, 8
-    1cb0: 33 64 a4 00  	or	s0, s0, a0
-    1cb4: 37 15 00 00  	lui	a0, 1
-    1cb8: 13 05 85 34  	addi	a0, a0, 840
-    1cbc: 97 e0 ff ff  	auipc	ra, 1048574
-    1cc0: e7 80 80 67  	jalr	1656(ra)
-    1cc4: 13 15 95 00  	slli	a0, a0, 9
-    1cc8: 33 64 a4 00  	or	s0, s0, a0
-    1ccc: 37 15 00 00  	lui	a0, 1
-    1cd0: 13 05 85 3a  	addi	a0, a0, 936
-    1cd4: 97 e0 ff ff  	auipc	ra, 1048574
-    1cd8: e7 80 c0 35  	jalr	860(ra)
-    1cdc: 13 15 a5 00  	slli	a0, a0, 10
-    1ce0: 33 64 a4 00  	or	s0, s0, a0
-    1ce4: 37 15 00 00  	lui	a0, 1
-    1ce8: 13 05 85 46  	addi	a0, a0, 1128
-    1cec: 97 e0 ff ff  	auipc	ra, 1048574
-    1cf0: e7 80 80 43  	jalr	1080(ra)
-    1cf4: 13 15 b5 00  	slli	a0, a0, 11
-    1cf8: 33 64 a4 00  	or	s0, s0, a0
-    1cfc: 37 15 00 00  	lui	a0, 1
-    1d00: 13 05 05 53  	addi	a0, a0, 1328
-    1d04: 97 e0 ff ff  	auipc	ra, 1048574
-    1d08: e7 80 c0 52  	jalr	1324(ra)
-    1d0c: 13 15 c5 00  	slli	a0, a0, 12
-    1d10: 33 64 a4 00  	or	s0, s0, a0
-    1d14: 37 15 00 00  	lui	a0, 1
-    1d18: 13 05 85 5f  	addi	a0, a0, 1528
-    1d1c: 97 e0 ff ff  	auipc	ra, 1048574
-    1d20: e7 80 40 51  	jalr	1300(ra)
-    1d24: 13 15 d5 00  	slli	a0, a0, 13
-    1d28: 33 64 a4 00  	or	s0, s0, a0
-    1d2c: 37 15 00 00  	lui	a0, 1
-    1d30: 13 05 05 6c  	addi	a0, a0, 1728
-    1d34: 97 e0 ff ff  	auipc	ra, 1048574
-    1d38: e7 80 00 60  	jalr	1536(ra)
-    1d3c: 13 15 e5 00  	slli	a0, a0, 14
-    1d40: 33 64 a4 00  	or	s0, s0, a0
+0000000000001bd4 <vector_memcpy_unit_stride_faultonlyfirst_e8m8>:
+    1bd4: 6f 00 c0 00  	j	0x1be0 <vector_memcpy_unit_stride_faultonlyfirst_e8m8+0xc>
+    1bd8: 93 06 00 00  	li	a3, 0
+    1bdc: 63 8a 06 02  	beqz	a3, 0x1c10 <vector_memcpy_unit_stride_faultonlyfirst_e8m8+0x3c>
+    1be0: d7 76 35 04  	<unknown>
+    1be4: e3 8a 06 fe  	beqz	a3, 0x1bd8 <vector_memcpy_unit_stride_faultonlyfirst_e8m8+0x4>
+    1be8: 07 84 05 03  	<unknown>
+    1bec: 73 27 00 c2  	csrr	a4, vl
+    1bf0: e3 14 d7 fe  	bne	a4, a3, 0x1bd8 <vector_memcpy_unit_stride_faultonlyfirst_e8m8+0x4>
+    1bf4: 57 f0 36 04  	<unknown>
+    1bf8: 27 04 06 02  	<unknown>
+    1bfc: b3 85 d5 00  	add	a1, a1, a3
+    1c00: 33 06 d6 00  	add	a2, a2, a3
+    1c04: 33 05 d5 40  	sub	a0, a0, a3
+    1c08: 93 06 10 00  	li	a3, 1
+    1c0c: e3 9a 06 fc  	bnez	a3, 0x1be0 <vector_memcpy_unit_stride_faultonlyfirst_e8m8+0xc>
+    1c10: 67 80 00 00  	ret
+
+0000000000001c14 <vector_memcpy_unit_stride_faultonlyfirst_e16m8>:
+    1c14: 6f 00 c0 00  	j	0x1c20 <vector_memcpy_unit_stride_faultonlyfirst_e16m8+0xc>
+    1c18: 93 06 00 00  	li	a3, 0
+    1c1c: 63 8c 06 02  	beqz	a3, 0x1c54 <vector_memcpy_unit_stride_faultonlyfirst_e16m8+0x40>
+    1c20: d7 76 b5 04  	<unknown>
+    1c24: e3 8a 06 fe  	beqz	a3, 0x1c18 <vector_memcpy_unit_stride_faultonlyfirst_e16m8+0x4>
+    1c28: 07 d4 05 03  	<unknown>
+    1c2c: 73 27 00 c2  	csrr	a4, vl
+    1c30: e3 14 d7 fe  	bne	a4, a3, 0x1c18 <vector_memcpy_unit_stride_faultonlyfirst_e16m8+0x4>
+    1c34: 57 f0 b6 04  	<unknown>
+    1c38: 27 54 06 02  	<unknown>
+    1c3c: 13 97 16 00  	slli	a4, a3, 1
+    1c40: b3 85 e5 00  	add	a1, a1, a4
+    1c44: 33 06 e6 00  	add	a2, a2, a4
+    1c48: 33 05 d5 40  	sub	a0, a0, a3
+    1c4c: 93 06 10 00  	li	a3, 1
+    1c50: e3 98 06 fc  	bnez	a3, 0x1c20 <vector_memcpy_unit_stride_faultonlyfirst_e16m8+0xc>
+    1c54: 67 80 00 00  	ret
+
+0000000000001c58 <vector_memcpy_unit_stride_faultonlyfirst_e32m8>:
+    1c58: 6f 00 c0 00  	j	0x1c64 <vector_memcpy_unit_stride_faultonlyfirst_e32m8+0xc>
+    1c5c: 93 06 00 00  	li	a3, 0
+    1c60: 63 8c 06 02  	beqz	a3, 0x1c98 <vector_memcpy_unit_stride_faultonlyfirst_e32m8+0x40>
+    1c64: d7 76 35 05  	<unknown>
+    1c68: e3 8a 06 fe  	beqz	a3, 0x1c5c <vector_memcpy_unit_stride_faultonlyfirst_e32m8+0x4>
+    1c6c: 07 e4 05 03  	<unknown>
+    1c70: 73 27 00 c2  	csrr	a4, vl
+    1c74: e3 14 d7 fe  	bne	a4, a3, 0x1c5c <vector_memcpy_unit_stride_faultonlyfirst_e32m8+0x4>
+    1c78: 57 f0 36 05  	<unknown>
+    1c7c: 27 64 06 02  	<unknown>
+    1c80: 13 97 26 00  	slli	a4, a3, 2
+    1c84: b3 85 e5 00  	add	a1, a1, a4
+    1c88: 33 06 e6 00  	add	a2, a2, a4
+    1c8c: 33 05 d5 40  	sub	a0, a0, a3
+    1c90: 93 06 10 00  	li	a3, 1
+    1c94: e3 98 06 fc  	bnez	a3, 0x1c64 <vector_memcpy_unit_stride_faultonlyfirst_e32m8+0xc>
+    1c98: 67 80 00 00  	ret
+
+0000000000001c9c <vector_memcpy_unit_stride_faultonlyfirst_e32mf2>:
+    1c9c: 6f 00 c0 00  	j	0x1ca8 <vector_memcpy_unit_stride_faultonlyfirst_e32mf2+0xc>
+    1ca0: 93 06 00 00  	li	a3, 0
+    1ca4: 63 8c 06 02  	beqz	a3, 0x1cdc <vector_memcpy_unit_stride_faultonlyfirst_e32mf2+0x40>
+    1ca8: d7 76 75 05  	<unknown>
+    1cac: e3 8a 06 fe  	beqz	a3, 0x1ca0 <vector_memcpy_unit_stride_faultonlyfirst_e32mf2+0x4>
+    1cb0: 07 e4 05 03  	<unknown>
+    1cb4: 73 27 00 c2  	csrr	a4, vl
+    1cb8: e3 14 d7 fe  	bne	a4, a3, 0x1ca0 <vector_memcpy_unit_stride_faultonlyfirst_e32mf2+0x4>
+    1cbc: 57 f0 76 05  	<unknown>
+    1cc0: 27 64 06 02  	<unknown>
+    1cc4: 13 97 26 00  	slli	a4, a3, 2
+    1cc8: b3 85 e5 00  	add	a1, a1, a4
+    1ccc: 33 06 e6 00  	add	a2, a2, a4
+    1cd0: 33 05 d5 40  	sub	a0, a0, a3
+    1cd4: 93 06 10 00  	li	a3, 1
+    1cd8: e3 98 06 fc  	bnez	a3, 0x1ca8 <vector_memcpy_unit_stride_faultonlyfirst_e32mf2+0xc>
+    1cdc: 67 80 00 00  	ret
+
+0000000000001ce0 <vector_memcpy_unit_stride_faultonlyfirst_e64m2>:
+    1ce0: 6f 00 c0 00  	j	0x1cec <vector_memcpy_unit_stride_faultonlyfirst_e64m2+0xc>
+    1ce4: 93 06 00 00  	li	a3, 0
+    1ce8: 63 8c 06 02  	beqz	a3, 0x1d20 <vector_memcpy_unit_stride_faultonlyfirst_e64m2+0x40>
+    1cec: d7 76 95 05  	<unknown>
+    1cf0: e3 8a 06 fe  	beqz	a3, 0x1ce4 <vector_memcpy_unit_stride_faultonlyfirst_e64m2+0x4>
+    1cf4: 07 f4 05 03  	<unknown>
+    1cf8: 73 27 00 c2  	csrr	a4, vl
+    1cfc: e3 14 d7 fe  	bne	a4, a3, 0x1ce4 <vector_memcpy_unit_stride_faultonlyfirst_e64m2+0x4>
+    1d00: 57 f0 96 05  	<unknown>
+    1d04: 27 74 06 02  	<unknown>
+    1d08: 13 97 36 00  	slli	a4, a3, 3
+    1d0c: b3 85 e5 00  	add	a1, a1, a4
+    1d10: 33 06 e6 00  	add	a2, a2, a4
+    1d14: 33 05 d5 40  	sub	a0, a0, a3
+    1d18: 93 06 10 00  	li	a3, 1
+    1d1c: e3 98 06 fc  	bnez	a3, 0x1cec <vector_memcpy_unit_stride_faultonlyfirst_e64m2+0xc>
+    1d20: 67 80 00 00  	ret
+
+0000000000001d24 <main>:
+    1d24: 13 01 01 ff  	addi	sp, sp, -16
+    1d28: 23 34 11 00  	sd	ra, 8(sp)
+    1d2c: 23 30 81 00  	sd	s0, 0(sp)
+    1d30: 37 15 00 00  	lui	a0, 1
+    1d34: 13 05 05 0e  	addi	a0, a0, 224
+    1d38: 97 e0 ff ff  	auipc	ra, 1048574
+    1d3c: e7 80 80 2f  	jalr	760(ra)
+    1d40: 13 04 05 00  	mv	s0, a0
     1d44: 37 15 00 00  	lui	a0, 1
-    1d48: 13 05 85 78  	addi	a0, a0, 1928
-    1d4c: 97 f0 ff ff  	auipc	ra, 1048575
-    1d50: e7 80 80 93  	jalr	-1736(ra)
-    1d54: 13 15 f5 00  	slli	a0, a0, 15
-    1d58: 33 64 a4 00  	or	s0, s0, a0
-    1d5c: 37 25 00 00  	lui	a0, 2
-    1d60: 13 05 c5 83  	addi	a0, a0, -1988
-    1d64: 97 f0 ff ff  	auipc	ra, 1048575
-    1d68: e7 80 00 92  	jalr	-1760(ra)
-    1d6c: 13 15 05 01  	slli	a0, a0, 16
+    1d48: 13 05 c5 10  	addi	a0, a0, 268
+    1d4c: 97 e0 ff ff  	auipc	ra, 1048574
+    1d50: e7 80 80 3d  	jalr	984(ra)
+    1d54: 13 15 15 00  	slli	a0, a0, 1
+    1d58: 33 64 85 00  	or	s0, a0, s0
+    1d5c: 37 15 00 00  	lui	a0, 1
+    1d60: 13 05 c5 13  	addi	a0, a0, 316
+    1d64: 97 e0 ff ff  	auipc	ra, 1048574
+    1d68: e7 80 c0 4c  	jalr	1228(ra)
+    1d6c: 13 15 25 00  	slli	a0, a0, 2
     1d70: 33 64 a4 00  	or	s0, s0, a0
-    1d74: 37 25 00 00  	lui	a0, 2
-    1d78: 13 05 45 8b  	addi	a0, a0, -1868
-    1d7c: 97 f0 ff ff  	auipc	ra, 1048575
-    1d80: e7 80 00 b6  	jalr	-1184(ra)
-    1d84: 13 15 15 01  	slli	a0, a0, 17
+    1d74: 37 15 00 00  	lui	a0, 1
+    1d78: 13 05 c5 16  	addi	a0, a0, 364
+    1d7c: 97 e0 ff ff  	auipc	ra, 1048574
+    1d80: e7 80 40 4b  	jalr	1204(ra)
+    1d84: 13 15 35 00  	slli	a0, a0, 3
     1d88: 33 64 a4 00  	or	s0, s0, a0
-    1d8c: 37 25 00 00  	lui	a0, 2
-    1d90: 13 05 c5 91  	addi	a0, a0, -1764
-    1d94: 97 f0 ff ff  	auipc	ra, 1048575
-    1d98: e7 80 80 d2  	jalr	-728(ra)
-    1d9c: 13 15 25 01  	slli	a0, a0, 18
+    1d8c: 37 15 00 00  	lui	a0, 1
+    1d90: 13 05 c5 19  	addi	a0, a0, 412
+    1d94: 97 e0 ff ff  	auipc	ra, 1048574
+    1d98: e7 80 00 5a  	jalr	1440(ra)
+    1d9c: 13 15 45 00  	slli	a0, a0, 4
     1da0: 33 64 a4 00  	or	s0, s0, a0
-    1da4: 37 25 00 00  	lui	a0, 2
-    1da8: 13 05 c5 98  	addi	a0, a0, -1652
-    1dac: 97 f0 ff ff  	auipc	ra, 1048575
-    1db0: e7 80 c0 f4  	jalr	-180(ra)
-    1db4: 13 15 35 01  	slli	a0, a0, 19
+    1da4: 37 15 00 00  	lui	a0, 1
+    1da8: 13 05 c5 1c  	addi	a0, a0, 460
+    1dac: 97 e0 ff ff  	auipc	ra, 1048574
+    1db0: e7 80 40 28  	jalr	644(ra)
+    1db4: 13 15 55 00  	slli	a0, a0, 5
     1db8: 33 64 a4 00  	or	s0, s0, a0
-    1dbc: 37 25 00 00  	lui	a0, 2
-    1dc0: 13 05 85 9f  	addi	a0, a0, -1544
-    1dc4: 97 f0 ff ff  	auipc	ra, 1048575
-    1dc8: e7 80 40 f3  	jalr	-204(ra)
-    1dcc: 13 15 45 01  	slli	a0, a0, 20
+    1dbc: 37 15 00 00  	lui	a0, 1
+    1dc0: 13 05 85 22  	addi	a0, a0, 552
+    1dc4: 97 e0 ff ff  	auipc	ra, 1048574
+    1dc8: e7 80 00 36  	jalr	864(ra)
+    1dcc: 13 15 65 00  	slli	a0, a0, 6
     1dd0: 33 64 a4 00  	or	s0, s0, a0
-    1dd4: 37 25 00 00  	lui	a0, 2
-    1dd8: 13 05 45 a6  	addi	a0, a0, -1436
-    1ddc: 97 f0 ff ff  	auipc	ra, 1048575
-    1de0: e7 80 c0 13  	jalr	316(ra)
-    1de4: 13 15 55 01  	slli	a0, a0, 21
+    1dd4: 37 15 00 00  	lui	a0, 1
+    1dd8: 13 05 85 28  	addi	a0, a0, 648
+    1ddc: 97 e0 ff ff  	auipc	ra, 1048574
+    1de0: e7 80 40 45  	jalr	1108(ra)
+    1de4: 13 15 75 00  	slli	a0, a0, 7
     1de8: 33 64 a4 00  	or	s0, s0, a0
-    1dec: 37 25 00 00  	lui	a0, 2
-    1df0: 13 05 45 ad  	addi	a0, a0, -1324
+    1dec: 37 15 00 00  	lui	a0, 1
+    1df0: 13 05 85 2e  	addi	a0, a0, 744
     1df4: 97 e0 ff ff  	auipc	ra, 1048574
-    1df8: e7 80 00 54  	jalr	1344(ra)
-    1dfc: 13 15 65 01  	slli	a0, a0, 22
+    1df8: e7 80 c0 43  	jalr	1084(ra)
+    1dfc: 13 15 85 00  	slli	a0, a0, 8
     1e00: 33 64 a4 00  	or	s0, s0, a0
-    1e04: 37 25 00 00  	lui	a0, 2
-    1e08: 13 05 45 b1  	addi	a0, a0, -1260
+    1e04: 37 15 00 00  	lui	a0, 1
+    1e08: 13 05 85 34  	addi	a0, a0, 840
     1e0c: 97 e0 ff ff  	auipc	ra, 1048574
     1e10: e7 80 80 52  	jalr	1320(ra)
-    1e14: 13 15 75 01  	slli	a0, a0, 23
+    1e14: 13 15 95 00  	slli	a0, a0, 9
     1e18: 33 64 a4 00  	or	s0, s0, a0
-    1e1c: 37 25 00 00  	lui	a0, 2
-    1e20: 13 05 45 b5  	addi	a0, a0, -1196
+    1e1c: 37 15 00 00  	lui	a0, 1
+    1e20: 13 05 85 3a  	addi	a0, a0, 936
     1e24: 97 e0 ff ff  	auipc	ra, 1048574
-    1e28: e7 80 00 51  	jalr	1296(ra)
-    1e2c: 13 15 85 01  	slli	a0, a0, 24
+    1e28: e7 80 c0 20  	jalr	524(ra)
+    1e2c: 13 15 a5 00  	slli	a0, a0, 10
     1e30: 33 64 a4 00  	or	s0, s0, a0
-    1e34: 37 25 00 00  	lui	a0, 2
-    1e38: 13 05 45 b9  	addi	a0, a0, -1132
+    1e34: 37 15 00 00  	lui	a0, 1
+    1e38: 13 05 85 46  	addi	a0, a0, 1128
     1e3c: 97 e0 ff ff  	auipc	ra, 1048574
-    1e40: e7 80 80 4f  	jalr	1272(ra)
-    1e44: 13 15 95 01  	slli	a0, a0, 25
-    1e48: 33 65 a4 00  	or	a0, s0, a0
-    1e4c: b7 05 00 01  	lui	a1, 4096
-    1e50: 37 06 00 04  	lui	a2, 16384
-    1e54: 1b 06 f6 ff  	addiw	a2, a2, -1
-    1e58: 23 b0 c5 00  	sd	a2, 0(a1)
-    1e5c: b7 05 00 01  	lui	a1, 4096
-    1e60: 23 b4 a5 00  	sd	a0, 8(a1)
-    1e64: 13 05 00 00  	li	a0, 0
-    1e68: 83 30 81 00  	ld	ra, 8(sp)
-    1e6c: 03 34 01 00  	ld	s0, 0(sp)
-    1e70: 13 01 01 01  	addi	sp, sp, 16
-    1e74: 67 80 00 00  	ret
+    1e40: e7 80 80 2e  	jalr	744(ra)
+    1e44: 13 15 b5 00  	slli	a0, a0, 11
+    1e48: 33 64 a4 00  	or	s0, s0, a0
+    1e4c: 37 15 00 00  	lui	a0, 1
+    1e50: 13 05 05 53  	addi	a0, a0, 1328
+    1e54: 97 e0 ff ff  	auipc	ra, 1048574
+    1e58: e7 80 c0 3d  	jalr	988(ra)
+    1e5c: 13 15 c5 00  	slli	a0, a0, 12
+    1e60: 33 64 a4 00  	or	s0, s0, a0
+    1e64: 37 15 00 00  	lui	a0, 1
+    1e68: 13 05 85 5f  	addi	a0, a0, 1528
+    1e6c: 97 e0 ff ff  	auipc	ra, 1048574
+    1e70: e7 80 40 3c  	jalr	964(ra)
+    1e74: 13 15 d5 00  	slli	a0, a0, 13
+    1e78: 33 64 a4 00  	or	s0, s0, a0
+    1e7c: 37 15 00 00  	lui	a0, 1
+    1e80: 13 05 05 6c  	addi	a0, a0, 1728
+    1e84: 97 e0 ff ff  	auipc	ra, 1048574
+    1e88: e7 80 00 4b  	jalr	1200(ra)
+    1e8c: 13 15 e5 00  	slli	a0, a0, 14
+    1e90: 33 64 a4 00  	or	s0, s0, a0
+    1e94: 37 15 00 00  	lui	a0, 1
+    1e98: 13 05 85 78  	addi	a0, a0, 1928
+    1e9c: 97 e0 ff ff  	auipc	ra, 1048574
+    1ea0: e7 80 80 7e  	jalr	2024(ra)
+    1ea4: 13 15 f5 00  	slli	a0, a0, 15
+    1ea8: 33 64 a4 00  	or	s0, s0, a0
+    1eac: 37 25 00 00  	lui	a0, 2
+    1eb0: 13 05 c5 83  	addi	a0, a0, -1988
+    1eb4: 97 e0 ff ff  	auipc	ra, 1048574
+    1eb8: e7 80 00 7d  	jalr	2000(ra)
+    1ebc: 13 15 05 01  	slli	a0, a0, 16
+    1ec0: 33 64 a4 00  	or	s0, s0, a0
+    1ec4: 37 25 00 00  	lui	a0, 2
+    1ec8: 13 05 45 8b  	addi	a0, a0, -1868
+    1ecc: 97 f0 ff ff  	auipc	ra, 1048575
+    1ed0: e7 80 00 a1  	jalr	-1520(ra)
+    1ed4: 13 15 15 01  	slli	a0, a0, 17
+    1ed8: 33 64 a4 00  	or	s0, s0, a0
+    1edc: 37 25 00 00  	lui	a0, 2
+    1ee0: 13 05 c5 91  	addi	a0, a0, -1764
+    1ee4: 97 f0 ff ff  	auipc	ra, 1048575
+    1ee8: e7 80 80 bd  	jalr	-1064(ra)
+    1eec: 13 15 25 01  	slli	a0, a0, 18
+    1ef0: 33 64 a4 00  	or	s0, s0, a0
+    1ef4: 37 25 00 00  	lui	a0, 2
+    1ef8: 13 05 c5 98  	addi	a0, a0, -1652
+    1efc: 97 f0 ff ff  	auipc	ra, 1048575
+    1f00: e7 80 c0 df  	jalr	-516(ra)
+    1f04: 13 15 35 01  	slli	a0, a0, 19
+    1f08: 33 64 a4 00  	or	s0, s0, a0
+    1f0c: 37 25 00 00  	lui	a0, 2
+    1f10: 13 05 85 9f  	addi	a0, a0, -1544
+    1f14: 97 f0 ff ff  	auipc	ra, 1048575
+    1f18: e7 80 40 de  	jalr	-540(ra)
+    1f1c: 13 15 45 01  	slli	a0, a0, 20
+    1f20: 33 64 a4 00  	or	s0, s0, a0
+    1f24: 37 25 00 00  	lui	a0, 2
+    1f28: 13 05 45 a6  	addi	a0, a0, -1436
+    1f2c: 97 f0 ff ff  	auipc	ra, 1048575
+    1f30: e7 80 c0 fe  	jalr	-20(ra)
+    1f34: 13 15 55 01  	slli	a0, a0, 21
+    1f38: 33 64 a4 00  	or	s0, s0, a0
+    1f3c: 37 25 00 00  	lui	a0, 2
+    1f40: 13 05 45 ad  	addi	a0, a0, -1324
+    1f44: 97 e0 ff ff  	auipc	ra, 1048574
+    1f48: e7 80 00 3f  	jalr	1008(ra)
+    1f4c: 13 15 65 01  	slli	a0, a0, 22
+    1f50: 33 64 a4 00  	or	s0, s0, a0
+    1f54: 37 25 00 00  	lui	a0, 2
+    1f58: 13 05 45 b1  	addi	a0, a0, -1260
+    1f5c: 97 e0 ff ff  	auipc	ra, 1048574
+    1f60: e7 80 80 3d  	jalr	984(ra)
+    1f64: 13 15 75 01  	slli	a0, a0, 23
+    1f68: 33 64 a4 00  	or	s0, s0, a0
+    1f6c: 37 25 00 00  	lui	a0, 2
+    1f70: 13 05 45 b5  	addi	a0, a0, -1196
+    1f74: 97 e0 ff ff  	auipc	ra, 1048574
+    1f78: e7 80 00 3c  	jalr	960(ra)
+    1f7c: 13 15 85 01  	slli	a0, a0, 24
+    1f80: 33 64 a4 00  	or	s0, s0, a0
+    1f84: 37 25 00 00  	lui	a0, 2
+    1f88: 13 05 45 b9  	addi	a0, a0, -1132
+    1f8c: 97 e0 ff ff  	auipc	ra, 1048574
+    1f90: e7 80 80 3a  	jalr	936(ra)
+    1f94: 13 15 95 01  	slli	a0, a0, 25
+    1f98: 33 64 a4 00  	or	s0, s0, a0
+    1f9c: 37 25 00 00  	lui	a0, 2
+    1fa0: 13 05 45 bd  	addi	a0, a0, -1068
+    1fa4: 97 e0 ff ff  	auipc	ra, 1048574
+    1fa8: e7 80 c0 08  	jalr	140(ra)
+    1fac: 13 15 a5 01  	slli	a0, a0, 26
+    1fb0: 33 64 a4 00  	or	s0, s0, a0
+    1fb4: 37 25 00 00  	lui	a0, 2
+    1fb8: 13 05 45 c1  	addi	a0, a0, -1004
+    1fbc: 97 e0 ff ff  	auipc	ra, 1048574
+    1fc0: e7 80 80 16  	jalr	360(ra)
+    1fc4: 13 15 b5 01  	slli	a0, a0, 27
+    1fc8: 33 64 a4 00  	or	s0, s0, a0
+    1fcc: 37 25 00 00  	lui	a0, 2
+    1fd0: 13 05 85 c5  	addi	a0, a0, -936
+    1fd4: 97 e0 ff ff  	auipc	ra, 1048574
+    1fd8: e7 80 c0 25  	jalr	604(ra)
+    1fdc: 13 15 c5 01  	slli	a0, a0, 28
+    1fe0: 33 64 a4 00  	or	s0, s0, a0
+    1fe4: 37 25 00 00  	lui	a0, 2
+    1fe8: 13 05 c5 c9  	addi	a0, a0, -868
+    1fec: 97 e0 ff ff  	auipc	ra, 1048574
+    1ff0: e7 80 40 24  	jalr	580(ra)
+    1ff4: 13 15 d5 01  	slli	a0, a0, 29
+    1ff8: 33 64 a4 00  	or	s0, s0, a0
+    1ffc: 37 25 00 00  	lui	a0, 2
+    2000: 13 05 05 ce  	addi	a0, a0, -800
+    2004: 97 e0 ff ff  	auipc	ra, 1048574
+    2008: e7 80 00 33  	jalr	816(ra)
+    200c: 13 15 e5 01  	slli	a0, a0, 30
+    2010: 33 65 a4 00  	or	a0, s0, a0
+    2014: b7 05 00 01  	lui	a1, 4096
+    2018: 37 06 00 80  	lui	a2, 524288
+    201c: 1b 06 f6 ff  	addiw	a2, a2, -1
+    2020: 23 b0 c5 00  	sd	a2, 0(a1)
+    2024: b7 05 00 01  	lui	a1, 4096
+    2028: 23 b4 a5 00  	sd	a0, 8(a1)
+    202c: 13 05 00 00  	li	a0, 0
+    2030: 83 30 81 00  	ld	ra, 8(sp)
+    2034: 03 34 01 00  	ld	s0, 0(sp)
+    2038: 13 01 01 01  	addi	sp, sp, 16
+    203c: 67 80 00 00  	ret
