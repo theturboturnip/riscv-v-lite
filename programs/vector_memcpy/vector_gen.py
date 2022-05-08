@@ -5,7 +5,7 @@ import contextlib
 from dataclasses import dataclass
 from enum import Enum
 from io import StringIO
-from typing import ContextManager, Dict, List, Optional, Tuple, Union
+from typing import Any, ContextManager, Dict, List, Optional, Tuple, Union
 
 from vector_intrinsic_gen import Sew, Lmul, VType
 
@@ -856,7 +856,7 @@ def generate_segmented_tests(b: VectorTestsCpp, vtypes: List[VType]):
                         b.write_code(f"out[i] += copied_per_iter;")
                     b.write_code(f"n -= copied_per_iter;")
 
-def generate_tests() -> Tuple[str, str]:
+def generate_tests() -> Tuple[str, Dict[Any, Any]]:
     b = VectorTestsCpp()
 
     # Create harnesses
@@ -890,7 +890,7 @@ def generate_tests() -> Tuple[str, str]:
         VType(Sew.e64, Lmul.e2),
     ])
 
-    test_list = ""
+    test_json = {}
 
     # Make main
     b.write_line("")
@@ -914,7 +914,7 @@ def generate_tests() -> Tuple[str, str]:
                 b.write_line(f"#endif // {test.required_def}")
             b.write_line("")
 
-            test_list += f"{i}: {harness.name}({test.name})\n"
+            test_json[i] = {"test": test.name}
         b.write_code("*(&outputAttempted) = attempted;")
         b.write_code("*(&outputSucceeded) = successful;")
         b.write_code("return 0;")
@@ -922,7 +922,7 @@ def generate_tests() -> Tuple[str, str]:
     b.write_code('}')
     b.write_line("#endif // __cplusplus")
 
-    return PREAMBLE + b.get_value(), test_list
+    return PREAMBLE + b.get_value(), test_json
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("vector_gen", description="Generator for vector test code")
@@ -931,8 +931,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    tests, test_list = generate_tests()
+    tests, test_json = generate_tests()
     with open(args.output_cpp, "w") as f:
         f.write(tests)
     with open(args.output_list, "w") as f:
-        f.write(test_list)
+        import json
+        f.write(json.dumps(test_json, indent=4))

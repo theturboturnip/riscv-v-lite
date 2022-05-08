@@ -1,0 +1,16 @@
+{
+    "0": { "test": "vector_memcpy_8m8" },
+    "1": { "test": "vector_memcpy_16m8" },
+    "2": { "test": "vector_memcpy_32m8" },
+    "3": { "test": "vector_memcpy_32mf2" },
+    "4": { "test": "vector_memcpy_8strided" },
+    "5": { "test": "vector_memcpy_16strided" },
+    "6": { "test": "vector_memcpy_32strided" },
+    "7": { "test": "vector_memcpy_indexed" },
+    "8": { "test": "vector_memcpy_masked" },
+    "9": { "test": "vector_memcpy_32m2_seg4load" },
+    "10": { "test": "vector_memcpy_masked_bytemaskload" },
+    "11": { "test": "vector_memcpy_32m8_faultonlyfirst" },
+    "12": { "test": "vector_memcpy_faultonlyfirst_test_under_fault" },
+    "13": { "test": "vector_memcpy_32m1_wholereg" }
+}

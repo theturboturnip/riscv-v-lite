@@ -1,0 +1,4 @@
+{
+    "0": { "test": "base_memcpy_capability_test" },
+    "1": { "test": "base_memcpy_capability_invalidate_test" }
+}

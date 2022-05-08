@@ -1,0 +1,11 @@
+{
+    "0": {
+        "test": "factorial_test"
+    },
+    "1": {
+        "test": "fibonacci_test_recursive"
+    },
+    "2": {
+        "test": "fibonacci_test_memoized"
+    }
+}
