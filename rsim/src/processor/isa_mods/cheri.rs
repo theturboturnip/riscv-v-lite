@@ -418,7 +418,17 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                             let loaded_cap = conn.memory.load_maybe_cap(cs1_val)?;
                             conn.sreg.write_maybe_cap(rd, loaded_cap)?;
                         }
-                        _ => bail!("Unhandled rs2 value {:x} for CHERI load/store (funct7=0x7d, funct3=0)", rs2)
+                        _ => bail!("Unhandled rs2 value {:x} for CHERI load (funct7=0x7d, funct3=0)", rs2)
+                    }
+                    (0x7c, 0) => match rd {
+                        0xb => {
+                            // SD.CAP
+                            // i.e. Store Doubleword (64-bits) with Cap
+                            let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                            let stored_val = conn.sreg.read_u64(rs2)?;
+                            conn.memory.store_u64(cs1_val, stored_val)?;
+                        }
+                        _ => bail!("Unhandled rd value {:x} for CHERI store (funct7=0x7c, funct3=0)", rd)
                     }
                     _ => bail!("Invalid funct3/funct7 combination {:x} {:x}", funct3, funct7)
                 }

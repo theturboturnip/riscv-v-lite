@@ -68,7 +68,7 @@ int main(void)
   result |= fib_test() << 1;
   result |= fib_memo_test() << 2;
 
-  int ran = 0b111;
+  int64_t ran = 0b111;
 
   // On pure-capability platforms this is equivalent to *(&outputAttempted) = ran;
   // but on hybrid-capability platforms this tests if capabilities can still be constructed and used.
