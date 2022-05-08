@@ -794,7 +794,7 @@ def generate_segmented_tests(b: VectorTestsCpp, vtypes: List[VType]):
                         b.write_code(f"out[i] += copied_per_iter;")
                     b.write_code(f"n -= copied_per_iter;")
 
-def generate_tests() -> str:
+def generate_tests() -> Tuple[str, str]:
     b = VectorTestsCpp()
 
     # Create harnesses
@@ -827,6 +827,8 @@ def generate_tests() -> str:
         VType(Sew.e64, Lmul.e2),
     ])
 
+    test_list = ""
+
     # Make main
     b.write_line("")
     b.write_line("")
@@ -848,6 +850,8 @@ def generate_tests() -> str:
             if test.required_def:
                 b.write_line(f"#endif // {test.required_def}")
             b.write_line("")
+
+            test_list += f"{i}: {harness.name}({test.name})\n"
         b.write_code("*(&outputAttempted) = attempted;")
         b.write_code("*(&outputSucceeded) = successful;")
         b.write_code("return 0;")
@@ -855,14 +859,17 @@ def generate_tests() -> str:
     b.write_code('}')
     b.write_line("#endif // __cplusplus")
 
-    return PREAMBLE + b.get_value()
+    return PREAMBLE + b.get_value(), test_list
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("vector_gen", description="Generator for vector test code")
     parser.add_argument("output_cpp", type=str)
+    parser.add_argument("output_list", type=str)
 
     args = parser.parse_args()
 
-    tests = generate_tests()
+    tests, test_list = generate_tests()
     with open(args.output_cpp, "w") as f:
         f.write(tests)
+    with open(args.output_list, "w") as f:
+        f.write(test_list)

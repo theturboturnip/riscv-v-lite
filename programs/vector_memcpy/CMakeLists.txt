@@ -3,7 +3,7 @@ add_custom_command(OUTPUT vec_wrappers.h
                    COMMAND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/vector_intrinsic_gen.py ${CMAKE_CURRENT_SOURCE_DIR}/vec_wrappers.h
                    DEPENDS vector_intrinsic_gen.py)
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/test_vector_memcpy.c
-                   COMMAND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/vector_gen.py ${CMAKE_CURRENT_SOURCE_DIR}/test_vector_memcpy.c
+                   COMMAND ${Python3_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/vector_gen.py ${CMAKE_CURRENT_SOURCE_DIR}/test_vector_memcpy.c ${CMAKE_CURRENT_SOURCE_DIR}/test_list.txt
                    DEPENDS vector_gen.py)
 
 
