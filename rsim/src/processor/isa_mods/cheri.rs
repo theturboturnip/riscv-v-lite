@@ -260,7 +260,27 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                     }
                     (0x13, 0x0) => {
                         // CFromPtr
-                        bail!("Haven't implemented CFromPtr")
+                        
+                        let cs1_val = if rs1 == 0 {
+                            conn.ddc
+                        } else {
+                            conn.sreg.read_maybe_cap(rs1)?.to_cap()
+                        };
+                        let rs2_val = conn.sreg.read_u64(rs2)?;
+
+                        if rs2_val == 0 {
+                            conn.sreg.write_u64(rd, 0)?;
+                        } else if !cs1_val.tag() {
+                            bail!(CapabilityException::TagViolation{ cap: CapOrRegister::Reg(rs1) })
+                        } else if cs1_val.is_sealed() {
+                            bail!(CapabilityException::SealViolation{ cap: CapOrRegister::Reg(rs1) })
+                        } else {
+                            let (success, mut new_cap) = Cc128::setCapOffset(&cs1_val, rs2_val);
+                            if !success {
+                                new_cap = Cc128::invalidateCap(&new_cap);
+                            }
+                            conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
+                        }
                     }
                     (0x14, 0x0) => {
                         // CSub
