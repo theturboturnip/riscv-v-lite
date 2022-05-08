@@ -44,9 +44,9 @@ $(BUILD)/%/.execstamp: $(BUILD)/%/.cmakestamp $(ALL_PROGRAMS_SOURCES) TC-%.cmake
 	@# Go to the build directory, check that .cmakestamp exists, then invoke the build system
 	@# (if the toolchain failed, .cmakestamp won't have been generated.)
 	@echo "Building for $*"
-	@cd $(BUILD)/$* && [ -f .cmakestamp ] \
-		&& (cmake --build . -- --no-print-directory && touch .execstamp) \
-		|| echo ".cmakestamp not found for $*, toolchain must have failed. not building..."
+	@cd $(BUILD)/$* && if [ -f .cmakestamp ]; \
+		then (cmake --build . -- --no-print-directory && touch .execstamp) \
+		else echo ".cmakestamp not found for $*, toolchain must have failed. not building..."; fi
 
 # make software project folder
 dirs:

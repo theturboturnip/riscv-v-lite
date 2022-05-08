@@ -2331,7 +2331,7 @@ main:
 .Linfo_string1:
 	.asciz	"/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/vector_memcpy_pointers/vector_memcpy_pointers.cpp"
 .Linfo_string2:
-	.asciz	"/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-13-rv64imxcheri/vector_memcpy_pointers"
+	.asciz	"/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-13-rv64imvxcheri/vector_memcpy_pointers"
 .Linfo_string3:
 	.asciz	"unsigned char"
 .Linfo_string4:

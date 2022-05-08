@@ -1,5 +1,5 @@
 
-/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-13-rv64imxcheri-int/hello_world/hello_world.elf:	file format elf64-littleriscv
+/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-13-rv64imvxcheri-int/hello_world/hello_world.elf:	file format elf64-littleriscv
 Contents of section .text.init:
  0000 17010100 13010102 97000000 e780401a  ..............@.
  0010 6f000000                             o...

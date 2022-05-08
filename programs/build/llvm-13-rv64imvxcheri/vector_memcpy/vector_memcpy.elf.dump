@@ -1,5 +1,5 @@
 
-/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-13-rv64imxcheri/vector_memcpy/vector_memcpy.elf:	file format elf64-littleriscv
+/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-13-rv64imvxcheri/vector_memcpy/vector_memcpy.elf:	file format elf64-littleriscv
 Contents of section __cap_relocs:
  0000 a0220000 00000000 e0ff0000 00000000  ."..............
  0010 00000000 00000000 00000000 00000000  ................
