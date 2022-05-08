@@ -403,6 +403,16 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         }
                         _ => bail!("Invalid rs2 value {:x} for CHERI funct3=0x0,funct7=0x7f", rs2)
                     }
+                    (0x7d, 0) => match rs2 {
+                        0xb => {
+                            // LC.CAP (RV32??)
+                            let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
+                            // The memory will clear the tag if cs1_val doesn't have a Load_Capability permission
+                            let loaded_cap = conn.memory.load_maybe_cap(cs1_val)?;
+                            conn.sreg.write_maybe_cap(rd, loaded_cap)?;
+                        }
+                        _ => bail!("Unhandled rs2 value {:x} for CHERI load/store (funct7=0x7d, funct3=0)", rs2)
+                    }
                     _ => bail!("Invalid funct3/funct7 combination {:x} {:x}", funct3, funct7)
                 }
             }
