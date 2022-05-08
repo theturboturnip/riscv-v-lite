@@ -723,9 +723,9 @@ def generate_masked_tests(b: VectorTestsCpp, vtypes: List[VType]):
             # Load mask ints into a vector
             b.write_code(f"{vtype_type} mask_ints_v")
             with b.preproc_guard(UNIT_ASM_DEF):
-                b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(mask_ints_v) : ASM_PREG(in));')
+                b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(mask_ints_v) : ASM_PREG(&mask_ints[0]));')
                 b.write_line("#else")
-                b.write_code(f"mask_ints_v = {vtype_unit_load}(in, VLMAX);")
+                b.write_code(f"mask_ints_v = {vtype_unit_load}(mask_ints, VLMAX);")
             # Create a mask from that vector
             # Use the intrinsic on all platforms, it doesn't involve a pointer
             b.write_code(f"{vtype_mask_type} mask = vmseq_vx_u{vtype.sew.value}{vtype.lmul.get_code()}_b{vtype_sew_lmul_ratio}(mask_ints_v, 1, VLMAX);")

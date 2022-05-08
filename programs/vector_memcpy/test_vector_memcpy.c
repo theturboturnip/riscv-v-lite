@@ -1053,9 +1053,9 @@ void vector_memcpy_masked_e32m8(size_t n, const uint32_t* __restrict__ in, uint3
     }
     vuint32m8_t mask_ints_v;
     #if USE_ASM_FOR_UNIT
-    asm volatile ("vle32.v %0, (%1)" : "=vr"(mask_ints_v) : ASM_PREG(in));
+    asm volatile ("vle32.v %0, (%1)" : "=vr"(mask_ints_v) : ASM_PREG(&mask_ints[0]));
     #else
-    mask_ints_v = vle32_v_u32m8(in, VLMAX);
+    mask_ints_v = vle32_v_u32m8(mask_ints, VLMAX);
     #endif // USE_ASM_FOR_UNIT
     vbool4_t mask = vmseq_vx_u32m8_b4(mask_ints_v, 1, VLMAX);
     #if USE_ASM_FOR_MASKED
