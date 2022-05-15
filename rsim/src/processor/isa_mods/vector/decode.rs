@@ -271,7 +271,7 @@ impl DecodedMemOp {
             let emul_times_8 = current_vtype.val_times_lmul_over_sew(eew_num * 8);
     
             // Limit EMUL to the same values as LMUL
-            if emul_times_8 > 64 || emul_times_8 <= 1 {
+            if emul_times_8 > 64 || emul_times_8 < 1 {
                 bail!("emul * 8 too big or too small: {}", emul_times_8);
             }
     

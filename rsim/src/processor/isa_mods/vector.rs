@@ -154,6 +154,45 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
         }
     }
 
+    /// Find the last segment index that isn't masked out.
+    /// Used to find a tight range of the segments/elements that will actually be processed.
+    fn get_active_segment_range(&mut self, vm: bool, evl: u32) -> Option<Range<u32>> {
+        // Find the smallest not-masked-out segments >= vreg
+        // Find the largest not-masked-out segments < evl
+
+        // Take range vstart-evl
+        // remove masked-out segments
+        // take minimum
+        // In theory, this could be replaced with a lowest-bit detection (with a shift to remove segments < vstart)
+        let start = (self.vstart..evl)
+            .filter_map(|i| match self.vreg.seg_masked_out(vm, i) {
+                true => None,
+                false => Some(i as u32)
+            })
+            .min();
+
+        // Take range vstart-evl
+        // remove masked-out segments
+        // take maximum
+        // In theory, this could be replaced with a highest-bit detection (with some kind of mask/shift to remove segments >= than evl?)
+        let final_accessed = (self.vstart..evl)
+            .filter_map(|i| match self.vreg.seg_masked_out(vm, i) {
+                true => None,
+                false => Some(i as u32)
+            })
+            .max();
+
+        // If the ranges weren't empty, i.e. at least one element in vstart..evl is active, return a range containing that segment.
+        // Otherwise no segments will be accessed.
+        match (start, final_accessed) {
+            (Some(start), Some(final_accessed)) => Some(Range::<u32> {
+                start,
+                end: final_accessed + 1 // Exclusive range, needs to contain final_accessed
+            }),
+            _ => None
+        }
+    }
+
     /// Try doing fast-path capability checks for accesses for a vector load/store.
     /// Fast-paths exist for all accesses, although in hardware some may not be as fast as others.
     /// Return values:
@@ -161,24 +200,29 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
     ///   - Therefore the full access should not raise any capability exceptions
     /// - Ok(false) if the fast-path check failed in a tolerable manner 
     ///   - Therefore the full access *may* raise a capability exception
-    ///   - A tolerable fast-path failure = fault-only-first, which might absorb the exception,
-    ///     or masked operations that might mask out the offending element.
+    ///   - A tolerable fast-path failure = fault-only-first, which might absorb the exception.
     /// - Err() if the fast-path check failed in a not-tolerable manner
+    /// panics if all elements are masked out
     fn fast_check_load_store(&mut self, addr_provenance: (u64, Provenance), rs2: u8, vm: bool, op: DecodedMemOp, sreg: &mut dyn VecRegInterface<uXLEN>) -> (Result<bool>, Range<u64>) {
         let (base_addr, provenance) = addr_provenance;
 
         use DecodedMemOp::*;
         let mut is_fault_only_first = false;
-        // Try to calculate an address range that totally encompasses the access.
+        // Calculate an address range that tightly encompasses the access.
         let addr_range = match op {
             Strided{stride, eew, evl, nf, ..} => {
-                // inclusive range
+                // Calculate the range of not-masked-out segments
+                // active_vstart = the smallest segment >= vstart that isn't masked out
+                // active_evl = (the largest segment < evl that isn't masked out) + 1
+                let Range{ start: active_vstart, end: active_evl } = self.get_active_segment_range(vm, evl).unwrap();
+
+                // todo!("negative range");
                 let offset_range = Range::<u64> {
-                    start: self.vstart as u64 * stride,
+                    start: active_vstart as u64 * stride,
                     // The index of the final segment = (evl - 1)
                     // The start of the final segment = (evl - 1) * stride
                     // The end of the final segment = (evl - 1) * stride + (nf * eew)
-                    end: (evl as u64 - 1) * stride + (nf as u64) * eew.width_in_bytes()
+                    end: (active_evl as u64 - 1) * stride + (nf as u64) * eew.width_in_bytes()
                 };
                 Range::<u64> {
                     start: base_addr + offset_range.start,
@@ -187,24 +231,31 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
             },
             FaultOnlyFirst{evl, nf, eew, ..} => {
                 is_fault_only_first = true;
-                let index_range = Range::<u64> {
-                    start: self.vstart as u64 * nf as u64 * eew.width_in_bytes(),
+
+                // Calculate the range of not-masked-out segments
+                let Range{ start: active_vstart, end: active_evl } = self.get_active_segment_range(vm, evl).unwrap();
+
+                let offset_range = Range::<u64> {
+                    start: (active_vstart as u64) * (nf as u64) * eew.width_in_bytes(),
                     // The index of the final segment = (evl - 1)
                     // The start of the final segment = (evl - 1) * stride
                     // The end of the final segment = (evl - 1) * stride + (nf * eew)
                     // stride = eew * nf
                     // => The end of the final segment = (evl - 1) * eew * nf + eew * nf
                     // = evl * eew * nf
-                    end: (evl as u64) * (nf as u64) * eew.width_in_bytes()
+                    end:   (active_evl as u64)    * (nf as u64) * eew.width_in_bytes()
                 };
                 Range::<u64> {
-                    start: base_addr + index_range.start ,
-                    end: base_addr + index_range.end * eew.width_in_bytes(),
+                    start: base_addr + offset_range.start,
+                    end: base_addr + offset_range.end,
                 }
             },
             Indexed{evl, nf, eew, index_ew, ..} => {
+                // Calculate the range of not-masked-out segments
+                let Range{ start: active_vstart, end: active_evl } = self.get_active_segment_range(vm, evl).unwrap();
+
                 let mut offsets = vec![];
-                for i_segment in self.vstart..evl {
+                for i_segment in active_vstart..active_evl {
                     offsets.push(self.vreg.load_vreg_elem_int(index_ew, rs2, i_segment).unwrap());
                 }
 
@@ -218,6 +269,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                 }
             }
             WholeRegister{eew, ..} => {
+                // Can't be masked out
                 // op.evl() accounts for the number of registers
                 let index_range = Range::<u64> {
                     start: 0,
@@ -229,6 +281,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                 }
             }
             ByteMask{evl, ..} => {
+                // Can't be masked out
                 // bytemask does not have segment support
                 let index_range = Range::<u64> {
                     start: self.vstart as u64,
@@ -250,9 +303,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
             Err(e) => {
                 // the full range encountered a capability exception
                 // if this is a fault-only-first operation, that's ok - it will handle that
-                // if this is a masked operation (i.e. vm == false), it's also ok 
-                //     - the element that generates that exception might be masked out
-                if is_fault_only_first || (vm == false) {
+                if is_fault_only_first {
                     return (Ok(false), addr_range);
                 }
                 // we aren't in a state that can tolerate errors.
@@ -277,7 +328,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                     let seg_addr = base_addr + (i_segment as u64 * stride);
 
                     // If we aren't masked out...
-                    if !self.vreg.seg_masked_out(vm, i_segment as usize) {
+                    if !self.vreg.seg_masked_out(vm, i_segment) {
                         // For each field
                         let mut field_addr = seg_addr;
                         for i_field in 0..nf {
@@ -305,7 +356,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                     let seg_addr = base_addr + (i_segment as u64 * stride);
 
                     // If we aren't masked out...
-                    if !self.vreg.seg_masked_out(vm, i_segment as usize) {
+                    if !self.vreg.seg_masked_out(vm, i_segment) {
                         // For each field
                         let mut field_addr = seg_addr;
                         for i_field in 0..nf {
@@ -326,11 +377,11 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                 // i = element index in logical vector (which includes groups)
                 for i_segment in self.vstart..evl {
                     // Get our index
-                    let seg_idx = self.vreg.load_vreg_elem_int(index_ew, rs2, i_segment)?;
-                    let seg_addr = base_addr + (seg_idx as u64);
+                    let seg_offset = self.vreg.load_vreg_elem_int(index_ew, rs2, i_segment)?;
+                    let seg_addr = base_addr + seg_offset as u64;
 
                     // If we aren't masked out...
-                    if !self.vreg.seg_masked_out(vm, seg_idx as usize) {
+                    if !self.vreg.seg_masked_out(vm, i_segment) {
                         // For each field
                         let mut field_addr = seg_addr;
                         for i_field in 0..nf {
@@ -390,12 +441,16 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
         let accesses = self.get_load_store_accesses(rd, addr_p, rs2, vm, op)?;
         let (_, provenance) = addr_p;
 
-        // Check the fast-path range contains all of the addresses we're planning to access
-        for (_, addr) in &accesses {
-            if !expected_addr_range.contains(&addr) {
-                bail!("Computed fast-path address range 0x{:x}-{:x} doesn't contain access address 0x{:x}",
-                    expected_addr_range.start, expected_addr_range.end, addr);
-            }
+        // Check the fast-path range is a tight range, equal to the min/max accessed addresses
+        // Get minimum and maximum element access addresses
+        let min_addr = accesses.iter().map(|(_, addr)| *addr).min().unwrap();
+        // For the maximum, take the maximum of (address + width of element) to get the top of the exclusive range of accessed bytes
+        let max_addr = accesses.iter().map(|(elem, addr)| addr + elem.eew.width_in_bytes()).max().unwrap();
+        if expected_addr_range.start != min_addr || expected_addr_range.end != max_addr {
+            bail!("Computed fast-path address range 0x{:x}-{:x} doesn't match the min/max accessed addresses 0x{:x}-{:x}",
+                expected_addr_range.start, expected_addr_range.end,
+                min_addr, max_addr
+            );
         }
 
         use DecodedMemOp::*;
@@ -406,8 +461,10 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                     let addr_p = (addr, provenance);
                     // Perform the access!
                     match dir {
-                        MemOpDir::Load => self.load_to_vreg(mem, eew, addr_p, base_reg, elem_within_group)?,
-                        MemOpDir::Store => self.store_to_mem(mem, eew, addr_p, base_reg, elem_within_group)?
+                        MemOpDir::Load => self.load_to_vreg(mem, eew, addr_p, base_reg, elem_within_group)
+                            .with_context(|| format!("Failure on element {}", elem_within_group))?,
+                        MemOpDir::Store => self.store_to_mem(mem, eew, addr_p, base_reg, elem_within_group)
+                            .with_context(|| format!("Failure on element {}", elem_within_group))?
                     }
                 }
             }
@@ -596,7 +653,7 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<VecInterface<'_, uXLEN, TElem>> for Rvv<
                                 // vmerge or vmv
                                 // if masked, vmerge, else vmv
                                 for i in self.vstart..self.vl {
-                                    let val = if self.vreg.seg_masked_out(vm, i as usize) {
+                                    let val = if self.vreg.seg_masked_out(vm, i) {
                                         // if masked out, this must be vmerge, write new value in
                                         self.vreg.load_vreg_elem_int(self.vtype.vsew, rs2, i)?
                                     } else {
@@ -654,7 +711,7 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<VecInterface<'_, uXLEN, TElem>> for Rvv<
                                 }
 
                                 for i in self.vstart..self.vl {
-                                    if !self.vreg.seg_masked_out(vm, i as usize) {
+                                    if !self.vreg.seg_masked_out(vm, i) {
                                         let val = self.vreg.load_vreg_elem_int(self.vtype.vsew, rs2, i)?;
                                         // Cast the value down to the element type, do the wrapping addition, then cast it back up
                                         let val = match self.vtype.vsew {
@@ -705,7 +762,9 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<VecInterface<'_, uXLEN, TElem>> for Rvv<
 
                 let addr_provenance = sreg.get_addr_provenance(rs1)?;
 
-                // TODO - set vstart in exec_load_store
+                // Any exception at this point does not set the vstart CSR
+                // In the fast-path Success or Indeterminate cases the access is still executed,
+                // and the element index is reported to the user through the context string.
 
                 // Pre-check capability access
                 let (fast_check_result, addr_range) = self.fast_check_load_store(addr_provenance, rs2, vm, op, sreg);
@@ -713,20 +772,19 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<VecInterface<'_, uXLEN, TElem>> for Rvv<
                     // There was a fast path that didn't raise an exception
                     Ok(true) => {
                         self.exec_load_store(addr_range, rd, rs1, rs2, vm, op, sreg, mem)
-                            .context("Executing pre-checked vector access - shouldn't throw CapabilityExceptions under any circumstances")?;
+                            .context("Executing pre-checked vector access - shouldn't throw CapabilityExceptions under any circumstances")
                     },
                     // There was a fast path that raised an exception, re-raise it
                     Err(e) => {
                         // This assumes imprecise error handling
-                        // todo!("set vstart");
-                        Err(e).context(format!("Fast-path checking vector access {:?}", op))?;
+                        Err(e)
                     }
                     // There was no fast path, or it was uncertain if a CapabilityException would actually be raised
                     Ok(false) => {
                         self.exec_load_store(addr_range, rd, rs1, rs2, vm, op, sreg, mem)
-                            .context("Executing not-pre-checked vector access - may throw CapabilityException")?;
+                            .context("Executing not-pre-checked vector access - may throw CapabilityException")
                     },
-                }
+                }.context(format!("Executing vector access {:?}", op))?;
             }
 
             _ => bail!("Unexpected opcode/InstructionBits pair at vector unit")

@@ -104,7 +104,7 @@ pub trait VectorRegisterFile<TElem> {
     fn store_vreg_int(&mut self, vs: u8, val: u128) -> Result<()>;
 
     /// Returns true if the mask is enabled and element `i` has been masked *out*, e.g. that it should not be touched.
-    fn seg_masked_out(&self, vm: bool, i: usize) -> bool;
+    fn seg_masked_out(&self, vm: bool, i: u32) -> bool;
     fn dump(&self);
     fn reset(&mut self);
 }
@@ -153,7 +153,8 @@ impl VectorRegisterFile<u128> for IntVectorRegisterFile {
         Ok(())
     }
 
-    fn seg_masked_out(&self, vm: bool, i: usize) -> bool {
+    fn seg_masked_out(&self, vm: bool, i: u32) -> bool {
+        let i = i as usize;
         // vm == 1 for mask disabled, 0 for mask enabled
         (!vm) && (bits!(self.vreg[0], i:i) == 0)
     }
@@ -244,7 +245,8 @@ impl VectorRegisterFile<SafeTaggedCap> for CheriVectorRegisterFile {
         self.store_vreg_elem(eew, vd_base, idx_from_base, SafeTaggedCap::from_integer(val))
     }
 
-    fn seg_masked_out(&self, vm: bool, i: usize) -> bool {
+    fn seg_masked_out(&self, vm: bool, i: u32) -> bool {
+        let i = i as usize;
         // vm == 1 for mask disabled, 0 for mask enabled
         (!vm) && (bits!(self.vreg[0].to_integer(), i:i) == 0)
     }
