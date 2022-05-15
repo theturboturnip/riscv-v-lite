@@ -62,11 +62,11 @@ def run_test(compiler: str, arch: str, test_program: str, use_elf: bool):
 
     output = process.stdout.decode('utf-8').split("\n")
 
-    if [line.startswith("All tests ran were successful") for line in output]:
+    if any([line.startswith("All tests ran were successful") for line in output]):
         crashed = False
         successful = True
         unsuccessful_indices = []
-    elif [line.startswith("Not all tests were successful.") for line in output]:
+    elif any([line.startswith("Not all tests were successful.") for line in output]):
         crashed = False
         successful = False
 
@@ -78,7 +78,7 @@ def run_test(compiler: str, arch: str, test_program: str, use_elf: bool):
         unsuccessful_indices = [
             int(line)
             for line in output[unsuccessful_list_start+1:]
-            if not line.strip().startswith("Finished")
+            if line.strip() and not line.strip().startswith("Finished")
         ]
     else:
         crashed = True
