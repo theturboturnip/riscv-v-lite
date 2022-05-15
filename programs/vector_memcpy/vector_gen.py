@@ -952,12 +952,9 @@ def generate_boundary_fof_tests(b: VectorTestsCpp, vtypes: List[VType]):
             f"vector_memcpy_boundary_faultonlyfirst_{vtype.get_code()}",
             required_def = ENABLE_FAULTONLYFIRST_DEF + (f" && {ENABLE_FRAC_LMUL_DEF}" if vtype.lmul.is_frac() else "")
         )
-        vtype_type = vtype.get_unsigned_type()
         vtype_elem_type = vtype.get_unsigned_elem_type()
         vtype_unit_load_fof = f"vle{vtype.sew.value}ff_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
-        vtype_unit_store = f"vse{vtype.sew.value}_v_u{vtype.sew.value}{vtype.lmul.get_code()}"
-        vtype_unit_load_fof_asm = f"vle{vtype.sew.value}.v"
-        vtype_unit_store_asm = f"vse{vtype.sew.value}.v"
+        vtype_unit_load_fof_asm = f"vle{vtype.sew.value}ff.v"
         with b.new_test(test, None):
             b.write_code(f"{vtype_elem_type}* unmapped_ptr = ({vtype_elem_type}*)&ramBoundary")
 
@@ -982,7 +979,7 @@ def generate_boundary_fof_tests(b: VectorTestsCpp, vtypes: List[VType]):
                     b.write_code(f'asm volatile ("csrr %0, vl" : "=r"(new_vl));')
                     b.write_line("#else")
                     b.write_code(f"{vtype_unit_load_fof}(in, &new_vl, VLMAX);")
-                b.write_code(f"if (new_vl != VLMAX) return 0;")
+                b.write_code(f"if (new_vl != expected_num_copied) return 0;")
             b.write_code("return 1")
 
 def generate_tests() -> Tuple[str, Dict[Any, Any]]:

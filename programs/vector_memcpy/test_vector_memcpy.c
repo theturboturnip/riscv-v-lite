@@ -1519,12 +1519,12 @@ int64_t vector_memcpy_boundary_faultonlyfirst_e8m8() {
         vsetvlmax_e8m8();
         size_t new_vl;
         #if USE_ASM_FOR_FAULTONLYFIRST
-        asm volatile ("vle8.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("vle8ff.v v8, (%0)" :: ASM_PREG(in));
         asm volatile ("csrr %0, vl" : "=r"(new_vl));
         #else
         vle8ff_v_u8m8(in, &new_vl, VLMAX);
         #endif // USE_ASM_FOR_FAULTONLYFIRST
-        if (new_vl != VLMAX) return 0;
+        if (new_vl != expected_num_copied) return 0;
     }
     return 1;
 }
@@ -1541,12 +1541,12 @@ int64_t vector_memcpy_boundary_faultonlyfirst_e16m8() {
         vsetvlmax_e16m8();
         size_t new_vl;
         #if USE_ASM_FOR_FAULTONLYFIRST
-        asm volatile ("vle16.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("vle16ff.v v8, (%0)" :: ASM_PREG(in));
         asm volatile ("csrr %0, vl" : "=r"(new_vl));
         #else
         vle16ff_v_u16m8(in, &new_vl, VLMAX);
         #endif // USE_ASM_FOR_FAULTONLYFIRST
-        if (new_vl != VLMAX) return 0;
+        if (new_vl != expected_num_copied) return 0;
     }
     return 1;
 }
@@ -1563,12 +1563,12 @@ int64_t vector_memcpy_boundary_faultonlyfirst_e32m8() {
         vsetvlmax_e32m8();
         size_t new_vl;
         #if USE_ASM_FOR_FAULTONLYFIRST
-        asm volatile ("vle32.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("vle32ff.v v8, (%0)" :: ASM_PREG(in));
         asm volatile ("csrr %0, vl" : "=r"(new_vl));
         #else
         vle32ff_v_u32m8(in, &new_vl, VLMAX);
         #endif // USE_ASM_FOR_FAULTONLYFIRST
-        if (new_vl != VLMAX) return 0;
+        if (new_vl != expected_num_copied) return 0;
     }
     return 1;
 }
@@ -1585,12 +1585,12 @@ int64_t vector_memcpy_boundary_faultonlyfirst_e32mf2() {
         vsetvlmax_e32mf2();
         size_t new_vl;
         #if USE_ASM_FOR_FAULTONLYFIRST
-        asm volatile ("vle32.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("vle32ff.v v8, (%0)" :: ASM_PREG(in));
         asm volatile ("csrr %0, vl" : "=r"(new_vl));
         #else
         vle32ff_v_u32mf2(in, &new_vl, VLMAX);
         #endif // USE_ASM_FOR_FAULTONLYFIRST
-        if (new_vl != VLMAX) return 0;
+        if (new_vl != expected_num_copied) return 0;
     }
     return 1;
 }
@@ -1607,12 +1607,12 @@ int64_t vector_memcpy_boundary_faultonlyfirst_e64m2() {
         vsetvlmax_e64m2();
         size_t new_vl;
         #if USE_ASM_FOR_FAULTONLYFIRST
-        asm volatile ("vle64.v v8, (%0)" :: ASM_PREG(in));
+        asm volatile ("vle64ff.v v8, (%0)" :: ASM_PREG(in));
         asm volatile ("csrr %0, vl" : "=r"(new_vl));
         #else
         vle64ff_v_u64m2(in, &new_vl, VLMAX);
         #endif // USE_ASM_FOR_FAULTONLYFIRST
-        if (new_vl != VLMAX) return 0;
+        if (new_vl != expected_num_copied) return 0;
     }
     return 1;
 }
