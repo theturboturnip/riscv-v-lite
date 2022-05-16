@@ -1,7 +1,7 @@
 # riscv-v-lite
 Simplistic RISC-V emulator including Vector extension instructions.
 
-Supports `rv32imv`, `rv64im`, and `rv64imxcheri` architectures.
+Supports `rv32imv`, `rv64im`, `rv64imxcheri`, and `rv64imxcheri-int` architectures.
 
 ## The Emulator
 
@@ -35,20 +35,7 @@ And some tests embedded in said documentation can be run:
 
 If an error occurs during execution, including any issues with unimplemented instructions, the processor state will be dumped and an error message will display.
 
-All instructions that occur in the example program are now implemented, so the program should succeed.
-The result of the program is written to the address `0xF000_0000`.
-When this happens, the Memory module will throw an ""error"" to report the success.
-
-```
-Error: Failed to execute decoded instruction Store SType { funct3: 2, rs1: 11, rs2: 10, imm: 0 }
-
-Caused by:
-    Program returned a value = 0x3FFF (expected 0x3FFF) = 0b0011111111111111
-```
-
-As the program has returned the expected value, it has been successful! 🎉
-
-The bits of the output represent the outcomes of various tests - see [programs/vector_memcpy/vector_memcpy.c](/programs/vector_memcpy/vector_memcpy.c) to tell which bit corresponds to which test.
+Run `./test.sh` to build and test the emulator, compile the test programs if necessary, and run all tests.
 
 ## The Program
 
