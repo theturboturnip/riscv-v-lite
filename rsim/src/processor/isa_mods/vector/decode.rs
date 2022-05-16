@@ -37,7 +37,7 @@ pub enum UnitStrideStoreOp {
 }
 
 /// The "direction" of a memory operation.
-/// Used by [OverallMemOp].
+/// Used by [DecodedMemOp].
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 pub enum MemOpDir { 
     /// Load = taking values from memory and putting them in vector registers
@@ -51,11 +51,11 @@ pub enum MemOpDir {
 /// Indexed access, and the special cases of unit-stride access (e.g. whole-register, bytemasked, fault-only-first).
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 pub enum DecodedMemOp {
-    /// Moves elements of [nf] vector register groups to/from contiguous segments of memory,
+    /// Moves elements of [Self::Strided::nf] vector register groups to/from contiguous segments of memory,
     /// where each segment is separated by a stride.
     /// 
-    /// - The start of each segment is separated by [stride] bytes.
-    /// - Each segment is `nf * eew` bits long, i.e. [nf] elements long.
+    /// - The start of each segment is separated by [Self::Strided::stride] bytes.
+    /// - Each segment is `nf * eew` bits long, i.e. [Self::Strided::nf] elements long.
     /// - Each element in the i-th segment maps to the i-th element of a vector register group.
     /// - This instruction doesn't do anything if the stored `vstart >= vl`.
     /// 
@@ -65,7 +65,7 @@ pub enum DecodedMemOp {
     /// base addr + (i * 8) <=> v0[i]
     /// ```
     /// 
-    /// Increasing [nf] makes it more complicated.
+    /// Increasing [Self::Strided::nf] makes it more complicated.
     /// For example if `nf = 3`, `stride = 8`, `eew = 32 bits = 4 bytes`:
     /// ```text
     /// base addr + (i * 8) + (0 * 4) <=> v0[i]
@@ -73,7 +73,7 @@ pub enum DecodedMemOp {
     /// base addr + (i * 8) + (2 * 4) <=> v2[i]
     /// ```
     /// 
-    /// In the most complicated case, [EMUL] may also be > 1.
+    /// In the most complicated case, [Self::Strided::emul] may also be > 1.
     /// If `EMUL = 2`, `nf = 3`, `stride = 8`, `eew = 32 bits = 4 bytes`:
     /// ```text
     /// base addr + (i * 8) + (0 * 4) <=> (v0..v1)[i]
@@ -103,11 +103,11 @@ pub enum DecodedMemOp {
         /// Number of Fields for segmented access
         nf: u8,
     },
-    /// Moves elements of [nf] vector register groups to/from contiguous segments of memory,
+    /// Moves elements of [Self::Indexed::nf] vector register groups to/from contiguous segments of memory,
     /// where each segment is offset by an index taken from another vector.
     /// 
     /// - The start of each segment is defined by `base address + index_vector[i]`.
-    /// - Each segment is `nf * eew` bits long, i.e. [nf] elements long.
+    /// - Each segment is `nf * eew` bits long, i.e. [Self::Indexed::nf] elements long.
     /// - Each element in the i-th segment maps to the i-th element of a vector register group.
     /// - Accesses within each segment are not ordered relative to each other.
     /// - If the ordered variant of this instruction is used, then the segments must be accessed in the order specified by the index vector.
@@ -122,7 +122,7 @@ pub enum DecodedMemOp {
     /// base addr + index_vector[i] <=> v0[i]
     /// ```
     /// 
-    /// Increasing [nf] makes it more complicated.
+    /// Increasing [Self::Indexed::nf] makes it more complicated.
     /// For example if `nf = 3`, `element width = 32 bits = 4 bytes`:
     /// ```text
     /// base addr + index_vector[i] + (0 * 4) <=> v0[i]
@@ -130,7 +130,7 @@ pub enum DecodedMemOp {
     /// base addr + index_vector[i] + (2 * 4) <=> v2[i]
     /// ```
     /// 
-    /// In the most complicated case, [EMUL] may also be > 1.
+    /// In the most complicated case, [Self::Indexed::emul] may also be > 1.
     /// If `EMUL = 2`, `nf = 3`, `element width = 32 bits = 4 bytes`:
     /// ```text
     /// base addr + index_vector[i] + (0 * 4) <=> (v0..v1)[i]
@@ -158,7 +158,7 @@ pub enum DecodedMemOp {
         /// Number of Fields for segmented access
         nf: u8,
     },
-    /// Moves the contents of [nf] vector registers to/from a contiguous range in memory.
+    /// Moves the contents of [Self::WholeRegister::nf] vector registers to/from a contiguous range in memory.
     WholeRegister{
         /// The direction, i.e. load or store
         dir: MemOpDir,
@@ -186,12 +186,12 @@ pub enum DecodedMemOp {
         /// The number of bytes to load, i.e. `ceil(vl/8)`
         evl: u32
     },
-    /// Loads elements from contiguous segments in memory into [nf] vector register groups.
+    /// Loads elements from contiguous segments in memory into [Self::FaultOnlyFirst::nf] vector register groups.
     /// If an exception is encountered while loading elements from segment 0, it is trapped as usual.
     /// However, an exception encountered after that point is ignored, and `vl` is set to the current segment instead.
     /// 
     /// - The start of the range is defined by `base address`.
-    /// - Each segment is `nf * eew` bits long, i.e. [nf] elements long.
+    /// - Each segment is `nf * eew` bits long, i.e. [Self::FaultOnlyFirst::nf] elements long.
     /// - Each element in the i-th segment maps to the i-th element of a vector register group.
     /// - Accesses within each segment are not ordered relative to each other.
     /// - This instruction doesn't do anything if the stored `vstart >= vl`.

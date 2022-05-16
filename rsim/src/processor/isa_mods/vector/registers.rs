@@ -29,6 +29,7 @@ fn bit_range_for_element(eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<(u
 /// Panics if new_data has 1s outside of the range specified by `bits`
 /// 
 /// ```
+/// # use rsim::processor::isa_mods::vector::replace_bits;
 /// assert_eq!(
 ///     replace_bits(0, 0xf, 12..15),
 ///     0xf000
@@ -38,7 +39,7 @@ fn bit_range_for_element(eew: Sew, vd_base: u8, idx_from_base: u32) -> Result<(u
 ///     0xbfff_ffff
 /// );
 /// ```
-fn replace_bits(original: u128, new_data: u128, bits: Range<usize>) -> u128 {
+pub fn replace_bits(original: u128, new_data: u128, bits: Range<usize>) -> u128 {
     assert!(bits.end >= bits.start);
     let data_length_bits = bits.end - bits.start + 1;
     // Mask of (data_length_bits) 1s, starting at bit 0
@@ -55,6 +56,7 @@ fn replace_bits(original: u128, new_data: u128, bits: Range<usize>) -> u128 {
 /// Grabs the bits of `original` in range `bits`
 /// Expects a Verilog-style i.e. all-inclusive bits range.
 ///```
+/// # use rsim::processor::isa_mods::vector::extract_bits;
 /// assert_eq!(
 ///     extract_bits(0xf000, 12..15),
 ///     0xf
@@ -64,7 +66,7 @@ fn replace_bits(original: u128, new_data: u128, bits: Range<usize>) -> u128 {
 ///     0b1011
 /// );
 /// ```
-fn extract_bits(original: u128, bits: Range<usize>) -> u128 {
+pub fn extract_bits(original: u128, bits: Range<usize>) -> u128 {
     assert!(bits.end >= bits.start);
     let data_length_bits = bits.end - bits.start + 1;
     // Mask of (data_length_bits) 1s, starting at bit 0
@@ -109,6 +111,7 @@ pub trait VectorRegisterFile<TElem> {
     fn reset(&mut self);
 }
 
+/// Register file which holds 128-bit integer vectors.
 pub struct IntVectorRegisterFile {
     vreg: [u128; 32]
 }
@@ -177,6 +180,7 @@ impl Default for IntVectorRegisterFile {
     }
 }
 
+/// Register file which holds 128-bit integer vectors OR one tagged capability per vector.
 pub struct CheriVectorRegisterFile {
     vreg: [SafeTaggedCap; 32]
 }

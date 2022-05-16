@@ -6,6 +6,8 @@ use crate::processor::elements::cheri::{Cc128,CompressedCapability,Cc128Cap,Cher
 use crate::processor::elements::cheri::CheriRV64RegisterFile;
 use crate::processor::elements::registers::RegisterFile;
 
+/// Connection to register state for 64-bit CHERI-aware ISA modules.
+/// Used by [XCheri64] and [Rv64imCapabilityMode]. 
 pub struct XCheri64Conn<'a> {
     pub pcc: Cc128Cap,
     pub sreg: &'a mut CheriRV64RegisterFile,
@@ -14,6 +16,8 @@ pub struct XCheri64Conn<'a> {
     pub ddc: Cc128Cap,
 }
 
+/// ISA module implementing the new CHERI instructions for 64-bit ISAs.
+/// Does not include capability-mode overrides for legacy instructions.
 pub struct XCheri64 {}
 impl XCheri64 {
     fn handle_cjalr(&mut self, cd: u8, cs1: u8, offset: u64, conn: XCheri64Conn) -> ProcessorResult<Cc128Cap> {
@@ -441,7 +445,7 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
     }
 }
 
-/// Override for base RV64I instructions when in "capability mode"
+/// Override for base RV64I instructions when in "capability mode".
 /// See TR-951$5.3.6, page 152 for list of affected instructions.
 pub struct Rv64imCapabilityMode {}
 impl IsaMod<XCheri64Conn<'_>> for Rv64imCapabilityMode {

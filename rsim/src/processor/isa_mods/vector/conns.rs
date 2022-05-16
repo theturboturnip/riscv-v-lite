@@ -15,11 +15,11 @@ use super::decode::MemOpDir;
 use crate::processor::elements::cheri::{CheriRV64RegisterFile,CheriAggregateMemory,Cc128,CompressedCapability,check_bounds_against_capability,check_obj_bounds_against_capability};
 use crate::processor::elements::{registers::RegisterFile,memory::Memory};
 
-/// The vector unit needs to support connections to
-/// - RegisterFile<u32>, Memory
-/// - RegisterFile<u64>, Memory
-/// - RegisterFile<u64>, CHERI memory (integer-mode CHERI)
-/// - RegisterFile<SafeTaggedCap>, CHERI memory (capability-mode CHERI)
+// The vector unit needs to support connections to
+// - RegisterFile<u32>, Memory
+// - RegisterFile<u64>, Memory
+// - RegisterFile<u64>, CHERI memory (integer-mode CHERI)
+// - RegisterFile<SafeTaggedCap>, CHERI memory (capability-mode CHERI)
 
 /// Struct indicating the providence of a pointer.
 pub type Provenance = Option<Cc128Cap>;
@@ -30,7 +30,7 @@ pub trait VecRegInterface<uXLEN: PossibleXlen> {
     /// Write a value XLEN to a register, not an address
     fn sreg_write_xlen(&mut self, reg: u8, val: uXLEN) -> Result<()>;
     /// Get a raw address value + the provenance of that address from a register.
-    /// The address can be changed, and then [load_from_memory] and [store_to_memory] 
+    /// The address can be changed, and then [VecMemInterface::load_from_memory] and [VecMemInterface::store_to_memory] 
     /// can reuse the providence with the modified address
     fn get_addr_provenance(&mut self, reg: u8) -> Result<(u64, Provenance)>;
 
@@ -152,9 +152,11 @@ impl<'a> VecRegInterface<u64> for CheriRV64RegisterFile {
             Sew::e32 => {
                 check_obj_bounds_against_capability::<u32>(addr, cap, expected_perms)
             }
-            Sew::e64 => { bail!("check_elem_bounds_against_provenance {:?} unsupported", eew) }
+            Sew::e64 => {
+                check_obj_bounds_against_capability::<u64>(addr, cap, expected_perms)
+            }
             Sew::e128 => {
-                bail!("Unsupported check-bounds width: 128");
+                check_obj_bounds_against_capability::<u128>(addr, cap, expected_perms)
             }
         }
     }
@@ -195,9 +197,11 @@ impl<'a> VecRegInterface<u64> for IntegerModeCheriRV64RegisterFile<'a> {
             Sew::e32 => {
                 check_obj_bounds_against_capability::<u32>(addr, cap, expected_perms)
             }
-            Sew::e64 => { bail!("check_elem_bounds_against_provenance {:?} unsupported", eew) }
+            Sew::e64 => {
+                check_obj_bounds_against_capability::<u64>(addr, cap, expected_perms)
+            }
             Sew::e128 => {
-                bail!("Unsupported check-bounds width: 128");
+                check_obj_bounds_against_capability::<u128>(addr, cap, expected_perms)
             }
         }
     }

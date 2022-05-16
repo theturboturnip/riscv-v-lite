@@ -9,8 +9,9 @@ use crate::processor::decode::{decode, InstructionBits};
 use crate::processor::elements::cheri::{Cc128Cap,CheriRV64RegisterFile,CheriAggregateMemory};
 use crate::processor::isa_mods::{IsaMod, Rv64im, Rv64imConn, Rv64imCapabilityMode, XCheri64, XCheri64Conn, Zicsr64, Zicsr64Conn, Rv64Cheriv, CheriVectorRegisterFile, CSRProvider};
 
-/// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
-/// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
+/// RISC-V Processor Model where XLEN=64-bit, with CHERI support.
+/// Can execute in Integer or Capability mode.
+/// Holds scalar registers and configuration, all other configuration stored in [Rv64imvXCheriProcessorModules]
 pub struct Rv64imvXCheriProcessor {
     pub running: bool,
     pub memory: CheriAggregateMemory,

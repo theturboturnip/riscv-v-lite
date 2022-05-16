@@ -17,7 +17,7 @@ pub const VLEN: usize = size_of::<uVLEN>() * 8;
 /// Convertible to/from u32, e.g. a register value.
 /// 
 /// ```
-/// use rsim::processor::vector::{VType,Sew,Lmul};
+/// # use rsim::processor::isa_mods::vector::{VType,Sew,Lmul};
 /// 
 /// let encoded_vtype = 0b00001010011;
 /// let decoded_vtype = VType::decode(encoded_vtype).unwrap();

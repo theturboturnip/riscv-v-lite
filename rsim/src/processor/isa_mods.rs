@@ -1,9 +1,16 @@
+//! All RISC-V ISA extensions implemented as objects implementing [IsaMod].
+
 use num_traits::Num;
 use crate::processor::exceptions::ProcessorResult;
 use crate::processor::decode::{Opcode, InstructionBits};
 use crate::processor::elements::memory::Memory;
 use crate::processor::elements::registers::RegisterFile;
 
+/// Trait for all ISA modules.
+/// 
+/// Uses a `TConn` value to connect to processor state: for example, 
+/// the [Rv64im] module takes a connection holding a reference to a 64-bit register file, 
+/// and a reference to main memory.
 pub trait IsaMod<TConn> {
     type Pc;
 
@@ -30,6 +37,7 @@ pub trait PossibleXlen:
 impl PossibleXlen for u32 {}
 impl PossibleXlen for u64 {}
 
+/// Connection to a RISC-V I+M ISA module.
 #[allow(non_camel_case_types)]
 pub struct RvimConn<'a, uXLEN: PossibleXlen> {
     pub pc: uXLEN,
@@ -46,7 +54,7 @@ pub use rv64im::Rv64im;
 
 mod csrs;
 pub use csrs::{Zicsr32, Zicsr32Conn, Zicsr64, Zicsr64Conn, CSRProvider};
-mod vector;
+pub mod vector;
 pub use vector::{Rv32v,Rv64v,Rv64Cheriv,IntVectorRegisterFile,CheriVectorRegisterFile};
 mod cheri;
 pub use cheri::{XCheri64,Rv64imCapabilityMode,XCheri64Conn};

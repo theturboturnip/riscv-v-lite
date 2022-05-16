@@ -20,11 +20,8 @@ pub(super) fn check_alignment_range<TData>(addr: u64, range: &Range<usize>) -> M
     }
 }
 
-/// Internal trait defining functions for reading/writing values of type [TData] from a memory,
-/// using values of type [TAddr] as addresses (TAddr is usually u64 for non-CHERI memory.)
-/// 
-/// Includes a helper function [MemoryOf<TData>::check_alignment_range] for checking for  
-/// AddressMisaligned or AddressUnmapped errors.
+/// Internal trait defining functions for reading/writing values of type `TData` from a memory,
+/// using values of type `TAddr` as addresses (TAddr is usually u64 for non-CHERI memory.)
 pub trait MemoryOf<TData, TAddr=u64> where TData: Sized {
     fn read(&mut self, addr: TAddr) -> MemoryResult<TData>;
     fn write(&mut self, addr: TAddr, val: TData) -> MemoryResult<()>;

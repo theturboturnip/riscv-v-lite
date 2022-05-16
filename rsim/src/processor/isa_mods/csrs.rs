@@ -153,7 +153,9 @@ impl<T> IsaMod<ZicsrConn<'_,T>> for Zicsr<T> where T: From<u8> {
     }
 }
 
+/// CSR unit for RV32 ISAs
 pub type Zicsr32 = Zicsr<u32>;
+/// CSR unit for RV64 ISAs
 pub type Zicsr64 = Zicsr<u64>;
 pub type Zicsr32Conn<'a> = ZicsrConn<'a,u32>;
 pub type Zicsr64Conn<'a> = ZicsrConn<'a,u64>;

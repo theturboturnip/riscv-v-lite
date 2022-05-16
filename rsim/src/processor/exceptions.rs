@@ -43,7 +43,7 @@ pub enum CapOrRegister {
 }
 
 /// Enum for capability-related exceptions.
-/// Modelled after [https://github.com/CTSRD-CHERI/sail-cheri-riscv/blob/master/src/cheri_types.sail].
+/// Modelled after <https://github.com/CTSRD-CHERI/sail-cheri-riscv/blob/master/src/cheri_types.sail>.
 /// Contains commented-out variants that are currently unused.
 #[derive(Debug,Clone,PartialEq,Eq,Error)]
 pub enum CapabilityException {

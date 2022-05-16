@@ -15,5 +15,12 @@ else
     exit 1
 fi
 
+if (cd ./rsim/ && cargo test --doc) then
+    echo "Succeeded doc-testing emulator"
+else
+    echo "Error doc-testing emulator"
+    exit 1
+fi
+
 # Now that the emulator and tests are ready, run the tests
 python3.8 ./test.py

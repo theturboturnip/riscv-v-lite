@@ -12,23 +12,21 @@ use anyhow::{Context, Result};
 use crate::processor::decode::{Opcode,InstructionBits};
 
 mod types;
-use types::*;
+pub use types::*;
 
 mod conns;
-use conns::*;
+pub use conns::*;
 
 mod decode;
-use decode::*;
+pub use decode::*;
 
 mod registers;
 pub use registers::*;
 
 /// The Vector Unit for the processor.
 /// Stores all vector state, including registers.
-/// Call [Rv32v::exec_inst()] on it when you encounter a vector instruction.
-/// This requires a [VecMemInterface<uXLEN>] to access other resources.
+/// This requires a [VecMemInterface<uXLEN, TElem>] and [VecRegInterface<uXLEN>] to access other resources.
 pub struct Rvv<uXLEN: PossibleXlen, TElem> {
-    // TODO use a RegisterFile for this?
     vreg: Box<dyn VectorRegisterFile<TElem>>,
 
     vtype: VType,
@@ -45,8 +43,11 @@ pub struct Rvv<uXLEN: PossibleXlen, TElem> {
 
     _phantom_xlen: PhantomData<uXLEN>,
 }
+/// RISC-V Vector unit for RV32 ISAs
 pub type Rv32v = Rvv<u32, u128>;
+/// RISC-V Vector unit for RV64 non-CHERI ISAs
 pub type Rv64v = Rvv<u64, u128>;
+/// RISC-V Vector unit for RV64 + CHERI ISAs
 pub type Rv64Cheriv = Rvv<u64, SafeTaggedCap>;
 
 impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
@@ -72,7 +73,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
     }
 
     /// (Internal) Execute a configuration instruction, e.g. vsetvli family
-    /// Requires a [Rv32vConn].
+    /// Requires a [VecRegInterface].
     /// 
     /// # Arguments
     /// 
@@ -533,6 +534,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
     }
 }
 
+/// Helper type combining [VecRegInterface] and [VecMemInterface]
 pub type VecInterface<'a, uXLEN, TElem> = (
     &'a mut dyn VecRegInterface<uXLEN>,
     &'a mut dyn VecMemInterface<uXLEN, TElem>
@@ -562,7 +564,7 @@ impl<uXLEN: PossibleXlen, TElem> IsaMod<VecInterface<'_, uXLEN, TElem>> for Rvv<
     }
     
     /// Execute a vector-specific instruction, e.g. vector arithmetic, loads, configuration
-    /// Requires a [Rv32vConn].
+    /// Requires a [VecRegInterface] and a [VecMemInterface].
     /// 
     /// # Arguments
     /// 

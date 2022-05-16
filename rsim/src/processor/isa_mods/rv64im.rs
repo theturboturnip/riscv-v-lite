@@ -2,6 +2,8 @@ use crate::processor::isa_mods::*;
 
 use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
 
+/// Base ISA module for RV64 ISAs.
+/// Implements Integer and Multiply extensions.
 pub struct Rv64im {}
 impl IsaMod<Rv64imConn<'_>> for Rv64im {
     type Pc = u64;
