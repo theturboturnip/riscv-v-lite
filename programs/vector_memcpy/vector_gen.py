@@ -253,6 +253,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define {ENABLE_BYTEMASK_DEF} 1
         #define {BYTEMASK_ASM_DEF} 0
     #else
+        // LLVM 13 does not support bytemask
         #define {ENABLE_BYTEMASK_DEF} 0
     #endif
 
@@ -275,6 +276,7 @@ void* memset(void* dest, int ch, size_t count) {
         #define {ENABLE_FRAC_LMUL_DEF} 1
         #define {ENABLE_ASM_WHOLEREG_DEF} 1
         #define {ENABLE_FAULTONLYFIRST_DEF} 1
+        // BYTEMASK is disabled above
 
         // Use ASM for everything
         #define {UNIT_ASM_DEF} 1
@@ -307,9 +309,12 @@ void* memset(void* dest, int ch, size_t count) {
 #elif defined(__GNUC__) && !defined(__INTEL_COMPILER)
 // GNU exts enabled, not in LLVM or Intel, => in GCC
 
-// My version of GCC intrinsics doesn't have correct intrinsics for segmented loads,
+// GCC from RISC-V toolchain rvv-intrinsics branch
+// (archived at https://github.com/theturboturnip/riscv-gnu-toolchain)
+// has incorrect names for segmented intrinsics,
 // doesn't support fractional LMUL,
-// doesn't have byte-mask intrinsics.
+// doesn't support byte-mask,
+// emits incorrect code for fault-only-first intrinsics (it seems to emit a vsetvli instruction).
 
     // Enable everything except fractional LMUL and bytemask
     #define {ENABLE_UNIT_DEF} 1
@@ -328,9 +333,9 @@ void* memset(void* dest, int ch, size_t count) {
     #define {INDEXED_ASM_DEF} 0
     #define {MASKED_ASM_DEF} 0
     #define {SEGMENTED_ASM_DEF} 1
-    #define {BYTEMASK_ASM_DEF} 1
+    #define {BYTEMASK_ASM_DEF} 0 // bytemask is disabled
     // Wholereg is always ASM
-    #define {FAULTONLYFIRST_ASM_DEF} 1
+    #define {FAULTONLYFIRST_ASM_DEF} 1 // fault-only-first intrinsics emit the wrong instruction
 #endif
 
 volatile extern int64_t outputAttempted; // magic output device
