@@ -1055,8 +1055,8 @@ def generate_tests() -> Tuple[str, Dict[Any, Any]]:
             b.write_line("")
 
             test_json[i] = {"test": test.name}
-        b.write_code("*(&outputAttempted) = attempted;")
-        b.write_code("*(&outputSucceeded) = successful;")
+        b.write_code("outputAttempted = attempted;")
+        b.write_code("outputSucceeded = successful;")
         b.write_code("return 0;")
     b.write_line("#ifdef __cplusplus")
     b.write_code('}')

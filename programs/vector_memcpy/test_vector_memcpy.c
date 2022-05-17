@@ -2670,8 +2670,8 @@ int main(void) {
     successful |= vector_memcpy_boundary_faultonlyfirst_e8mf8() << 57;
     #endif // ENABLE_FAULTONLYFIRST && ENABLE_FRAC_LMUL
     
-    *(&outputAttempted) = attempted;
-    *(&outputSucceeded) = successful;
+    outputAttempted = attempted;
+    outputSucceeded = successful;
     return 0;
 }
 #ifdef __cplusplus

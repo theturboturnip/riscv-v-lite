@@ -15,7 +15,7 @@ add_custom_command(TARGET hello_world POST_BUILD
 # extract the binary data from data and text sections to get a binary image of memory
 # $(OBJCOPY) -O binary --only-section=.data* --only-section=.text* $< $@
 add_custom_command(TARGET hello_world POST_BUILD
-                   COMMAND ${CMAKE_OBJCOPY} -O binary --only-section=.data* --only-section=.text* $<TARGET_FILE:hello_world> mem.bin)
+                   COMMAND ${CMAKE_OBJCOPY} -O binary --only-section=.data* --only-section=.text* --only-section=.srodata* $<TARGET_FILE:hello_world> mem.bin)
 
 
 # Dump the executable

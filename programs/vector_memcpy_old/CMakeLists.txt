@@ -22,7 +22,7 @@ add_custom_command(TARGET vector_memcpy_old POST_BUILD
 # extract the binary data from data and text sections to get a binary image of memory
 # $(OBJCOPY) -O binary --only-section=.data* --only-section=.text* $< $@
 add_custom_command(TARGET vector_memcpy_old POST_BUILD
-                   COMMAND ${CMAKE_OBJCOPY} -O binary --only-section=.data* --only-section=.text* $<TARGET_FILE:vector_memcpy_old> mem.bin)
+                   COMMAND ${CMAKE_OBJCOPY} -O binary --only-section=.data* --only-section=.text* --only-section=.srodata* $<TARGET_FILE:vector_memcpy_old> mem.bin)
 
 
 # Dump the executable

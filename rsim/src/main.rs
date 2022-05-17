@@ -162,8 +162,9 @@ fn run_binary_in_processor<T>(mut processor: Box<dyn Processor<T>>, mut mods: T)
                     let io_vals = processor.get_io_values();
                     match &io_vals[..] {
                         [Some(tests_ran), Some(tests_successful)] => {
-                            if *tests_ran == 0 {
-                                panic!("Something went wrong, ran = 0 (successful = 0x{:016x})", tests_successful);
+                            if (tests_ran & tests_successful) != *tests_successful || *tests_ran == 0 {
+                                processor.dump(&mods);
+                                bail!("Something went wrong: ran = 0x{:016x}, successful = 0x{:016x}", tests_ran, tests_successful);
                             }
                             if tests_ran == tests_successful {
                                 println!("All tests ran were successful: 0x{:016x}", tests_ran);

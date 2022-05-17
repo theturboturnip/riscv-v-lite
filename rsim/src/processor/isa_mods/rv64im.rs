@@ -144,7 +144,7 @@ impl IsaMod<Rv64imConn<'_>> for Rv64im {
                     (0, 0b111) => x & y, // AND
 
                     (1, funct3) => match funct3 {
-                        0b000 => x * y, // MUL
+                        0b000 => x.wrapping_mul(y), // MUL
                         // MULH
                         // Widen x,y to i128, multiply, shift down so we take top 32 bits of result
                         0b001 => ((x as i64 as i128) * (y as i64 as i128) >> 32) as i64 as u64,

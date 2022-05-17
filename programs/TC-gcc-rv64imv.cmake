@@ -70,6 +70,9 @@ set( CMAKE_OBJDUMP      ${RISCV_TOOLCHAIN_BIN_PATH}/${CROSS_COMPILE}objdump
 
 # Set the CMAKE C flags (which should also be used by the assembler!
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${CMAKE_SYSTEM_PROCESSOR} -mabi=lp64" )
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostartfiles" )
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdlib" )
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffreestanding" )
 
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" CACHE STRING "" )
 set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS}" CACHE STRING "" )
