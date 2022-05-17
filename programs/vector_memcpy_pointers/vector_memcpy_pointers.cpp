@@ -370,16 +370,17 @@ int run_invalidate_test(void) {
 
 
 // Magical output devices, set by linker
-volatile extern int outputAttempted;
-volatile extern int outputSucceeded;
+volatile extern int64_t outputAttempted;
+volatile extern int64_t outputSucceeded;
+volatile extern int8_t finished;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 int main(void)
 {
-    int result = 0;
-    int attempted = 0;
+    int64_t result = 0;
+    int64_t attempted = 0;
 
     attempted |= 1 << 0;
     result |= run_base_test() << 0;
@@ -391,6 +392,7 @@ int main(void)
 
     *(&outputAttempted) = attempted;
     *(&outputSucceeded) = result;
+    finished = 1;
     return result;
 }
 #ifdef __cplusplus

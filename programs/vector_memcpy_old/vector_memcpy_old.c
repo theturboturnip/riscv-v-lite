@@ -638,16 +638,17 @@ int vector_unit_faultonlyfirst_test_under_fault(void) {
 #endif // ENABLE_FAULTONLYFIRST
 
 // Magical output devices, set by linker
-volatile extern int outputAttempted;
-volatile extern int outputSucceeded;
+volatile extern int64_t outputAttempted;
+volatile extern int64_t outputSucceeded;
+volatile extern int8_t finished;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 int main(void)
 {
-  int result = 0;
-  int attempted = 0;
+  int64_t result = 0;
+  int64_t attempted = 0;
 
   attempted |= 1 << 0; result |= vector_memcpy_harness(vector_memcpy_8m8) << 0;
   attempted |= 1 << 1; result |= vector_memcpy_harness(vector_memcpy_16m8) << 1;
@@ -688,6 +689,7 @@ int main(void)
 
   *(&outputAttempted) = attempted;
   *(&outputSucceeded) = result;
+  finished = 1;
   return result;
 }
 #ifdef __cplusplus

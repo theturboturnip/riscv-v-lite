@@ -827,11 +827,16 @@ main:
 	slli	a0, a0, 13
 	or	a0, s0, a0
 	lui	a1, %hi(outputAttempted)
+	sw	zero, %lo(outputAttempted+4)(a1)
 	lui	a2, 4
 	addi	a2, a2, -1025
 	sw	a2, %lo(outputAttempted)(a1)
 	lui	a1, %hi(outputSucceeded)
+	sw	zero, %lo(outputSucceeded+4)(a1)
 	sw	a0, %lo(outputSucceeded)(a1)
+	lui	a1, %hi(finished)
+	addi	a2, zero, 1
+	sb	a2, %lo(finished)(a1)
 	lw	s0, 8(sp)
 	lw	ra, 12(sp)
 	addi	sp, sp, 16
@@ -856,3 +861,4 @@ main:
 	.addrsig_sym vector_memcpy_32m2_seg4load
 	.addrsig_sym outputAttempted
 	.addrsig_sym outputSucceeded
+	.addrsig_sym finished

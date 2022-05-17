@@ -172,6 +172,9 @@ main:
 	sext.w	a0, a0
 	lui	a1, %hi(outputSucceeded)
 	sd	a0, %lo(outputSucceeded)(a1)
+	lui	a1, %hi(finished)
+	addi	a2, zero, 1
+	sb	a2, %lo(finished)(a1)
 	ld	s0, 0(sp)
 	ld	ra, 8(sp)
 	addi	sp, sp, 16
@@ -184,3 +187,4 @@ main:
 	.addrsig
 	.addrsig_sym outputAttempted
 	.addrsig_sym outputSucceeded
+	.addrsig_sym finished

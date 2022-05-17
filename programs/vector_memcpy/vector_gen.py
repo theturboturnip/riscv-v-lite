@@ -340,6 +340,7 @@ void* memset(void* dest, int ch, size_t count) {
 
 volatile extern int64_t outputAttempted; // magic output device
 volatile extern int64_t outputSucceeded; // magic output device
+volatile extern int8_t finished; // magic output device
 volatile extern int64_t ramBoundary; // edge of writable memory
 """
 
@@ -1062,6 +1063,7 @@ def generate_tests() -> Tuple[str, Dict[Any, Any]]:
             test_json[i] = {"test": test.name}
         b.write_code("outputAttempted = attempted;")
         b.write_code("outputSucceeded = successful;")
+        b.write_code("finished = 1;")
         b.write_code("return 0;")
     b.write_line("#ifdef __cplusplus")
     b.write_code('}')

@@ -158,6 +158,9 @@ main:
 	sd	a4,%lo(outputAttempted)(a5)
 	lui	a5,%hi(outputSucceeded)
 	sd	a0,%lo(outputSucceeded)(a5)
+	lui	a5,%hi(finished)
+	li	a4,1
+	sb	a4,%lo(finished)(a5)
 	ld	ra,24(sp)
 	ld	s0,16(sp)
 	ld	s1,8(sp)

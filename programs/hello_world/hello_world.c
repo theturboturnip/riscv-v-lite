@@ -59,6 +59,7 @@ int fib_memo_test() {
 
 volatile extern int64_t outputAttempted; // magic output device
 volatile extern int64_t outputSucceeded; // magic output device
+volatile extern int8_t finished; // magic output device
 
 int main(void)
 {
@@ -86,5 +87,8 @@ int main(void)
   #endif
 
   *(&outputSucceeded) = result;
+
+  finished = 1;
+
   return result;
 }

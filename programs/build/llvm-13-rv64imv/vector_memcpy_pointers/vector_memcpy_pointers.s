@@ -310,7 +310,7 @@ _Z13run_base_testv:
 	.type	main,@function
 main:
 .Lfunc_begin4:
-	.loc	4 380 0
+	.loc	4 381 0
 	.cfi_startproc
 	addi	sp, sp, -16
 	.cfi_def_cfa_offset 16
@@ -319,21 +319,29 @@ main:
 	sd	ra, 8(sp)
 	.cfi_offset ra, -8
 .Ltmp43:
-	.loc	4 385 15
+	.loc	4 386 15
 	call	_Z13run_base_testv
 .Ltmp44:
-	.loc	4 392 25
-	lui	a1, %hi(outputAttempted)
-	addi	a2, zero, 1
-	sw	a2, %lo(outputAttempted)(a1)
-	.loc	4 393 25
-	lui	a1, %hi(outputSucceeded)
-	sw	a0, %lo(outputSucceeded)(a1)
-	.loc	4 394 5
+	.loc	4 0 15 is_stmt 0
+	slli	a1, a0, 32
+	srli	a1, a1, 32
+.Ltmp45:
+	.loc	4 393 25 is_stmt 1
+	lui	a2, %hi(outputAttempted)
+	addi	a3, zero, 1
+	sd	a3, %lo(outputAttempted)(a2)
+	.loc	4 394 25
+	lui	a2, %hi(outputSucceeded)
+	sd	a1, %lo(outputSucceeded)(a2)
+	.loc	4 395 14
+	lui	a1, %hi(finished)
+.Ltmp46:
+	sb	a3, %lo(finished)(a1)
+	.loc	4 396 5
 	ld	ra, 8(sp)
 	addi	sp, sp, 16
 	ret
-.Ltmp45:
+.Ltmp47:
 .Lfunc_end4:
 	.size	main, .Lfunc_end4-main
 	.cfi_endproc
@@ -622,11 +630,14 @@ main:
 	.quad	0
 .Ldebug_loc10:
 	.quad	.Ltmp43-.Lfunc_begin0
-	.quad	.Ltmp44-.Lfunc_begin0
-	.half	3
-	.byte	17
-	.byte	0
+	.quad	.Ltmp45-.Lfunc_begin0
+	.half	2
+	.byte	48
 	.byte	159
+	.quad	.Ltmp45-.Lfunc_begin0
+	.quad	.Ltmp46-.Lfunc_begin0
+	.half	1
+	.byte	91
 	.quad	0
 	.quad	0
 	.section	.debug_abbrev,"",@progbits
@@ -1372,21 +1383,21 @@ main:
 
 	.word	.Linfo_string20
 	.byte	4
-	.half	379
+	.half	380
 	.word	813
 
 	.byte	21
 	.word	.Ldebug_loc10
 	.word	.Linfo_string43
 	.byte	4
-	.half	381
-	.word	813
+	.half	382
+	.word	903
 	.byte	25
 	.byte	1
-	.word	.Linfo_string44
+	.word	.Linfo_string46
 	.byte	4
-	.half	382
-	.word	813
+	.half	383
+	.word	903
 	.byte	23
 	.word	523
 	.quad	.Ltmp44
@@ -1440,6 +1451,15 @@ main:
 	.word	149
 	.byte	128
 	.byte	0
+	.byte	5
+	.word	914
+	.word	.Linfo_string45
+	.byte	2
+	.byte	96
+	.byte	2
+	.word	.Linfo_string44
+	.byte	5
+	.byte	8
 	.byte	0
 .Ldebug_info_end0:
 	.section	.debug_str,"MS",@progbits,1
@@ -1532,11 +1552,16 @@ main:
 .Linfo_string43:
 	.asciz	"result"
 .Linfo_string44:
+	.asciz	"long int"
+.Linfo_string45:
+	.asciz	"int64_t"
+.Linfo_string46:
 	.asciz	"attempted"
 	.ident	"Ubuntu clang version 13.0.1-++20220120110924+75e33f71c2da-1~exp1~20220120231001.58"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
 	.addrsig_sym outputAttempted
 	.addrsig_sym outputSucceeded
+	.addrsig_sym finished
 	.section	.debug_line,"",@progbits
 .Lline_table_start0:

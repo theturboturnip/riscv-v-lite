@@ -667,7 +667,7 @@ _ZL13cheri_tag_getU12__capabilityPv:
 	.type	main,@function
 main:
 .Lfunc_begin7:
-	.loc	3 380 0
+	.loc	3 381 0
 	.cfi_startproc
 	addi	sp, sp, -16
 	.cfi_def_cfa_offset 16
@@ -678,35 +678,43 @@ main:
 	.cfi_offset ra, -8
 	.cfi_offset s0, -16
 .Ltmp96:
-	.loc	3 385 15
+	.loc	3 386 15
 	call	_Z13run_base_testv
 .Ltmp97:
 	mv	s0, a0
 .Ltmp98:
-	.loc	3 389 15
+	.loc	3 390 15
 	call	_Z19run_invalidate_testv
 .Ltmp99:
-	.loc	3 389 37 is_stmt 0
+	.loc	3 390 37 is_stmt 0
 	slli	a0, a0, 1
-	.loc	3 389 12
-	or	a1, a0, s0
+	.loc	3 390 12
+	or	a0, a0, s0
+	slli	a1, a0, 32
+	srli	a1, a1, 32
 .Ltmp100:
-	.loc	3 392 25 is_stmt 1
-	lui	a0, %hi(outputAttempted)
-	addi	a2, zero, 3
-	sw	a2, %lo(outputAttempted)(a0)
-	.loc	3 393 25
+	.loc	3 393 25 is_stmt 1
+	lui	a2, %hi(outputAttempted)
+	addi	a3, zero, 3
+	sd	a3, %lo(outputAttempted)(a2)
+	.loc	3 394 25
 	lui	a2, %hi(outputSucceeded)
-	.loc	3 394 5
-	sext.w	a0, a1
-	.loc	3 393 25
-	sw	a1, %lo(outputSucceeded)(a2)
-	.loc	3 394 5
+	sd	a1, %lo(outputSucceeded)(a2)
+	.loc	3 395 14
+	lui	a1, %hi(finished)
+.Ltmp101:
+	.loc	3 0 14 is_stmt 0
+	addi	a2, zero, 1
+	.loc	3 396 5 is_stmt 1
+	sext.w	a0, a0
+	.loc	3 395 14
+	sb	a2, %lo(finished)(a1)
+	.loc	3 396 5
 	ld	s0, 0(sp)
 	ld	ra, 8(sp)
 	addi	sp, sp, 16
 	ret
-.Ltmp101:
+.Ltmp102:
 .Lfunc_end7:
 	.size	main, .Lfunc_end7-main
 	.cfi_endproc
@@ -1133,16 +1141,24 @@ main:
 .Ldebug_loc22:
 	.quad	.Ltmp96-.Lfunc_begin0
 	.quad	.Ltmp98-.Lfunc_begin0
-	.half	3
-	.byte	17
-	.byte	0
+	.half	2
+	.byte	48
 	.byte	159
 	.quad	.Ltmp98-.Lfunc_begin0
 	.quad	.Ltmp100-.Lfunc_begin0
-	.half	1
-	.byte	88
+	.half	10
+	.byte	120
+	.byte	0
+	.byte	16
+	.byte	255
+	.byte	255
+	.byte	255
+	.byte	255
+	.byte	15
+	.byte	26
+	.byte	159
 	.quad	.Ltmp100-.Lfunc_begin0
-	.quad	.Lfunc_end7-.Lfunc_begin0
+	.quad	.Ltmp101-.Lfunc_begin0
 	.half	1
 	.byte	91
 	.quad	0
@@ -1150,15 +1166,13 @@ main:
 .Ldebug_loc23:
 	.quad	.Ltmp96-.Lfunc_begin0
 	.quad	.Ltmp98-.Lfunc_begin0
-	.half	3
-	.byte	17
-	.byte	1
+	.half	2
+	.byte	49
 	.byte	159
 	.quad	.Ltmp98-.Lfunc_begin0
 	.quad	.Lfunc_end7-.Lfunc_begin0
-	.half	3
-	.byte	17
-	.byte	3
+	.half	2
+	.byte	51
 	.byte	159
 	.quad	0
 	.quad	0
@@ -2140,21 +2154,21 @@ main:
 
 	.word	.Linfo_string24
 	.byte	3
-	.half	379
+	.half	380
 	.word	1305
 
 	.byte	18
 	.word	.Ldebug_loc22
 	.word	.Linfo_string55
 	.byte	3
-	.half	381
-	.word	1305
+	.half	382
+	.word	1452
 	.byte	18
 	.word	.Ldebug_loc23
-	.word	.Linfo_string56
+	.word	.Linfo_string58
 	.byte	3
-	.half	382
-	.word	1305
+	.half	383
+	.word	1452
 	.byte	20
 	.word	688
 	.quad	.Ltmp97
@@ -2244,6 +2258,15 @@ main:
 	.byte	0
 	.byte	34
 	.byte	16
+	.byte	5
+	.word	1463
+	.word	.Linfo_string57
+	.byte	2
+	.byte	96
+	.byte	2
+	.word	.Linfo_string56
+	.byte	5
+	.byte	8
 	.byte	0
 .Ldebug_info_end0:
 	.section	.debug_ranges,"",@progbits
@@ -2368,11 +2391,16 @@ main:
 .Linfo_string55:
 	.asciz	"result"
 .Linfo_string56:
+	.asciz	"long int"
+.Linfo_string57:
+	.asciz	"int64_t"
+.Linfo_string58:
 	.asciz	"attempted"
 	.ident	"clang version 13.0.0 (ssh://git@github.com/theturboturnip/llvm-project.git 88213dcf1e9bc454f471b9e9a8b2ede325dc5e24)"
 	.section	".note.GNU-stack","",@progbits
 	.addrsig
 	.addrsig_sym outputAttempted
 	.addrsig_sym outputSucceeded
+	.addrsig_sym finished
 	.section	.debug_line,"",@progbits
 .Lline_table_start0:

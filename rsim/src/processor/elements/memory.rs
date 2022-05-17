@@ -1,3 +1,4 @@
+use crate::processor::utils::replace_bits;
 use crate::processor::exceptions::{MemoryException,ProgramHaltedException};
 use std::ops::Range;
 use std::any::Any;
@@ -83,10 +84,19 @@ impl IOMemory {
         }
     }
 }
-impl<TData> MemoryOf<TData> for IOMemory where TData: Into<u64> + Default, dyn Memory: MemoryOf<TData> {
+impl<TData> MemoryOf<TData> for IOMemory where TData: Into<u128> + Into<u64> + Default, dyn Memory: MemoryOf<TData> {
     fn read(&mut self, _: u64) -> MemoryResult<TData> { Ok(TData::default()) }
     fn write(&mut self, addr: u64, val: TData) -> MemoryResult<()> {
-        self.value = Some(val.into());
+        let bit_range_start = (addr as usize - self.range.start) * 8;
+        let bit_range_end = (addr as usize + std::mem::size_of::<TData>() - self.range.start) * 8;
+
+        let initial_value = match self.value {
+            None => 0,
+            Some(val) => val
+        };
+
+        self.value = Some(replace_bits(initial_value as u128, val.into(), bit_range_start..bit_range_end) as u64);
+        
         if self.halt_on_write {
             bail!(ProgramHaltedException::ResultReturned{
                 addr: addr as usize

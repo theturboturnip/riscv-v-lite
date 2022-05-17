@@ -897,14 +897,19 @@ main:
 	addi	a0, a0, %lo(vector_memcpy_32m1_wholereg)
 	call	vector_memcpy_harness
 	slliw	a0, a0, 13
-	or	a1, s0, a0
-	lui	a0, %hi(outputAttempted)
-	lui	a2, 4
-	addiw	a2, a2, -1
-	sw	a2, %lo(outputAttempted)(a0)
+	or	a0, s0, a0
+	slli	a1, a0, 32
+	srli	a1, a1, 32
+	lui	a2, %hi(outputAttempted)
+	lui	a3, 4
+	addiw	a3, a3, -1
+	sd	a3, %lo(outputAttempted)(a2)
 	lui	a2, %hi(outputSucceeded)
-	sext.w	a0, a1
-	sw	a1, %lo(outputSucceeded)(a2)
+	sd	a1, %lo(outputSucceeded)(a2)
+	lui	a1, %hi(finished)
+	li	a2, 1
+	sext.w	a0, a0
+	sb	a2, %lo(finished)(a1)
 	ld	ra, 8(sp)
 	ld	s0, 0(sp)
 	addi	sp, sp, 16
@@ -930,3 +935,4 @@ main:
 	.addrsig_sym vector_memcpy_32m2_seg4load
 	.addrsig_sym outputAttempted
 	.addrsig_sym outputSucceeded
+	.addrsig_sym finished

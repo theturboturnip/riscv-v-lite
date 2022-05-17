@@ -123,6 +123,7 @@ void* memset(void* dest, int ch, size_t count) {
 
 volatile extern int64_t outputAttempted; // magic output device
 volatile extern int64_t outputSucceeded; // magic output device
+volatile extern int8_t finished; // magic output device
 volatile extern int64_t ramBoundary; // edge of writable memory
 int64_t vector_memcpy_harness_uint8_t(void (*memcpy_fn)(size_t, const uint8_t* __restrict__, uint8_t* __restrict__)) {
     uint8_t data[128] = {0};
@@ -2677,6 +2678,7 @@ int main(void) {
     
     outputAttempted = attempted;
     outputSucceeded = successful;
+    finished = 1;
     return 0;
 }
 #ifdef __cplusplus

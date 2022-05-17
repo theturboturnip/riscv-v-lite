@@ -572,11 +572,12 @@ Contents of section .text:
  2360 13143503 b3649400 eff09fc2 13144503  ..5..d........E.
  2370 33649400 eff09fcb 13155503 33648500  3d........U.3d..
  2380 eff09fd4 13156503 33658500 37270000  ......e.3e..7'..
- 2390 b7070001 0337073c 23b0e700 b7070001  .....7.<#.......
- 23a0 23b4a700 13050000 83308101 03340101  #........0...4..
- 23b0 83348100 13010102 67800000           .4......g...    
+ 2390 b7070001 0337873c 23b0e700 b7070001  .....7.<#.......
+ 23a0 23b4a700 b7070001 13071000 2388e700  #...........#...
+ 23b0 13050000 83308101 03340101 83348100  .....0...4...4..
+ 23c0 13010102 67800000                    ....g...        
 Contents of section .srodata.cst8:
- 23c0 8fc7e301 78ff7800                    ....x.x.        
+ 23c8 8fc7e301 78ff7800                    ....x.x.        
 Contents of section .riscv.attributes:
  0000 413d0000 00726973 63760001 33000000  A=...riscv..3...
  0010 04100572 76363469 3270305f 6d327030  ...rv64i2p0_m2p0
@@ -2581,7 +2582,7 @@ Disassembly of section .text:
     1dbc:	01313823          	sd	s3,16(sp)
     1dc0:	02010a13          	addi	s4,sp,32
     1dc4:	01413c23          	sd	s4,24(sp)
-    1dc8:	7e078793          	addi	a5,a5,2016 # fffffffffffff7e0 <outputSucceeded+0xfffffffffefff7d8>
+    1dc8:	7e078793          	addi	a5,a5,2016 # fffffffffffff7e0 <finished+0xfffffffffefff7d0>
     1dcc:	00001737          	lui	a4,0x1
     1dd0:	82070713          	addi	a4,a4,-2016 # 820 <vector_memcpy_masked_e8m1+0x14>
     1dd4:	00270733          	add	a4,a4,sp
@@ -2962,13 +2963,16 @@ Disassembly of section .text:
     2388:	00856533          	or	a0,a0,s0
     238c:	00002737          	lui	a4,0x2
     2390:	010007b7          	lui	a5,0x1000
-    2394:	3c073703          	ld	a4,960(a4) # 23c0 <main+0x25c>
+    2394:	3c873703          	ld	a4,968(a4) # 23c8 <main+0x264>
     2398:	00e7b023          	sd	a4,0(a5) # 1000000 <outputAttempted>
     239c:	010007b7          	lui	a5,0x1000
     23a0:	00a7b423          	sd	a0,8(a5) # 1000008 <outputSucceeded>
-    23a4:	00000513          	li	a0,0
-    23a8:	01813083          	ld	ra,24(sp)
-    23ac:	01013403          	ld	s0,16(sp)
-    23b0:	00813483          	ld	s1,8(sp)
-    23b4:	02010113          	addi	sp,sp,32
-    23b8:	00008067          	ret
+    23a4:	010007b7          	lui	a5,0x1000
+    23a8:	00100713          	li	a4,1
+    23ac:	00e78823          	sb	a4,16(a5) # 1000010 <finished>
+    23b0:	00000513          	li	a0,0
+    23b4:	01813083          	ld	ra,24(sp)
+    23b8:	01013403          	ld	s0,16(sp)
+    23bc:	00813483          	ld	s1,8(sp)
+    23c0:	02010113          	addi	sp,sp,32
+    23c4:	00008067          	ret

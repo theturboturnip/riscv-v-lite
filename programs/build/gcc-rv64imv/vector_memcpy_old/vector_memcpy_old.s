@@ -576,9 +576,12 @@ main:
 	lui	a4,%hi(outputAttempted)
 	li	a5,8192
 	addi	a5,a5,503
-	sw	a5,%lo(outputAttempted)(a4)
+	sd	a5,%lo(outputAttempted)(a4)
 	lui	a5,%hi(outputSucceeded)
-	sw	a0,%lo(outputSucceeded)(a5)
+	sd	a0,%lo(outputSucceeded)(a5)
+	lui	a5,%hi(finished)
+	li	a4,1
+	sb	a4,%lo(finished)(a5)
 	ld	ra,24(sp)
 	ld	s0,16(sp)
 	ld	s1,8(sp)

@@ -181,6 +181,11 @@ main:
 	or	a0, s0, a0
 	sext.w	a0, a0
 	csd	a0, 0(ca1)
+.LBB6_3:
+	auipcc	ca1, %captab_pcrel_hi(finished)
+	clc	ca1, %pcrel_lo(.LBB6_3)(ca1)
+	addi	a2, zero, 1
+	csb	a2, 0(ca1)
 	clc	cs0, 0(csp)
 	clc	cra, 16(csp)
 	cincoffset	csp, csp, 32
@@ -193,3 +198,4 @@ main:
 	.addrsig
 	.addrsig_sym outputAttempted
 	.addrsig_sym outputSucceeded
+	.addrsig_sym finished

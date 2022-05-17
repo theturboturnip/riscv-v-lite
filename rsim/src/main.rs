@@ -61,9 +61,10 @@ fn load_cheri_elf(elf_path: &str, mode: CheriExecMode) -> Result<(u64, CheriAggr
         Box::new(MemoryBacking::from_vec(code_data, 0x0..0x4000)),
         // Allocate ~96KB for RAM
         Box::new(MemoryBacking::zeros(0x4000..0x25_000)),
-        // Add two I/O memory addresses: tests_ran, tests_suceeded
+        // Add three I/O memory addresses: tests_ran, tests_suceeded, plus a "done" address
         Box::new(IOMemory::return_address(0x0100_0000, false)),
-        Box::new(IOMemory::return_address(0x0100_0008, true)),
+        Box::new(IOMemory::return_address(0x0100_0008, false)),
+        Box::new(IOMemory::return_address(0x0100_0010, true)),
     ]);
     let mut cheri_mem = CheriAggregateMemory::from_base(agg_mem);
 
@@ -161,7 +162,7 @@ fn run_binary_in_processor<T>(mut processor: Box<dyn Processor<T>>, mut mods: T)
                     // Lookup I/O values
                     let io_vals = processor.get_io_values();
                     match &io_vals[..] {
-                        [Some(tests_ran), Some(tests_successful)] => {
+                        [Some(tests_ran), Some(tests_successful), _] => {
                             if (tests_ran & tests_successful) != *tests_successful || *tests_ran == 0 {
                                 processor.dump(&mods);
                                 bail!("Something went wrong: ran = 0x{:016x}, successful = 0x{:016x}", tests_ran, tests_successful);
@@ -184,10 +185,10 @@ fn run_binary_in_processor<T>(mut processor: Box<dyn Processor<T>>, mut mods: T)
                                 return Ok(false)
                             }
                         }
-                        [tests_ran_maybe, tests_successful_maybe] => {
+                        [tests_ran_maybe, tests_successful_maybe, _] => {
                             bail!("Not all I/O addresses were written: tests_ran = {:?}, tests_successful = {:?}", tests_ran_maybe, tests_successful_maybe)
                         }
-                        _ => bail!("Should have exactly two IO values, found {}", io_vals.len())
+                        _ => bail!("Should have exactly three IO values, found {}", io_vals.len())
                     }
                 } else {
                     processor.dump(&mods);
@@ -238,9 +239,10 @@ fn main() -> Result<()> {
                         Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x4000)),
                         // Allocate ~96KB for RAM
                         Box::new(MemoryBacking::zeros(0x0_4000..0x2_5000)),
-                        // Add two I/O memory addresses: tests_ran, tests_suceeded
+                        // Add three I/O memory addresses: tests_ran, tests_suceeded, plus a "done" address
                         Box::new(IOMemory::return_address(0x0100_0000, false)),
-                        Box::new(IOMemory::return_address(0x0100_0008, true)),
+                        Box::new(IOMemory::return_address(0x0100_0008, false)),
+                        Box::new(IOMemory::return_address(0x0100_0010, true)),
                     ]);
 
                     let (processor, mods) = Processor32::new(mem);
@@ -253,9 +255,10 @@ fn main() -> Result<()> {
                         Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x4000)),
                         // Allocate ~96KB for RAM
                         Box::new(MemoryBacking::zeros(0x0_4000..0x2_5000)),
-                        // Add two I/O memory addresses: tests_ran, tests_suceeded
+                        // Add three I/O memory addresses: tests_ran, tests_suceeded, plus a "done" address
                         Box::new(IOMemory::return_address(0x0100_0000, false)),
-                        Box::new(IOMemory::return_address(0x0100_0008, true)),
+                        Box::new(IOMemory::return_address(0x0100_0008, false)),
+                        Box::new(IOMemory::return_address(0x0100_0010, true)),
                     ]);
 
                     let (processor, mods) = Rv64imvProcessor::new(mem);

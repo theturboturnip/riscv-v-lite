@@ -400,31 +400,35 @@ _Z13run_base_testv:
 	.type	main, @function
 main:
 .LFB17417:
-	.loc 1 380 1 is_stmt 1
+	.loc 1 381 1 is_stmt 1
 	.cfi_startproc
 	addi	sp,sp,-16
 	.cfi_def_cfa_offset 16
 	sd	ra,8(sp)
 	.cfi_offset 1, -8
-	.loc 1 381 5
-.LVL30:
 	.loc 1 382 5
-	.loc 1 384 5
+.LVL30:
+	.loc 1 383 5
 	.loc 1 385 5
-	.loc 1 385 28 is_stmt 0
+	.loc 1 386 5
+	.loc 1 386 28 is_stmt 0
 	call	_Z13run_base_testv
 .LVL31:
-	.loc 1 392 5 is_stmt 1
-	.loc 1 392 25 is_stmt 0
-	lui	a4,%hi(outputAttempted)
-	li	a3,1
-	sw	a3,%lo(outputAttempted)(a4)
 	.loc 1 393 5 is_stmt 1
 	.loc 1 393 25 is_stmt 0
-	lui	a4,%hi(outputSucceeded)
-	sw	a0,%lo(outputSucceeded)(a4)
+	li	a4,1
+	lui	a3,%hi(outputAttempted)
+	sd	a4,%lo(outputAttempted)(a3)
 	.loc 1 394 5 is_stmt 1
-	.loc 1 395 1 is_stmt 0
+	.loc 1 394 25 is_stmt 0
+	lui	a3,%hi(outputSucceeded)
+	sd	a0,%lo(outputSucceeded)(a3)
+	.loc 1 395 5 is_stmt 1
+	.loc 1 395 14 is_stmt 0
+	lui	a5,%hi(finished)
+	sb	a4,%lo(finished)(a5)
+	.loc 1 396 5 is_stmt 1
+	.loc 1 397 1 is_stmt 0
 	ld	ra,8(sp)
 	.cfi_restore 1
 	addi	sp,sp,16
@@ -580,15 +584,15 @@ main:
 	.file 4 "/scratch/gccs/outputs/rvv-intrinsic/lib/gcc/riscv64-unknown-elf/10.1.0/include/stdint-gcc.h"
 	.section	.debug_info,"",@progbits
 .Ldebug_info0:
-	.4byte	0x60d
+	.4byte	0x637
 	.2byte	0x4
 	.4byte	.Ldebug_abbrev0
 	.byte	0x8
 	.byte	0x1
-	.4byte	.LASF43
+	.4byte	.LASF46
 	.byte	0x4
-	.4byte	.LASF44
-	.4byte	.LASF45
+	.4byte	.LASF47
+	.4byte	.LASF48
 	.8byte	.Ltext0
 	.8byte	.Letext0-.Ltext0
 	.4byte	.Ldebug_line0
@@ -597,7 +601,7 @@ main:
 	.byte	0x5
 	.4byte	.LASF0
 	.byte	0x3
-	.4byte	.LASF6
+	.4byte	.LASF4
 	.byte	0x3
 	.byte	0xd1
 	.byte	0x17
@@ -615,51 +619,65 @@ main:
 	.byte	0x4
 	.4byte	.LASF3
 	.byte	0x4
-	.4byte	.LASF46
+	.4byte	.LASF49
+	.byte	0x3
+	.4byte	.LASF5
+	.byte	0x4
+	.byte	0x22
+	.byte	0x17
+	.4byte	0x6b
+	.byte	0x5
+	.4byte	0x5a
 	.byte	0x2
 	.byte	0x1
 	.byte	0x6
-	.4byte	.LASF4
+	.4byte	.LASF6
 	.byte	0x2
 	.byte	0x2
 	.byte	0x5
-	.4byte	.LASF5
-	.byte	0x5
+	.4byte	.LASF7
+	.byte	0x6
 	.byte	0x4
 	.byte	0x5
 	.string	"int"
-	.byte	0x6
-	.4byte	0x68
 	.byte	0x3
-	.4byte	.LASF7
+	.4byte	.LASF8
+	.byte	0x4
+	.byte	0x2b
+	.byte	0x18
+	.4byte	0x2d
+	.byte	0x5
+	.4byte	0x80
+	.byte	0x3
+	.4byte	.LASF9
 	.byte	0x4
 	.byte	0x2e
 	.byte	0x18
-	.4byte	0x85
+	.4byte	0xa2
 	.byte	0x7
-	.4byte	0x74
+	.4byte	0x91
 	.byte	0x2
 	.byte	0x1
 	.byte	0x8
-	.4byte	.LASF8
+	.4byte	.LASF10
 	.byte	0x7
-	.4byte	0x85
+	.4byte	0xa2
 	.byte	0x2
 	.byte	0x2
 	.byte	0x7
-	.4byte	.LASF9
+	.4byte	.LASF11
 	.byte	0x2
 	.byte	0x4
 	.byte	0x7
-	.4byte	.LASF10
+	.4byte	.LASF12
 	.byte	0x3
-	.4byte	.LASF11
+	.4byte	.LASF13
 	.byte	0x4
 	.byte	0x37
 	.byte	0x19
 	.4byte	0x40
 	.byte	0x3
-	.4byte	.LASF12
+	.4byte	.LASF14
 	.byte	0x2
 	.byte	0x2a
 	.byte	0xd
@@ -667,170 +685,176 @@ main:
 	.byte	0x2
 	.byte	0x2
 	.byte	0x4
-	.4byte	.LASF13
-	.byte	0x2
-	.byte	0x4
-	.byte	0x4
-	.4byte	.LASF14
-	.byte	0x2
-	.byte	0x8
-	.byte	0x4
 	.4byte	.LASF15
+	.byte	0x2
+	.byte	0x4
+	.byte	0x4
+	.4byte	.LASF16
+	.byte	0x2
 	.byte	0x8
-	.4byte	.LASF47
+	.byte	0x4
+	.4byte	.LASF17
+	.byte	0x8
+	.4byte	.LASF50
 	.byte	0x10
 	.byte	0x1
 	.byte	0x86
 	.byte	0x8
-	.4byte	0xe7
+	.4byte	0x104
 	.byte	0x9
-	.4byte	.LASF16
+	.4byte	.LASF18
 	.byte	0x1
 	.byte	0x87
 	.byte	0xe
-	.4byte	0x9f
+	.4byte	0xbc
 	.byte	0
 	.byte	0
 	.byte	0xa
-	.4byte	.LASF48
+	.4byte	.LASF51
 	.byte	0x20
 	.byte	0x10
 	.byte	0x1
 	.byte	0x8b
 	.byte	0x8
-	.4byte	0x111
+	.4byte	0x12e
 	.byte	0x9
-	.4byte	.LASF17
+	.4byte	.LASF19
 	.byte	0x1
 	.byte	0x8d
 	.byte	0xe
-	.4byte	0x9f
+	.4byte	0xbc
 	.byte	0
 	.byte	0xb
-	.4byte	.LASF49
+	.4byte	.LASF52
 	.byte	0x1
 	.byte	0x8f
 	.byte	0x44
-	.4byte	0x111
+	.4byte	0x12e
 	.byte	0x10
 	.byte	0x10
 	.byte	0
 	.byte	0xc
 	.byte	0x8
 	.byte	0x10
-	.4byte	0xcc
+	.4byte	0xe9
 	.byte	0xd
-	.4byte	.LASF18
+	.4byte	.LASF20
 	.byte	0x1
 	.2byte	0x175
-	.byte	0x15
-	.4byte	0x6f
+	.byte	0x19
+	.4byte	0x8c
 	.byte	0xd
-	.4byte	.LASF19
+	.4byte	.LASF21
 	.byte	0x1
 	.2byte	0x176
-	.byte	0x15
-	.4byte	0x6f
-	.byte	0xe
-	.4byte	.LASF29
+	.byte	0x19
+	.4byte	0x8c
+	.byte	0xd
+	.4byte	.LASF22
 	.byte	0x1
-	.2byte	0x17b
+	.2byte	0x177
+	.byte	0x18
+	.4byte	0x66
+	.byte	0xe
+	.4byte	.LASF32
+	.byte	0x1
+	.2byte	0x17c
 	.byte	0x5
-	.4byte	0x68
+	.4byte	0x79
 	.8byte	.LFB17417
 	.8byte	.LFE17417-.LFB17417
 	.byte	0x1
 	.byte	0x9c
-	.4byte	0x182
+	.4byte	0x1ac
 	.byte	0xf
-	.4byte	.LASF20
-	.byte	0x1
-	.2byte	0x17d
-	.byte	0x9
-	.4byte	0x68
-	.4byte	.LLST21
-	.byte	0x10
-	.4byte	.LASF21
+	.4byte	.LASF23
 	.byte	0x1
 	.2byte	0x17e
-	.byte	0x9
-	.4byte	0x68
+	.byte	0xd
+	.4byte	0x80
+	.4byte	.LLST21
+	.byte	0x10
+	.4byte	.LASF24
+	.byte	0x1
+	.2byte	0x17f
+	.byte	0xd
+	.4byte	0x80
 	.byte	0x1
 	.byte	0x11
 	.8byte	.LVL31
-	.4byte	0x182
+	.4byte	0x1ac
 	.byte	0
 	.byte	0x12
-	.4byte	.LASF50
+	.4byte	.LASF53
 	.byte	0x1
 	.byte	0xf6
 	.byte	0x5
-	.4byte	.LASF51
-	.4byte	0x68
+	.4byte	.LASF54
+	.4byte	0x79
 	.8byte	.LFB17416
 	.8byte	.LFE17416-.LFB17416
 	.byte	0x1
 	.byte	0x9c
-	.4byte	0x2af
+	.4byte	0x2d9
 	.byte	0x13
-	.4byte	.LASF22
+	.4byte	.LASF25
 	.byte	0x1
 	.byte	0xfa
 	.byte	0xa
-	.4byte	0x2af
+	.4byte	0x2d9
 	.byte	0x3
 	.byte	0x91
 	.byte	0xa0,0x7f
 	.byte	0x14
-	.4byte	.LASF23
+	.4byte	.LASF26
 	.byte	0x1
 	.2byte	0x103
 	.byte	0x9
-	.4byte	0x2bf
+	.4byte	0x2e9
 	.byte	0x3
 	.byte	0x91
 	.byte	0xa0,0x7b
 	.byte	0x14
-	.4byte	.LASF24
+	.4byte	.LASF27
 	.byte	0x1
 	.2byte	0x116
 	.byte	0xd
-	.4byte	0x2cf
+	.4byte	0x2f9
 	.byte	0x3
 	.byte	0x91
 	.byte	0xa0,0x5b
 	.byte	0x14
-	.4byte	.LASF25
+	.4byte	.LASF28
 	.byte	0x1
 	.2byte	0x11f
 	.byte	0xd
-	.4byte	0x2cf
+	.4byte	0x2f9
 	.byte	0x4
 	.byte	0x91
 	.byte	0xa0,0xbb,0x7f
 	.byte	0x14
-	.4byte	.LASF26
+	.4byte	.LASF29
 	.byte	0x1
 	.2byte	0x121
 	.byte	0xe
-	.4byte	0x2e0
+	.4byte	0x30a
 	.byte	0x4
 	.byte	0x91
 	.byte	0xa0,0x5b
 	.byte	0x9f
 	.byte	0x14
-	.4byte	.LASF27
+	.4byte	.LASF30
 	.byte	0x1
 	.2byte	0x122
 	.byte	0xe
-	.4byte	0x2e0
+	.4byte	0x30a
 	.byte	0x5
 	.byte	0x91
 	.byte	0xa0,0xbb,0x7f
 	.byte	0x9f
 	.byte	0x15
 	.4byte	.Ldebug_ranges0+0
-	.4byte	0x24d
+	.4byte	0x277
 	.byte	0x16
 	.string	"i"
 	.byte	0x1
@@ -842,17 +866,17 @@ main:
 	.8byte	.LBB30
 	.8byte	.LBE30-.LBB30
 	.byte	0xf
-	.4byte	.LASF28
+	.4byte	.LASF31
 	.byte	0x1
 	.2byte	0x118
 	.byte	0xd
-	.4byte	0x68
+	.4byte	0x79
 	.4byte	.LLST19
 	.byte	0
 	.byte	0
 	.byte	0x15
 	.4byte	.Ldebug_ranges0+0x30
-	.4byte	0x266
+	.4byte	0x290
 	.byte	0x16
 	.string	"i"
 	.byte	0x1
@@ -863,8 +887,8 @@ main:
 	.byte	0
 	.byte	0x18
 	.8byte	.LVL27
-	.4byte	0x607
-	.4byte	0x28c
+	.4byte	0x631
+	.4byte	0x2b6
 	.byte	0x19
 	.byte	0x1
 	.byte	0x5a
@@ -885,7 +909,7 @@ main:
 	.byte	0
 	.byte	0x1a
 	.8byte	.LVL28
-	.4byte	0x2e6
+	.4byte	0x310
 	.byte	0x19
 	.byte	0x1
 	.byte	0x5a
@@ -907,57 +931,57 @@ main:
 	.byte	0
 	.byte	0
 	.byte	0x1b
-	.4byte	0xcc
-	.4byte	0x2bf
+	.4byte	0xe9
+	.4byte	0x2e9
 	.byte	0x1c
 	.4byte	0x40
 	.byte	0x3
 	.byte	0
 	.byte	0x1b
-	.4byte	0x68
-	.4byte	0x2cf
+	.4byte	0x79
+	.4byte	0x2f9
 	.byte	0x1c
 	.4byte	0x40
 	.byte	0x7f
 	.byte	0
 	.byte	0x1d
-	.4byte	0xe7
+	.4byte	0x104
 	.byte	0x10
-	.4byte	0x2e0
+	.4byte	0x30a
 	.byte	0x1c
 	.4byte	0x40
 	.byte	0x7f
 	.byte	0
 	.byte	0x1e
 	.byte	0x8
-	.4byte	0xe7
+	.4byte	0x104
 	.byte	0x1f
-	.4byte	.LASF30
+	.4byte	.LASF33
 	.byte	0x1
 	.byte	0x9c
 	.byte	0x6
-	.4byte	.LASF52
+	.4byte	.LASF55
 	.8byte	.LFB17415
 	.8byte	.LFE17415-.LFB17415
 	.byte	0x1
 	.byte	0x9c
-	.4byte	0x445
+	.4byte	0x46f
 	.byte	0x20
 	.string	"dst"
 	.byte	0x1
 	.byte	0x9c
 	.byte	0x1d
-	.4byte	0x445
+	.4byte	0x46f
 	.4byte	.LLST6
 	.byte	0x20
 	.string	"src"
 	.byte	0x1
 	.byte	0x9c
 	.byte	0x31
-	.4byte	0x44b
+	.4byte	0x475
 	.4byte	.LLST7
 	.byte	0x21
-	.4byte	.LASF31
+	.4byte	.LASF34
 	.byte	0x1
 	.byte	0x9c
 	.byte	0x3d
@@ -967,102 +991,102 @@ main:
 	.8byte	.LBB18
 	.8byte	.LBE18-.LBB18
 	.byte	0x22
-	.4byte	.LASF32
+	.4byte	.LASF35
 	.byte	0x1
 	.byte	0xb0
 	.byte	0x10
 	.4byte	0x34
 	.4byte	.LLST9
 	.byte	0x23
-	.4byte	.LASF42
+	.4byte	.LASF45
 	.byte	0x1
 	.byte	0xb2
 	.byte	0x14
-	.4byte	0x451
+	.4byte	0x47b
 	.byte	0x24
-	.4byte	0x5dc
+	.4byte	0x606
 	.8byte	.LBB19
 	.8byte	.LBE19-.LBB19
 	.byte	0x1
 	.byte	0xb0
 	.byte	0x2d
-	.4byte	0x394
+	.4byte	0x3be
 	.byte	0x25
-	.4byte	0x5f1
+	.4byte	0x61b
 	.4byte	.LLST10
 	.byte	0x26
-	.4byte	0x5fb
+	.4byte	0x625
 	.4byte	.LLST9
 	.byte	0
 	.byte	0x24
-	.4byte	0x5ae
+	.4byte	0x5d8
 	.8byte	.LBB21
 	.8byte	.LBE21-.LBB21
 	.byte	0x1
 	.byte	0xb7
 	.byte	0x1b
-	.4byte	0x3eb
+	.4byte	0x415
 	.byte	0x25
-	.4byte	0x5cf
+	.4byte	0x5f9
 	.4byte	.LLST12
 	.byte	0x25
-	.4byte	0x5c4
+	.4byte	0x5ee
 	.4byte	.LLST13
 	.byte	0x27
-	.4byte	0x5dc
+	.4byte	0x606
 	.8byte	.LBB23
 	.8byte	.LBE23-.LBB23
 	.byte	0x2
 	.2byte	0x1fd
 	.byte	0x1
 	.byte	0x25
-	.4byte	0x5f1
+	.4byte	0x61b
 	.4byte	.LLST14
 	.byte	0x28
-	.4byte	0x5fb
+	.4byte	0x625
 	.byte	0
 	.byte	0
 	.byte	0x29
-	.4byte	0x579
+	.4byte	0x5a3
 	.8byte	.LBB25
 	.8byte	.LBE25-.LBB25
 	.byte	0x1
 	.byte	0xb8
 	.byte	0x14
 	.byte	0x25
-	.4byte	0x5a1
+	.4byte	0x5cb
 	.4byte	.LLST15
 	.byte	0x2a
-	.4byte	0x596
+	.4byte	0x5c0
 	.byte	0x25
-	.4byte	0x58b
+	.4byte	0x5b5
 	.4byte	.LLST16
 	.byte	0x27
-	.4byte	0x5dc
+	.4byte	0x606
 	.8byte	.LBB27
 	.8byte	.LBE27-.LBB27
 	.byte	0x2
 	.2byte	0x1fe
 	.byte	0x1
 	.byte	0x25
-	.4byte	0x5f1
+	.4byte	0x61b
 	.4byte	.LLST17
 	.byte	0x28
-	.4byte	0x5fb
+	.4byte	0x625
 	.byte	0
 	.byte	0
 	.byte	0
 	.byte	0
 	.byte	0x1e
 	.byte	0x8
-	.4byte	0x74
+	.4byte	0x91
 	.byte	0x1e
 	.byte	0x8
-	.4byte	0x80
+	.4byte	0x9d
 	.byte	0x2b
-	.4byte	.LASF53
-	.4byte	0x85
-	.4byte	0x469
+	.4byte	.LASF56
+	.4byte	0xa2
+	.4byte	0x493
 	.byte	0x2c
 	.byte	0x8
 	.byte	0x92
@@ -1074,22 +1098,22 @@ main:
 	.byte	0x1c
 	.byte	0
 	.byte	0x2d
-	.4byte	.LASF33
+	.4byte	.LASF36
 	.byte	0x1
 	.byte	0x13
 	.byte	0x7
-	.4byte	0x4d8
+	.4byte	0x502
 	.8byte	.LFB17414
 	.8byte	.LFE17414-.LFB17414
 	.byte	0x1
 	.byte	0x9c
-	.4byte	0x4d8
+	.4byte	0x502
 	.byte	0x2e
-	.4byte	.LASF34
+	.4byte	.LASF37
 	.byte	0x1
 	.byte	0x13
 	.byte	0x14
-	.4byte	0x4d8
+	.4byte	0x502
 	.byte	0x1
 	.byte	0x5a
 	.byte	0x20
@@ -1097,28 +1121,28 @@ main:
 	.byte	0x1
 	.byte	0x13
 	.byte	0x26
-	.4byte	0x4da
+	.4byte	0x504
 	.4byte	.LLST3
 	.byte	0x21
-	.4byte	.LASF35
+	.4byte	.LASF38
 	.byte	0x1
 	.byte	0x13
 	.byte	0x32
 	.4byte	0x34
 	.4byte	.LLST4
 	.byte	0x22
-	.4byte	.LASF36
+	.4byte	.LASF39
 	.byte	0x1
 	.byte	0x14
 	.byte	0x14
-	.4byte	0x4e1
+	.4byte	0x50b
 	.4byte	.LLST5
 	.byte	0x13
-	.4byte	.LASF37
+	.4byte	.LASF40
 	.byte	0x1
 	.byte	0x15
 	.byte	0x1a
-	.4byte	0x4e7
+	.4byte	0x511
 	.byte	0x1
 	.byte	0x5b
 	.byte	0
@@ -1126,31 +1150,31 @@ main:
 	.byte	0x8
 	.byte	0x1e
 	.byte	0x8
-	.4byte	0x4e0
+	.4byte	0x50a
 	.byte	0x30
 	.byte	0x1e
 	.byte	0x8
-	.4byte	0x85
+	.4byte	0xa2
 	.byte	0x1e
 	.byte	0x8
-	.4byte	0x8c
+	.4byte	0xa9
 	.byte	0x2d
-	.4byte	.LASF38
+	.4byte	.LASF41
 	.byte	0x1
 	.byte	0x8
 	.byte	0x7
-	.4byte	0x4d8
+	.4byte	0x502
 	.8byte	.LFB17413
 	.8byte	.LFE17413-.LFB17413
 	.byte	0x1
 	.byte	0x9c
-	.4byte	0x579
+	.4byte	0x5a3
 	.byte	0x2e
-	.4byte	.LASF34
+	.4byte	.LASF37
 	.byte	0x1
 	.byte	0x8
 	.byte	0x14
-	.4byte	0x4d8
+	.4byte	0x502
 	.byte	0x1
 	.byte	0x5a
 	.byte	0x20
@@ -1158,29 +1182,29 @@ main:
 	.byte	0x1
 	.byte	0x8
 	.byte	0x1e
-	.4byte	0x68
+	.4byte	0x79
 	.4byte	.LLST0
 	.byte	0x21
-	.4byte	.LASF35
+	.4byte	.LASF38
 	.byte	0x1
 	.byte	0x8
 	.byte	0x29
 	.4byte	0x34
 	.4byte	.LLST1
 	.byte	0x13
-	.4byte	.LASF39
+	.4byte	.LASF42
 	.byte	0x1
 	.byte	0x9
 	.byte	0x13
-	.4byte	0x85
+	.4byte	0xa2
 	.byte	0x1
 	.byte	0x5b
 	.byte	0x13
-	.4byte	.LASF36
+	.4byte	.LASF39
 	.byte	0x1
 	.byte	0xa
 	.byte	0x14
-	.4byte	0x4e1
+	.4byte	0x50b
 	.byte	0x1
 	.byte	0x5a
 	.byte	0x17
@@ -1191,84 +1215,84 @@ main:
 	.byte	0x1
 	.byte	0xb
 	.byte	0xe
-	.4byte	0x68
+	.4byte	0x79
 	.4byte	.LLST2
 	.byte	0
 	.byte	0
 	.byte	0x32
-	.4byte	.LASF54
+	.4byte	.LASF57
 	.byte	0x2
 	.2byte	0x1fe
 	.byte	0x1
-	.4byte	.LASF55
+	.4byte	.LASF58
 	.byte	0x3
-	.4byte	0x5ae
+	.4byte	0x5d8
 	.byte	0x33
 	.string	"a"
 	.byte	0x2
 	.2byte	0x1fe
 	.byte	0x1
-	.4byte	0x445
+	.4byte	0x46f
 	.byte	0x33
 	.string	"b"
 	.byte	0x2
 	.2byte	0x1fe
 	.byte	0x1
-	.4byte	0x451
+	.4byte	0x47b
 	.byte	0x33
 	.string	"vl"
 	.byte	0x2
 	.2byte	0x1fe
 	.byte	0x1
-	.4byte	0xab
+	.4byte	0xc8
 	.byte	0
 	.byte	0x34
-	.4byte	.LASF40
+	.4byte	.LASF43
 	.byte	0x2
 	.2byte	0x1fd
 	.byte	0x1
-	.4byte	.LASF56
-	.4byte	0x451
+	.4byte	.LASF59
+	.4byte	0x47b
 	.byte	0x3
-	.4byte	0x5dc
+	.4byte	0x606
 	.byte	0x33
 	.string	"a"
 	.byte	0x2
 	.2byte	0x1fd
 	.byte	0x1
-	.4byte	0x44b
+	.4byte	0x475
 	.byte	0x33
 	.string	"vl"
 	.byte	0x2
 	.2byte	0x1fd
 	.byte	0x1
-	.4byte	0xab
+	.4byte	0xc8
 	.byte	0
 	.byte	0x35
-	.4byte	.LASF41
+	.4byte	.LASF44
 	.byte	0x2
 	.byte	0x89
 	.byte	0x1
-	.4byte	.LASF57
-	.4byte	0xab
+	.4byte	.LASF60
+	.4byte	0xc8
 	.byte	0x3
-	.4byte	0x607
+	.4byte	0x631
 	.byte	0x36
 	.string	"a"
 	.byte	0x2
 	.byte	0x89
 	.byte	0x1
-	.4byte	0xab
+	.4byte	0xc8
 	.byte	0x37
 	.string	"vl"
 	.byte	0x2
 	.byte	0x89
 	.byte	0x1
-	.4byte	0xab
+	.4byte	0xc8
 	.byte	0
 	.byte	0x38
-	.4byte	.LASF38
-	.4byte	.LASF58
+	.4byte	.LASF41
+	.4byte	.LASF61
 	.byte	0
 	.section	.debug_abbrev,"",@progbits
 .Ldebug_abbrev0:
@@ -1325,6 +1349,13 @@ main:
 	.byte	0
 	.byte	0
 	.byte	0x5
+	.byte	0x35
+	.byte	0
+	.byte	0x49
+	.byte	0x13
+	.byte	0
+	.byte	0
+	.byte	0x6
 	.byte	0x24
 	.byte	0
 	.byte	0xb
@@ -1333,13 +1364,6 @@ main:
 	.byte	0xb
 	.byte	0x3
 	.byte	0x8
-	.byte	0
-	.byte	0
-	.byte	0x6
-	.byte	0x35
-	.byte	0
-	.byte	0x49
-	.byte	0x13
 	.byte	0
 	.byte	0
 	.byte	0x7
@@ -2351,122 +2375,128 @@ main:
 	.section	.debug_line,"",@progbits
 .Ldebug_line0:
 	.section	.debug_str,"MS",@progbits,1
-.LASF54:
+.LASF57:
 	.string	"vse8_v_u8m8"
-.LASF20:
+.LASF23:
 	.string	"result"
-.LASF14:
-	.string	"float"
-.LASF46:
-	.string	"decltype(nullptr)"
-.LASF41:
-	.string	"vsetvl_e8m8"
-.LASF34:
-	.string	"dest"
-.LASF11:
-	.string	"uint64_t"
-.LASF5:
-	.string	"short int"
-.LASF6:
-	.string	"size_t"
-.LASF51:
-	.string	"_Z13run_base_testv"
-.LASF29:
-	.string	"main"
-.LASF33:
-	.string	"memcpy"
-.LASF36:
-	.string	"dest_uc"
-.LASF32:
-	.string	"copied_per_iter"
 .LASF16:
-	.string	"value"
-.LASF58:
-	.string	"__builtin_memset"
+	.string	"float"
+.LASF49:
+	.string	"decltype(nullptr)"
+.LASF44:
+	.string	"vsetvl_e8m8"
+.LASF37:
+	.string	"dest"
+.LASF5:
+	.string	"int8_t"
+.LASF13:
+	.string	"uint64_t"
 .LASF7:
+	.string	"short int"
+.LASF4:
+	.string	"size_t"
+.LASF54:
+	.string	"_Z13run_base_testv"
+.LASF33:
+	.string	"vector_memcpy"
+.LASF32:
+	.string	"main"
+.LASF36:
+	.string	"memcpy"
+.LASF39:
+	.string	"dest_uc"
+.LASF35:
+	.string	"copied_per_iter"
+.LASF8:
+	.string	"int64_t"
+.LASF18:
+	.string	"value"
+.LASF61:
+	.string	"__builtin_memset"
+.LASF9:
 	.string	"uint8_t"
-.LASF53:
+.LASF56:
 	.string	"__vector([128,128]) unsigned char"
 .LASF3:
 	.string	"long double"
 .LASF2:
 	.string	"long long int"
-.LASF39:
+.LASF42:
 	.string	"ch_uc"
-.LASF38:
+.LASF41:
 	.string	"memset"
 .LASF0:
 	.string	"long int"
-.LASF12:
+.LASF14:
 	.string	"word_type"
-.LASF30:
-	.string	"vector_memcpy"
-.LASF31:
-	.string	"num_bytes"
-.LASF43:
-	.string	"GNU C++14 10.1.0 -march=rv64imv -mabi=lp64 -mtune=rocket -march=rv64imv_zvamo_zvlsseg -g -O1 -fno-inline-functions -ffreestanding"
-.LASF56:
-	.string	"_Z11vle8_v_u8m8PKhl"
-.LASF8:
-	.string	"unsigned char"
-.LASF48:
-	.string	"Element"
-.LASF4:
-	.string	"signed char"
-.LASF10:
-	.string	"unsigned int"
-.LASF25:
-	.string	"dest_array"
-.LASF9:
-	.string	"short unsigned int"
-.LASF45:
-	.string	"/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/gcc-rv64imv/vector_memcpy_pointers"
-.LASF47:
-	.string	"Base"
 .LASF22:
+	.string	"finished"
+.LASF34:
+	.string	"num_bytes"
+.LASF46:
+	.string	"GNU C++14 10.1.0 -march=rv64imv -mabi=lp64 -mtune=rocket -march=rv64imv_zvamo_zvlsseg -g -O1 -fno-inline-functions -ffreestanding"
+.LASF59:
+	.string	"_Z11vle8_v_u8m8PKhl"
+.LASF10:
+	.string	"unsigned char"
+.LASF51:
+	.string	"Element"
+.LASF6:
+	.string	"signed char"
+.LASF12:
+	.string	"unsigned int"
+.LASF28:
+	.string	"dest_array"
+.LASF11:
+	.string	"short unsigned int"
+.LASF48:
+	.string	"/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/gcc-rv64imv/vector_memcpy_pointers"
+.LASF50:
+	.string	"Base"
+.LASF25:
 	.string	"bases"
-.LASF17:
-	.string	"expected_base_value"
-.LASF42:
-	.string	"data"
 .LASF19:
+	.string	"expected_base_value"
+.LASF45:
+	.string	"data"
+.LASF21:
 	.string	"outputSucceeded"
-.LASF27:
+.LASF30:
 	.string	"dst_ptr"
-.LASF18:
+.LASF20:
 	.string	"outputAttempted"
 .LASF1:
 	.string	"long unsigned int"
-.LASF13:
-	.string	"__fp16"
 .LASF15:
+	.string	"__fp16"
+.LASF17:
 	.string	"double"
-.LASF37:
-	.string	"src_uc"
-.LASF55:
-	.string	"_Z11vse8_v_u8m8Ph_vuint8m8_tl"
-.LASF35:
-	.string	"count"
-.LASF52:
-	.string	"_Z13vector_memcpyPhPKhm"
-.LASF21:
-	.string	"attempted"
-.LASF57:
-	.string	"_Z11vsetvl_e8m8l"
-.LASF26:
-	.string	"src_ptr"
-.LASF28:
-	.string	"index"
-.LASF44:
-	.string	"/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/vector_memcpy_pointers/vector_memcpy_pointers.cpp"
 .LASF40:
-	.string	"vle8_v_u8m8"
-.LASF23:
-	.string	"indices"
-.LASF49:
-	.string	"base_ptr"
-.LASF50:
-	.string	"run_base_test"
+	.string	"src_uc"
+.LASF58:
+	.string	"_Z11vse8_v_u8m8Ph_vuint8m8_tl"
+.LASF38:
+	.string	"count"
+.LASF55:
+	.string	"_Z13vector_memcpyPhPKhm"
 .LASF24:
+	.string	"attempted"
+.LASF60:
+	.string	"_Z11vsetvl_e8m8l"
+.LASF29:
+	.string	"src_ptr"
+.LASF31:
+	.string	"index"
+.LASF47:
+	.string	"/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/vector_memcpy_pointers/vector_memcpy_pointers.cpp"
+.LASF43:
+	.string	"vle8_v_u8m8"
+.LASF26:
+	.string	"indices"
+.LASF52:
+	.string	"base_ptr"
+.LASF53:
+	.string	"run_base_test"
+.LASF27:
 	.string	"source_array"
 	.ident	"GCC: (GNU) 10.1.0"

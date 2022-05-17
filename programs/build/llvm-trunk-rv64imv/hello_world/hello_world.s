@@ -167,6 +167,9 @@ main:
 	sd	a2, %lo(outputAttempted)(a1)
 	lui	a1, %hi(outputSucceeded)
 	sd	a0, %lo(outputSucceeded)(a1)
+	lui	a1, %hi(finished)
+	li	a2, 1
+	sb	a2, %lo(finished)(a1)
 	ld	ra, 8(sp)
 	ld	s0, 0(sp)
 	addi	sp, sp, 16
@@ -179,3 +182,4 @@ main:
 	.addrsig
 	.addrsig_sym outputAttempted
 	.addrsig_sym outputSucceeded
+	.addrsig_sym finished

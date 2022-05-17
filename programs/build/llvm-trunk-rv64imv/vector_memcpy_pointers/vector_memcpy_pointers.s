@@ -2,10 +2,10 @@
 	.attribute	4, 16
 	.attribute	5, "rv64i2p0_m2p0_f2p0_d2p0_v1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0"
 	.file	"vector_memcpy_pointers.cpp"
-	.file	0 "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-trunk-rv64imv/vector_memcpy_pointers" "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/vector_memcpy_pointers/vector_memcpy_pointers.cpp" md5 0x11344c1c70f4151c1c3a09e87e843960
+	.file	0 "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-trunk-rv64imv/vector_memcpy_pointers" "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/vector_memcpy_pointers/vector_memcpy_pointers.cpp" md5 0x59ab8558022b46fb46174ad984e4291d
 	.file	1 "/home/samuel/repos/llvm-project/build/lib/clang/15.0.0/include" "stddef.h" md5 0x2499dd2361b915724b073282bea3a7bc
 	.file	2 "/home/samuel/repos/llvm-project/build/lib/clang/15.0.0/include" "stdint.h" md5 0x65478c86519fc5f031066ff00d1e57d5
-	.file	3 "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs" "vector_memcpy_pointers/vector_memcpy_pointers.cpp" md5 0x11344c1c70f4151c1c3a09e87e843960
+	.file	3 "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs" "vector_memcpy_pointers/vector_memcpy_pointers.cpp" md5 0x59ab8558022b46fb46174ad984e4291d
 	.globl	memset
 	.p2align	2
 	.type	memset,@function
@@ -297,7 +297,7 @@ _Z13run_base_testv:
 	.type	main,@function
 main:
 .Lfunc_begin4:
-	.loc	3 380 0
+	.loc	3 381 0
 	.cfi_startproc
 	addi	sp, sp, -16
 	.cfi_def_cfa_offset 16
@@ -306,17 +306,20 @@ main:
 	sd	ra, 8(sp)
 	.cfi_offset ra, -8
 .Ltmp43:
-	.loc	3 385 15 prologue_end is_stmt 1
+	.loc	3 386 15 prologue_end is_stmt 1
 	call	_Z13run_base_testv
 .Ltmp44:
-	.loc	3 392 25
+	.loc	3 393 25
 	lui	a1, %hi(outputAttempted)
 	li	a2, 1
-	sw	a2, %lo(outputAttempted)(a1)
-	.loc	3 393 25
+	sd	a2, %lo(outputAttempted)(a1)
+	.loc	3 394 25
 	lui	a1, %hi(outputSucceeded)
-	sw	a0, %lo(outputSucceeded)(a1)
-	.loc	3 394 5
+	sd	a0, %lo(outputSucceeded)(a1)
+	.loc	3 395 14
+	lui	a1, %hi(finished)
+	sb	a2, %lo(finished)(a1)
+	.loc	3 396 5
 	ld	ra, 8(sp)
 	addi	sp, sp, 16
 	ret
@@ -637,10 +640,14 @@ main:
 	.byte	4
 	.uleb128 .Ltmp43-.Lfunc_begin0
 	.uleb128 .Ltmp44-.Lfunc_begin0
-	.byte	3
-	.byte	17
-	.byte	0
+	.byte	2
+	.byte	48
 	.byte	159
+	.byte	4
+	.uleb128 .Ltmp44-.Lfunc_begin0
+	.uleb128 .Lfunc_end4-.Lfunc_begin0
+	.byte	1
+	.byte	90
 	.byte	0
 .Ldebug_list_header_end0:
 	.section	.debug_abbrev,"",@progbits
@@ -1379,21 +1386,21 @@ main:
 
 	.byte	19
 	.byte	3
-	.half	379
+	.half	380
 	.word	540
 
 	.byte	17
 	.byte	10
 	.byte	45
 	.byte	3
-	.half	381
-	.word	540
+	.half	382
+	.word	658
 	.byte	21
 	.byte	1
-	.byte	46
+	.byte	48
 	.byte	3
-	.half	382
-	.word	540
+	.half	383
+	.word	658
 	.byte	19
 	.word	356
 	.byte	10
@@ -1475,10 +1482,19 @@ main:
 	.word	586
 	.byte	128
 	.byte	0
+	.byte	5
+	.word	666
+	.byte	47
+	.byte	2
+	.byte	96
+	.byte	2
+	.byte	46
+	.byte	5
+	.byte	8
 	.byte	0
 .Ldebug_info_end0:
 	.section	.debug_str_offsets,"",@progbits
-	.word	192
+	.word	200
 	.half	5
 	.half	0
 .Lstr_offsets_base0:
@@ -1576,6 +1592,10 @@ main:
 .Linfo_string45:
 	.asciz	"result"
 .Linfo_string46:
+	.asciz	"long"
+.Linfo_string47:
+	.asciz	"int64_t"
+.Linfo_string48:
 	.asciz	"attempted"
 	.section	.debug_str_offsets,"",@progbits
 	.word	.Linfo_string0
@@ -1625,6 +1645,8 @@ main:
 	.word	.Linfo_string44
 	.word	.Linfo_string45
 	.word	.Linfo_string46
+	.word	.Linfo_string47
+	.word	.Linfo_string48
 	.section	.debug_addr,"",@progbits
 	.word	.Ldebug_addr_end0-.Ldebug_addr_start0
 .Ldebug_addr_start0:
@@ -1649,5 +1671,6 @@ main:
 	.addrsig
 	.addrsig_sym outputAttempted
 	.addrsig_sym outputSucceeded
+	.addrsig_sym finished
 	.section	.debug_line,"",@progbits
 .Lline_table_start0:

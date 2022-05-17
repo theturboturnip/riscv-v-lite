@@ -6,6 +6,7 @@
 __sp = 0x10000;
 outputAttempted = 0x01000000;
 outputSucceeded = 0x01000008;
+finished = 0x01000010;
 ramBoundary = 0x25000;
 
 MEMORY
