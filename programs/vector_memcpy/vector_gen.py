@@ -238,6 +238,9 @@ void* memset(void* dest, int ch, size_t count) {
 #endif
 """ + f"""
 #define ASM_PREG(val) "r"(val)
+// GCC doesn't like __has_feature(capabilities), so define a convenience value
+// which is only 1 when in LLVM with __has_feature(capabilities)
+#define HAS_CAPABILITIES 0
 
 // Patch over differences between GCC, clang, and CHERI-clang
 #if defined(__llvm__)
@@ -254,6 +257,9 @@ void* memset(void* dest, int ch, size_t count) {
     #endif
 
     #if __has_feature(capabilities)
+        #undef HAS_CAPABILITIES
+        #define HAS_CAPABILITIES 1
+
         #if __has_feature(pure_capabilities)
             // Replace the ASM pointer register function to use capability register
             #undef ASM_PREG
@@ -305,18 +311,18 @@ void* memset(void* dest, int ch, size_t count) {
 // doesn't support fractional LMUL,
 // doesn't have byte-mask intrinsics.
 
-    // Enable everything except fractional LMUL
+    // Enable everything except fractional LMUL and bytemask
     #define {ENABLE_UNIT_DEF} 1
     #define {ENABLE_STRIDED_DEF} 1
     #define {ENABLE_INDEXED_DEF} 1
     #define {ENABLE_MASKED_DEF} 1
     #define {ENABLE_SEGMENTED_DEF} 1
     #define {ENABLE_FRAC_LMUL_DEF} 0
-    #define {ENABLE_BYTEMASK_DEF} 1
+    #define {ENABLE_BYTEMASK_DEF} 0
     #define {ENABLE_ASM_WHOLEREG_DEF} 1
-    #define {ENABLE_FAULTONLYFIRST_DEF} 0
+    #define {ENABLE_FAULTONLYFIRST_DEF} 1
 
-    // Use intrinsics for all except segmented loads and bytemask
+    // Use intrinsics for all except segmented loads
     #define {UNIT_ASM_DEF} 0
     #define {STRIDED_ASM_DEF} 0
     #define {INDEXED_ASM_DEF} 0
@@ -679,7 +685,7 @@ def generate_indexed_tests(b: VectorTestsCpp, vtypes: List[VType]):
                 b.write_code(f"indices[i] = ((({vtype_elem_type}) i) ^ 1) * ELEM_WIDTH")
             # Load indices into a vector
             b.write_code(f"{vtype_type} indices_v;")
-            b.write_line("#if __has_feature(capabilities)")
+            b.write_line("#if HAS_CAPABILITIES")
             b.write_code(f'asm volatile ("{vtype_unit_load_asm} %0, (%1)" : "=vr"(indices_v) : ASM_PREG(indices));')
             b.write_line("#else")
             b.write_code(f"indices_v = {vtype_unit_load}(indices, VLMAX);")
@@ -992,28 +998,29 @@ def generate_tests() -> Tuple[str, Dict[Any, Any]]:
 
     # Create tests
     vtypes = [
-        VType(Sew.e8, Lmul.e8),
-        VType(Sew.e16, Lmul.e8),
-        VType(Sew.e32, Lmul.e8),
+        VType(Sew.e8, Lmul.e1),
+        VType(Sew.e16, Lmul.e2),
+        VType(Sew.e32, Lmul.e4),
+        VType(Sew.e64, Lmul.e8),
         # Test fractional lmul
         VType(Sew.e32, Lmul.eHalf),
-        VType(Sew.e64, Lmul.e2),
+        VType(Sew.e16, Lmul.eQuarter),
+        VType(Sew.e8, Lmul.eEighth),
     ]
     generate_unit_tests(b, vtypes)
     generate_strided_tests(b, vtypes)
     generate_indexed_tests(b, vtypes)
-    # emulator doesn't support non-32-bit-aritmnetic
-    generate_masked_tests(b, [VType(Sew.e32, Lmul.e8)])
-    generate_bytemask_tests(b, [VType(Sew.e32, Lmul.e8)])
+    generate_masked_tests(b, vtypes)
+    generate_bytemask_tests(b, vtypes)
     # Can't use m8 for 4x segmented loads
     # At most can use 2x, so that total number of registers = 8
     generate_segmented_tests(b, [
         VType(Sew.e8, Lmul.e2),
         VType(Sew.e16, Lmul.e2),
         VType(Sew.e32, Lmul.e2),
+        VType(Sew.e64, Lmul.e2),
         # Test fractional lmul
         VType(Sew.e32, Lmul.eHalf),
-        VType(Sew.e64, Lmul.e2),
     ])
     generate_wholereg_tests(b, [
         VType(Sew.e64, Lmul.e1),

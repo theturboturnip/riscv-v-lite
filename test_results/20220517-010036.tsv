@@ -1,0 +1,3 @@
+gcc	rv64imv	hello_world	factorial_test	True	True
+gcc	rv64imv	hello_world	fibonacci_test_recursive	True	True
+gcc	rv64imv	hello_world	fibonacci_test_memoized	True	True

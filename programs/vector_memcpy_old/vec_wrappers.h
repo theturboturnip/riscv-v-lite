@@ -6,11 +6,13 @@
 // Script for compatibility with old vector_memcpy
 // Used to have wrapper functions for vector intrinsics on CHERI, but now we don't
 
+#if defined(__llvm__)
 #if __has_feature(capabilities)
 #error "Doesn't support pure-capability compilation"
-#else
+#endif // __has_feature(capabilities)
+#endif // defined(__llvm__)
+
 #define VEC_INTRIN(i) i
 #define VEC_TYPE(T) T
-#endif // __has_feature(capabilities)
 
 #endif // CHERI_VECTOR_WRAPPERS

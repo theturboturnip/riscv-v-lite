@@ -54,8 +54,8 @@ class Lmul(Enum):
 
     def valid_for(self, sew: Sew) -> bool:
         # compute sew / lmul
-        # if that's >= 128 then false
-        if sew.value / ((2 ** self.value) / 8) >= 128:
+        # if that's > 128 then false
+        if sew.value / ((2 ** self.value) / 8) > 128:
             return False
         return True
 

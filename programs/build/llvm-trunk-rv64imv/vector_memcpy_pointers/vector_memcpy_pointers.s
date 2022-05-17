@@ -2,10 +2,10 @@
 	.attribute	4, 16
 	.attribute	5, "rv64i2p0_m2p0_f2p0_d2p0_v1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0"
 	.file	"vector_memcpy_pointers.cpp"
-	.file	0 "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-trunk-rv64imv/vector_memcpy_pointers" "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/vector_memcpy_pointers/vector_memcpy_pointers.cpp" md5 0x1ff4a29792c57ebf3560855a0770f1b2
+	.file	0 "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/llvm-trunk-rv64imv/vector_memcpy_pointers" "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/vector_memcpy_pointers/vector_memcpy_pointers.cpp" md5 0x11344c1c70f4151c1c3a09e87e843960
 	.file	1 "/home/samuel/repos/llvm-project/build/lib/clang/15.0.0/include" "stddef.h" md5 0x2499dd2361b915724b073282bea3a7bc
 	.file	2 "/home/samuel/repos/llvm-project/build/lib/clang/15.0.0/include" "stdint.h" md5 0x65478c86519fc5f031066ff00d1e57d5
-	.file	3 "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs" "vector_memcpy_pointers/vector_memcpy_pointers.cpp" md5 0x1ff4a29792c57ebf3560855a0770f1b2
+	.file	3 "/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs" "vector_memcpy_pointers/vector_memcpy_pointers.cpp" md5 0x11344c1c70f4151c1c3a09e87e843960
 	.globl	memset
 	.p2align	2
 	.type	memset,@function
@@ -82,34 +82,34 @@ memcpy:
 	.type	_Z13vector_memcpyPhPKhm,@function
 _Z13vector_memcpyPhPKhm:
 .Lfunc_begin2:
-	.loc	3 153 0
+	.loc	3 156 0
 	.cfi_startproc
-	.loc	3 172 5 prologue_end
+	.loc	3 175 5 prologue_end
 	beqz	a2, .LBB2_2
 .Ltmp13:
 .LBB2_1:
-	.loc	3 173 34
+	.loc	3 176 34
 	vsetvli	a3, a2, e8, m8, ta, mu
 .Ltmp14:
-	.loc	3 180 16
+	.loc	3 183 16
 	vle8.v	v8, (a1)
 .Ltmp15:
-	.loc	3 181 9
+	.loc	3 184 9
 	vse8.v	v8, (a0)
-	.loc	3 184 13
+	.loc	3 187 13
 	add	a1, a1, a3
 .Ltmp16:
-	.loc	3 186 19
+	.loc	3 189 19
 	sub	a2, a2, a3
 .Ltmp17:
-	.loc	3 185 13
+	.loc	3 188 13
 	add	a0, a0, a3
 .Ltmp18:
-	.loc	3 172 5
+	.loc	3 175 5
 	bnez	a2, .LBB2_1
 .Ltmp19:
 .LBB2_2:
-	.loc	3 188 1
+	.loc	3 191 1
 	ret
 .Ltmp20:
 .Lfunc_end2:
@@ -132,7 +132,7 @@ _Z13vector_memcpyPhPKhm:
 	.type	_Z13run_base_testv,@function
 _Z13run_base_testv:
 .Lfunc_begin3:
-	.loc	3 243 0
+	.loc	3 246 0
 	.cfi_startproc
 	addi	sp, sp, -2032
 	.cfi_def_cfa_offset 2032
@@ -144,7 +144,7 @@ _Z13run_base_testv:
 	.cfi_def_cfa_offset 8288
 	li	a0, 0
 .Ltmp21:
-	.loc	3 247 10 prologue_end
+	.loc	3 250 10 prologue_end
 	lui	a1, 2
 	addiw	a1, a1, 72
 	add	a1, sp, a1
@@ -186,7 +186,7 @@ _Z13run_base_testv:
 	add	a1, sp, a1
 	sd	a4, 0(a1)
 .Ltmp22:
-	.loc	3 276 5
+	.loc	3 279 5
 	lui	a1, 1
 	addiw	a1, a1, 32
 	add	a1, sp, a1
@@ -198,34 +198,34 @@ _Z13run_base_testv:
 	li	a4, 512
 .Ltmp23:
 .LBB3_1:
-	.loc	3 277 21
+	.loc	3 280 21
 	add	a5, a0, a2
 	lw	a5, 0(a5)
 .Ltmp24:
-	.loc	3 279 36
+	.loc	3 282 36
 	slli	a5, a5, 4
 	add	a5, a3, a5
-	.loc	3 279 49 is_stmt 0
+	.loc	3 282 49 is_stmt 0
 	ld	a6, 0(a5)
-	.loc	3 278 25 is_stmt 1
+	.loc	3 281 25 is_stmt 1
 	sd	a6, -16(a1)
 	sd	a5, 0(a1)
 .Ltmp25:
-	.loc	3 276 26
+	.loc	3 279 26
 	addi	a0, a0, 4
 .Ltmp26:
 	addi	a1, a1, 32
 .Ltmp27:
-	.loc	3 276 5 is_stmt 0
+	.loc	3 279 5 is_stmt 0
 	bne	a0, a4, .LBB3_1
 .Ltmp28:
-	.loc	3 284 13 is_stmt 1
+	.loc	3 287 13 is_stmt 1
 	addi	a0, sp, 16
 	lui	a2, 1
 	li	a1, 0
 	call	memset@plt
 .Ltmp29:
-	.loc	3 290 5
+	.loc	3 293 5
 	addi	a0, sp, 16
 	lui	a1, 1
 	addiw	a1, a1, 16
@@ -236,7 +236,7 @@ _Z13run_base_testv:
 	.loc	3 0 5 is_stmt 0
 	li	a0, 0
 .Ltmp31:
-	.loc	3 293 5 is_stmt 1
+	.loc	3 296 5 is_stmt 1
 	addi	a1, sp, 32
 	lui	a2, %hi(.L__const._Z13run_base_testv.indices)
 	addi	a2, a2, %lo(.L__const._Z13run_base_testv.indices)
@@ -246,30 +246,30 @@ _Z13run_base_testv:
 	li	a4, 512
 .Ltmp32:
 .LBB3_3:
-	.loc	3 296 27
+	.loc	3 299 27
 	ld	a5, 0(a1)
-	.loc	3 296 37 is_stmt 0
+	.loc	3 299 37 is_stmt 0
 	ld	a6, 0(a5)
-	.loc	3 296 60
+	.loc	3 299 60
 	ld	a7, -16(a1)
 	bne	a6, a7, .LBB3_7
 .Ltmp33:
-	.loc	3 299 78 is_stmt 1
+	.loc	3 302 78 is_stmt 1
 	add	a6, a0, a2
 	lw	a6, 0(a6)
-	.loc	3 299 72 is_stmt 0
+	.loc	3 302 72 is_stmt 0
 	slli	a6, a6, 4
 	add	a6, a3, a6
 .Ltmp34:
 	.loc	3 0 72
 	bne	a5, a6, .LBB3_7
 .Ltmp35:
-	.loc	3 293 26 is_stmt 1
+	.loc	3 296 26 is_stmt 1
 	addi	a0, a0, 4
 .Ltmp36:
 	addi	a1, a1, 32
 .Ltmp37:
-	.loc	3 293 5 is_stmt 0
+	.loc	3 296 5 is_stmt 0
 	bne	a0, a4, .LBB3_3
 .Ltmp38:
 	.loc	3 0 5
@@ -280,7 +280,7 @@ _Z13run_base_testv:
 	li	a0, 0
 .Ltmp40:
 .LBB3_8:
-	.loc	3 304 1 is_stmt 1
+	.loc	3 307 1 is_stmt 1
 	lui	a1, 2
 	addiw	a1, a1, -1936
 	add	sp, sp, a1
@@ -297,7 +297,7 @@ _Z13run_base_testv:
 	.type	main,@function
 main:
 .Lfunc_begin4:
-	.loc	3 377 0
+	.loc	3 380 0
 	.cfi_startproc
 	addi	sp, sp, -16
 	.cfi_def_cfa_offset 16
@@ -306,17 +306,17 @@ main:
 	sd	ra, 8(sp)
 	.cfi_offset ra, -8
 .Ltmp43:
-	.loc	3 382 15 prologue_end is_stmt 1
+	.loc	3 385 15 prologue_end is_stmt 1
 	call	_Z13run_base_testv
 .Ltmp44:
-	.loc	3 389 25
+	.loc	3 392 25
 	lui	a1, %hi(outputAttempted)
 	li	a2, 1
 	sw	a2, %lo(outputAttempted)(a1)
-	.loc	3 390 25
+	.loc	3 393 25
 	lui	a1, %hi(outputSucceeded)
 	sw	a0, %lo(outputSucceeded)(a1)
-	.loc	3 391 5
+	.loc	3 394 5
 	ld	ra, 8(sp)
 	addi	sp, sp, 16
 	ret
@@ -1104,13 +1104,13 @@ main:
 	.byte	8
 	.byte	16
 	.byte	3
-	.byte	131
+	.byte	134
 	.byte	16
 	.byte	7
 	.byte	6
 	.word	100
 	.byte	3
-	.byte	132
+	.byte	135
 	.byte	0
 	.byte	0
 	.byte	5
@@ -1245,28 +1245,28 @@ main:
 	.byte	14
 	.byte	15
 	.byte	3
-	.byte	153
+	.byte	156
 
 	.byte	9
 	.byte	1
 	.byte	90
 	.byte	28
 	.byte	3
-	.byte	153
+	.byte	156
 	.word	108
 	.byte	9
 	.byte	1
 	.byte	91
 	.byte	26
 	.byte	3
-	.byte	153
+	.byte	156
 	.word	121
 	.byte	9
 	.byte	1
 	.byte	92
 	.byte	29
 	.byte	3
-	.byte	153
+	.byte	156
 	.word	66
 	.byte	12
 	.byte	3
@@ -1275,13 +1275,13 @@ main:
 	.byte	4
 	.byte	30
 	.byte	3
-	.byte	173
+	.byte	176
 	.word	66
 	.byte	13
 	.byte	5
 	.byte	31
 	.byte	3
-	.byte	175
+	.byte	178
 	.word	550
 	.byte	0
 	.byte	0
@@ -1294,7 +1294,7 @@ main:
 	.byte	16
 	.byte	17
 	.byte	3
-	.byte	243
+	.byte	246
 	.word	540
 
 	.byte	11
@@ -1303,7 +1303,7 @@ main:
 	.asciz	"\220\300"
 	.byte	35
 	.byte	3
-	.byte	247
+	.byte	250
 	.word	590
 	.byte	16
 	.byte	3
@@ -1311,7 +1311,7 @@ main:
 	.ascii	"\220 "
 	.byte	36
 	.byte	3
-	.half	275
+	.half	278
 	.word	602
 	.byte	16
 	.byte	2
@@ -1319,24 +1319,24 @@ main:
 	.byte	16
 	.byte	40
 	.byte	3
-	.half	284
+	.half	287
 	.word	602
 	.byte	17
 	.byte	7
 	.byte	41
 	.byte	3
-	.half	287
+	.half	290
 	.word	641
 	.byte	17
 	.byte	8
 	.byte	42
 	.byte	3
-	.half	286
+	.half	289
 	.word	641
 	.byte	18
 	.byte	43
 	.byte	3
-	.half	256
+	.half	259
 	.word	646
 	.byte	12
 	.byte	5
@@ -1345,7 +1345,7 @@ main:
 	.byte	6
 	.byte	25
 	.byte	3
-	.half	276
+	.half	279
 	.word	66
 	.byte	12
 	.byte	6
@@ -1353,7 +1353,7 @@ main:
 	.byte	18
 	.byte	44
 	.byte	3
-	.half	277
+	.half	280
 	.word	540
 	.byte	0
 	.byte	0
@@ -1364,7 +1364,7 @@ main:
 	.byte	9
 	.byte	25
 	.byte	3
-	.half	293
+	.half	296
 	.word	66
 	.byte	0
 	.byte	19
@@ -1379,20 +1379,20 @@ main:
 
 	.byte	19
 	.byte	3
-	.half	376
+	.half	379
 	.word	540
 
 	.byte	17
 	.byte	10
 	.byte	45
 	.byte	3
-	.half	378
+	.half	381
 	.word	540
 	.byte	21
 	.byte	1
 	.byte	46
 	.byte	3
-	.half	379
+	.half	382
 	.word	540
 	.byte	19
 	.word	356
@@ -1451,19 +1451,19 @@ main:
 	.byte	39
 	.byte	32
 	.byte	3
-	.byte	136
+	.byte	139
 	.byte	16
 	.byte	7
 	.byte	37
 	.word	100
 	.byte	3
-	.byte	138
+	.byte	141
 	.byte	0
 	.byte	30
 	.byte	38
 	.word	78
 	.byte	3
-	.byte	140
+	.byte	143
 	.byte	16
 	.byte	16
 	.byte	0

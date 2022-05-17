@@ -58,9 +58,9 @@ fn load_cheri_elf(elf_path: &str, mode: CheriExecMode) -> Result<(u64, CheriAggr
     let agg_mem = AggregateMemory::from_mappings(vec![
         // Allocate 4KB for the program
         // Load in the code+data sections
-        Box::new(MemoryBacking::from_vec(code_data, 0x0..0x3000)),
+        Box::new(MemoryBacking::from_vec(code_data, 0x0..0x4000)),
         // Allocate ~96KB for RAM
-        Box::new(MemoryBacking::zeros(0x3000..0x25_000)),
+        Box::new(MemoryBacking::zeros(0x4000..0x25_000)),
         // Add two I/O memory addresses: tests_ran, tests_suceeded
         Box::new(IOMemory::return_address(0x0100_0000, false)),
         Box::new(IOMemory::return_address(0x0100_0008, true)),
@@ -162,6 +162,9 @@ fn run_binary_in_processor<T>(mut processor: Box<dyn Processor<T>>, mut mods: T)
                     let io_vals = processor.get_io_values();
                     match &io_vals[..] {
                         [Some(tests_ran), Some(tests_successful)] => {
+                            if *tests_ran == 0 {
+                                panic!("Something went wrong, ran = 0 (successful = 0x{:016x})", tests_successful);
+                            }
                             if tests_ran == tests_successful {
                                 println!("All tests ran were successful: 0x{:016x}", tests_ran);
                                 return Ok(true)
@@ -231,9 +234,9 @@ fn main() -> Result<()> {
                     // Create the memory map
                     let mem = AggregateMemory::from_mappings(vec![
                         // Allocate 4KB for the program
-                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x3000)),
+                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x4000)),
                         // Allocate ~96KB for RAM
-                        Box::new(MemoryBacking::zeros(0x0_3000..0x2_5000)),
+                        Box::new(MemoryBacking::zeros(0x0_4000..0x2_5000)),
                         // Add two I/O memory addresses: tests_ran, tests_suceeded
                         Box::new(IOMemory::return_address(0x0100_0000, false)),
                         Box::new(IOMemory::return_address(0x0100_0008, true)),
@@ -246,9 +249,9 @@ fn main() -> Result<()> {
                     // Create the memory map
                     let mem = AggregateMemory::from_mappings(vec![
                         // Allocate 4KB for the program
-                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x3000)),
+                        Box::new(MemoryBacking::from_file(memory_bin, 0x0..0x4000)),
                         // Allocate ~96KB for RAM
-                        Box::new(MemoryBacking::zeros(0x0_3000..0x2_5000)),
+                        Box::new(MemoryBacking::zeros(0x0_4000..0x2_5000)),
                         // Add two I/O memory addresses: tests_ran, tests_suceeded
                         Box::new(IOMemory::return_address(0x0100_0000, false)),
                         Box::new(IOMemory::return_address(0x0100_0008, true)),

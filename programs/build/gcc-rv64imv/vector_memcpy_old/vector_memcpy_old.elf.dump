@@ -1,0 +1,611 @@
+
+/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/gcc-rv64imv/vector_memcpy_old/vector_memcpy_old.elf:     file format elf64-littleriscv
+
+Contents of section .text.init:
+ 0000 17010100 130101fe ef00c061 6f000000  ...........ao...
+Contents of section .text:
+ 0010 130101de 233c1120 23388120 23349120  ....#<. #8. #4. 
+ 0020 23302121 13040500 13890500 93040600  #0!!............
+ 0030 13060020 93050000 13050100 ef00c03e  ... ...........>
+ 0040 9305f0ff d7f52501 13860500 63820502  ......%.....c...
+ 0050 93060100 93070000 13c71700 1b172700  ..............'.
+ 0060 23a0e600 93871700 93864600 e316f6fe  #.........F.....
+ 0070 d7f52501 07640102 63100404 83308121  ..%..d..c....0.!
+ 0080 03340121 83348120 03390120 13010122  .4.!.4. .9. ..."
+ 0090 67800000 57f72701 0762890e 57f72701  g...W.'..b..W.'.
+ 00a0 27e2840e 13972700 3309e900 b384e400  '.....'.3.......
+ 00b0 3304f440 e30404fc d7772401 e30cf6fc  3..@.....w$.....
+ 00c0 57f72701 07620902 57f72701 27e20402  W.'..b..W.'.'...
+ 00d0 6ff05ffd 130101de 233c1120 23388120  o._.....#<. #8. 
+ 00e0 23349120 23302121 13040500 13890500  #4. #0!!........
+ 00f0 93040600 13060020 93050000 13050100  ....... ........
+ 0100 ef008032 1306f0ff 57762601 63020602  ...2....Wv&.c...
+ 0110 93050600 13070100 93070000 93f61700  ................
+ 0120 2320d700 93871700 13074700 e398f5fe  # ........G.....
+ 0130 d7772601 07620102 d7772601 57b04062  .w&..b...w&.W.@b
+ 0140 57762601 5734005e 630a0402 d7772401  Wv&.W4.^c....w$.
+ 0150 57f72701 57b2819e 07620900 57b2419e  W.'.W....b..W.A.
+ 0160 57f72701 27e20400 13972700 3309e900  W.'.'.....'.3...
+ 0170 b384e400 3304f440 e31a04fc 83308121  ....3..@.....0.!
+ 0180 03340121 83348120 03390120 13010122  .4.!.4. .9. ..."
+ 0190 67800000 63040508 930ef0ff 93de2e00  g...c...........
+ 01a0 13084000 6f000004 13870500 93060600  ..@.o...........
+ 01b0 93880501 57f30700 8700070b 57f30700  ....W.......W...
+ 01c0 a780060b 13071700 93861600 e31417ff  ................
+ 01d0 93972700 b385f500 3306f600 3305c541  ..'.....3...3..A
+ 01e0 630e0502 93172500 d7f70700 33fed701  c.....%.....3...
+ 01f0 e36caefa 57f70700 87800502 57f70700  .l..W.......W...
+ 0200 a7000602 13f7c7ff b385e500 3306e600  ............3...
+ 0210 93d72700 3305f540 6ff09ffc 67800000  ..'.3..@o...g...
+ 0220 130f0000 930e1000 13088000 63120504  ............c...
+ 0230 67800000 93171500 d7f78700 138f0700  g...............
+ 0240 93982700 63eca802 57f78700 87d00502  ..'.c...W.......
+ 0250 57f78700 a7500602 93d71700 13972700  W....P........'.
+ 0260 b385e500 3306e600 3305f540 63060500  ....3...3..@c...
+ 0270 e312d5fd e3e0eefd 67800000 13870500  ........g.......
+ 0280 93060600 13830501 57fe8700 8750070b  ........W....P..
+ 0290 57fe8700 a7d0060b 13072700 93862600  W.........'...&.
+ 02a0 e314e3fe 93d71800 93981800 b3851501  ................
+ 02b0 33061601 3305f540 6ff05ffb 63060506  3...3..@o._.c...
+ 02c0 13080001 6f008003 13070000 d7f80701  ....o...........
+ 02d0 b388e500 87e0080b d7f80701 b308e600  ................
+ 02e0 a7e0080b 13074700 e31207ff 93974700  ......G.......G.
+ 02f0 b385f500 3306f600 3305d540 d7770501  ....3...3..@.w..
+ 0300 93962700 e3e2a6fc 57f70701 87e00502  ..'.....W.......
+ 0310 57f70701 a7600602 b385d500 3306d600  W....`......3...
+ 0320 3305f540 e31c05fc 67800000 9306f0ff  3..@....g.......
+ 0330 d7f60601 63140502 67800000 87808502  ....c...g.......
+ 0340 d730109e a7008602 13972700 b385e500  .0........'.....
+ 0350 3306e600 3305f540 e30005fe d7770501  3...3..@.....w..
+ 0360 e38ef6fc 57f70701 87e00502 57f70701  ....W.......W...
+ 0370 a7600602 6ff05ffd 13152500 63040502  .`..o._...%.c...
+ 0380 d7773500 57f73700 07840502 57f73700  .w5.W.7.....W.7.
+ 0390 27040602 b385f500 3306f600 3305f540  '.......3...3..@
+ 03a0 e31005fe 67800000 13070000 13081000  ....g...........
+ 03b0 631e0502 67800000 93171500 d7f7b700  c...g...........
+ 03c0 13870700 d7f6b700 07d40502 d7f6b700  ................
+ 03d0 27540602 93d71700 93962700 b385d500  'T........'.....
+ 03e0 3306d600 3305f540 63060500 e31605fd  3...3..@c.......
+ 03f0 e364e8fc 67800000 63060502 d7773501  .d..g...c....w5.
+ 0400 57f73701 07e40502 57f73701 27640602  W.7.....W.7.'d..
+ 0410 13972700 b385e500 3306e600 3305f540  ..'.....3...3..@
+ 0420 e31e05fc 67800000 93f5f50f 630c0600  ....g.......c...
+ 0430 93070500 3306a600 2380b700 93871700  ....3...#.......
+ 0440 e39cc7fe 67800000 130101be 233c1140  ....g.......#<.@
+ 0450 23388140 23349140 23302141 13090500  #8.@#4.@#0!A....
+ 0460 13060020 93050000 13050120 eff0dffb  ... ....... ....
+ 0470 13060020 93050000 13050100 eff0dffa  ... ............
+ 0480 13040120 13070400 93070000 93060008  ... ............
+ 0490 2320f700 9b871700 13074700 e39ad7fe  # ........G.....
+ 04a0 93040100 13860400 93050120 13057006  ........... ..p.
+ 04b0 e7000900 93850400 9306c419 13860400  ................
+ 04c0 03270400 83270600 6318f702 13044400  .'...'..c.....D.
+ 04d0 13064600 e316d4fe 9307c119 93860520  ..F............ 
+ 04e0 03a70700 63180702 93874700 e39ad7fe  ....c.....G.....
+ 04f0 13051000 6f008000 13050000 83308141  ....o........0.A
+ 0500 03340141 83348140 03390140 13010142  .4.A.4.@.9.@...B
+ 0510 67800000 13050000 6ff05ffe 130101be  g.......o._.....
+ 0520 233c1140 23388140 23349140 23302141  #<.@#8.@#4.@#0!A
+ 0530 13090500 13060020 93050000 13050120  ....... ....... 
+ 0540 eff09fee 13060020 93050000 13050100  ....... ........
+ 0550 eff09fed 13060020 9305f00f 13050100  ....... ........
+ 0560 eff09fec 93040120 13870400 93070000  ....... ........
+ 0570 93060008 2320f700 9b871700 13074700  ....# ........G.
+ 0580 e39ad7fe 13040100 13060400 93050120  ............... 
+ 0590 13057006 e7000900 93080400 13060400  ..p.............
+ 05a0 93070000 1308f0ff 13077006 6f00c001  ..........p.o...
+ 05b0 83260600 63960603 9b871700 13064600  .&..c.........F.
+ 05c0 93844400 638ae702 13f51700 e30205fe  ..D.c...........
+ 05d0 83a50400 83260600 e380d5fe 13050000  .....&..........
+ 05e0 83308141 03340141 83348140 03390140  .0.A.4.A.4.@.9.@
+ 05f0 13010142 67800000 9307c119 93860820  ...Bg.......... 
+ 0600 1306f0ff 03a70700 631ac700 93874700  ........c.....G.
+ 0610 e39ad7fe 13051000 6ff09ffc 13050000  ........o.......
+ 0620 6ff01ffc 130101fe 233c1100 23388100  o.......#<..#8..
+ 0630 23349100 13058037 eff01fe1 13040500  #4.....7........
+ 0640 1305803a eff05fe0 93040500 1305803f  ...:.._........?
+ 0650 eff09fdf 9b941400 1b152500 b3e4a400  ..........%.....
+ 0660 33649400 1b040400 13054019 eff0dfdd  3d........@.....
+ 0670 1b154500 3364a400 1b040400 13050022  ..E.3d........."
+ 0680 eff09fdc 1b155500 3364a400 1b040400  ......U.3d......
+ 0690 1305c02b eff05fdb 1b156500 3364a400  ...+.._...e.3d..
+ 06a0 1b040400 13050001 eff01fda 1b157500  ..............u.
+ 06b0 3364a400 1b040400 1305400d eff01fe6  3d........@.....
+ 06c0 1b158500 3364a400 1b040400 1305c032  ....3d.........2
+ 06d0 eff09fd7 1b15d500 3365a400 1b050500  ........3e......
+ 06e0 37070001 b7270000 9387771f 2320f700  7....'....w.# ..
+ 06f0 b7070001 23a4a700 83308101 03340101  ....#....0...4..
+ 0700 83348100 13010102 67800000           .4......g...    
+Contents of section .riscv.attributes:
+ 0000 41390000 00726973 63760001 2f000000  A9...riscv../...
+ 0010 04100572 76363469 3270305f 6d327030  ...rv64i2p0_m2p0
+ 0020 5f763170 305f7a76 616d6f31 70305f7a  _v1p0_zvamo1p0_z
+ 0030 766c7373 65673170 3000               vlsseg1p0.      
+Contents of section .comment:
+ 0000 4743433a 2028474e 55292031 302e312e  GCC: (GNU) 10.1.
+ 0010 3000                                 0.              
+
+Disassembly of section .text.init:
+
+0000000000000000 <entry>:
+   0:	00010117          	auipc	sp,0x10
+   4:	fe010113          	addi	sp,sp,-32 # ffe0 <main+0xf9bc>
+   8:	61c000ef          	jal	ra,624 <main>
+
+000000000000000c <end>:
+   c:	0000006f          	j	c <end>
+
+Disassembly of section .text:
+
+0000000000000010 <vector_memcpy_indexed>:
+  10:	de010113          	addi	sp,sp,-544
+  14:	20113c23          	sd	ra,536(sp)
+  18:	20813823          	sd	s0,528(sp)
+  1c:	20913423          	sd	s1,520(sp)
+  20:	21213023          	sd	s2,512(sp)
+  24:	00050413          	mv	s0,a0
+  28:	00058913          	mv	s2,a1
+  2c:	00060493          	mv	s1,a2
+  30:	20000613          	li	a2,512
+  34:	00000593          	li	a1,0
+  38:	00010513          	mv	a0,sp
+  3c:	3ec000ef          	jal	ra,428 <memset>
+  40:	fff00593          	li	a1,-1
+  44:	0125f5d7          	vsetvli	a1,a1,e32,m4,tu,mu
+  48:	00058613          	mv	a2,a1
+  4c:	02058263          	beqz	a1,70 <vector_memcpy_indexed+0x60>
+  50:	00010693          	mv	a3,sp
+  54:	00000793          	li	a5,0
+  58:	0017c713          	xori	a4,a5,1
+  5c:	0027171b          	slliw	a4,a4,0x2
+  60:	00e6a023          	sw	a4,0(a3)
+  64:	00178793          	addi	a5,a5,1
+  68:	00468693          	addi	a3,a3,4
+  6c:	fef616e3          	bne	a2,a5,58 <vector_memcpy_indexed+0x48>
+  70:	0125f5d7          	vsetvli	a1,a1,e32,m4,tu,mu
+  74:	02016407          	vle32.v	v8,(sp)
+  78:	04041063          	bnez	s0,b8 <vector_memcpy_indexed+0xa8>
+  7c:	21813083          	ld	ra,536(sp)
+  80:	21013403          	ld	s0,528(sp)
+  84:	20813483          	ld	s1,520(sp)
+  88:	20013903          	ld	s2,512(sp)
+  8c:	22010113          	addi	sp,sp,544
+  90:	00008067          	ret
+  94:	0127f757          	vsetvli	a4,a5,e32,m4,tu,mu
+  98:	0e896207          	vloxei32.v	v4,(s2),v8
+  9c:	0127f757          	vsetvli	a4,a5,e32,m4,tu,mu
+  a0:	0e84e227          	vsoxei32.v	v4,(s1),v8
+  a4:	00279713          	slli	a4,a5,0x2
+  a8:	00e90933          	add	s2,s2,a4
+  ac:	00e484b3          	add	s1,s1,a4
+  b0:	40f40433          	sub	s0,s0,a5
+  b4:	fc0404e3          	beqz	s0,7c <vector_memcpy_indexed+0x6c>
+  b8:	012477d7          	vsetvli	a5,s0,e32,m4,tu,mu
+  bc:	fcf60ce3          	beq	a2,a5,94 <vector_memcpy_indexed+0x84>
+  c0:	0127f757          	vsetvli	a4,a5,e32,m4,tu,mu
+  c4:	02096207          	vle32.v	v4,(s2)
+  c8:	0127f757          	vsetvli	a4,a5,e32,m4,tu,mu
+  cc:	0204e227          	vse32.v	v4,(s1)
+  d0:	fd5ff06f          	j	a4 <vector_memcpy_indexed+0x94>
+
+00000000000000d4 <vector_memcpy_masked>:
+  d4:	de010113          	addi	sp,sp,-544
+  d8:	20113c23          	sd	ra,536(sp)
+  dc:	20813823          	sd	s0,528(sp)
+  e0:	20913423          	sd	s1,520(sp)
+  e4:	21213023          	sd	s2,512(sp)
+  e8:	00050413          	mv	s0,a0
+  ec:	00058913          	mv	s2,a1
+  f0:	00060493          	mv	s1,a2
+  f4:	20000613          	li	a2,512
+  f8:	00000593          	li	a1,0
+  fc:	00010513          	mv	a0,sp
+ 100:	328000ef          	jal	ra,428 <memset>
+ 104:	fff00613          	li	a2,-1
+ 108:	01267657          	vsetvli	a2,a2,e32,m4,tu,mu
+ 10c:	02060263          	beqz	a2,130 <vector_memcpy_masked+0x5c>
+ 110:	00060593          	mv	a1,a2
+ 114:	00010713          	mv	a4,sp
+ 118:	00000793          	li	a5,0
+ 11c:	0017f693          	andi	a3,a5,1
+ 120:	00d72023          	sw	a3,0(a4)
+ 124:	00178793          	addi	a5,a5,1
+ 128:	00470713          	addi	a4,a4,4
+ 12c:	fef598e3          	bne	a1,a5,11c <vector_memcpy_masked+0x48>
+ 130:	012677d7          	vsetvli	a5,a2,e32,m4,tu,mu
+ 134:	02016207          	vle32.v	v4,(sp)
+ 138:	012677d7          	vsetvli	a5,a2,e32,m4,tu,mu
+ 13c:	6240b057          	vmseq.vi	v0,v4,1
+ 140:	01267657          	vsetvli	a2,a2,e32,m4,tu,mu
+ 144:	5e003457          	vmv.v.i	v8,0
+ 148:	02040a63          	beqz	s0,17c <vector_memcpy_masked+0xa8>
+ 14c:	012477d7          	vsetvli	a5,s0,e32,m4,tu,mu
+ 150:	0127f757          	vsetvli	a4,a5,e32,m4,tu,mu
+ 154:	9e81b257          	vmv4r.v	v4,v8
+ 158:	00096207          	vle32.v	v4,(s2),v0.t
+ 15c:	9e41b257          	vmv4r.v	v4,v4
+ 160:	0127f757          	vsetvli	a4,a5,e32,m4,tu,mu
+ 164:	0004e227          	vse32.v	v4,(s1),v0.t
+ 168:	00279713          	slli	a4,a5,0x2
+ 16c:	00e90933          	add	s2,s2,a4
+ 170:	00e484b3          	add	s1,s1,a4
+ 174:	40f40433          	sub	s0,s0,a5
+ 178:	fc041ae3          	bnez	s0,14c <vector_memcpy_masked+0x78>
+ 17c:	21813083          	ld	ra,536(sp)
+ 180:	21013403          	ld	s0,528(sp)
+ 184:	20813483          	ld	s1,520(sp)
+ 188:	20013903          	ld	s2,512(sp)
+ 18c:	22010113          	addi	sp,sp,544
+ 190:	00008067          	ret
+
+0000000000000194 <vector_memcpy_8strided>:
+ 194:	08050463          	beqz	a0,21c <vector_memcpy_8strided+0x88>
+ 198:	fff00e93          	li	t4,-1
+ 19c:	002ede93          	srli	t4,t4,0x2
+ 1a0:	00400813          	li	a6,4
+ 1a4:	0400006f          	j	1e4 <vector_memcpy_8strided+0x50>
+ 1a8:	00058713          	mv	a4,a1
+ 1ac:	00060693          	mv	a3,a2
+ 1b0:	01058893          	addi	a7,a1,16
+ 1b4:	0007f357          	vsetvli	t1,a5,e8,m1,tu,mu
+ 1b8:	0b070087          	vlse8.v	v1,(a4),a6
+ 1bc:	0007f357          	vsetvli	t1,a5,e8,m1,tu,mu
+ 1c0:	0b0680a7          	vsse8.v	v1,(a3),a6
+ 1c4:	00170713          	addi	a4,a4,1
+ 1c8:	00168693          	addi	a3,a3,1
+ 1cc:	ff1714e3          	bne	a4,a7,1b4 <vector_memcpy_8strided+0x20>
+ 1d0:	00279793          	slli	a5,a5,0x2
+ 1d4:	00f585b3          	add	a1,a1,a5
+ 1d8:	00f60633          	add	a2,a2,a5
+ 1dc:	41c50533          	sub	a0,a0,t3
+ 1e0:	02050e63          	beqz	a0,21c <vector_memcpy_8strided+0x88>
+ 1e4:	00251793          	slli	a5,a0,0x2
+ 1e8:	0007f7d7          	vsetvli	a5,a5,e8,m1,tu,mu
+ 1ec:	01d7fe33          	and	t3,a5,t4
+ 1f0:	faae6ce3          	bltu	t3,a0,1a8 <vector_memcpy_8strided+0x14>
+ 1f4:	0007f757          	vsetvli	a4,a5,e8,m1,tu,mu
+ 1f8:	02058087          	vle8.v	v1,(a1)
+ 1fc:	0007f757          	vsetvli	a4,a5,e8,m1,tu,mu
+ 200:	020600a7          	vse8.v	v1,(a2)
+ 204:	ffc7f713          	andi	a4,a5,-4
+ 208:	00e585b3          	add	a1,a1,a4
+ 20c:	00e60633          	add	a2,a2,a4
+ 210:	0027d793          	srli	a5,a5,0x2
+ 214:	40f50533          	sub	a0,a0,a5
+ 218:	fc9ff06f          	j	1e0 <vector_memcpy_8strided+0x4c>
+ 21c:	00008067          	ret
+
+0000000000000220 <vector_memcpy_16strided>:
+ 220:	00000f13          	li	t5,0
+ 224:	00100e93          	li	t4,1
+ 228:	00800813          	li	a6,8
+ 22c:	04051263          	bnez	a0,270 <vector_memcpy_16strided+0x50>
+ 230:	00008067          	ret
+ 234:	00151793          	slli	a5,a0,0x1
+ 238:	0087f7d7          	vsetvli	a5,a5,e16,m1,tu,mu
+ 23c:	00078f13          	mv	t5,a5
+ 240:	00279893          	slli	a7,a5,0x2
+ 244:	02a8ec63          	bltu	a7,a0,27c <vector_memcpy_16strided+0x5c>
+ 248:	0087f757          	vsetvli	a4,a5,e16,m1,tu,mu
+ 24c:	0205d087          	vle16.v	v1,(a1)
+ 250:	0087f757          	vsetvli	a4,a5,e16,m1,tu,mu
+ 254:	020650a7          	vse16.v	v1,(a2)
+ 258:	0017d793          	srli	a5,a5,0x1
+ 25c:	00279713          	slli	a4,a5,0x2
+ 260:	00e585b3          	add	a1,a1,a4
+ 264:	00e60633          	add	a2,a2,a4
+ 268:	40f50533          	sub	a0,a0,a5
+ 26c:	00050663          	beqz	a0,278 <vector_memcpy_16strided+0x58>
+ 270:	fdd512e3          	bne	a0,t4,234 <vector_memcpy_16strided+0x14>
+ 274:	fdeee0e3          	bltu	t4,t5,234 <vector_memcpy_16strided+0x14>
+ 278:	00008067          	ret
+ 27c:	00058713          	mv	a4,a1
+ 280:	00060693          	mv	a3,a2
+ 284:	01058313          	addi	t1,a1,16
+ 288:	0087fe57          	vsetvli	t3,a5,e16,m1,tu,mu
+ 28c:	0b075087          	vlse16.v	v1,(a4),a6
+ 290:	0087fe57          	vsetvli	t3,a5,e16,m1,tu,mu
+ 294:	0b06d0a7          	vsse16.v	v1,(a3),a6
+ 298:	00270713          	addi	a4,a4,2
+ 29c:	00268693          	addi	a3,a3,2
+ 2a0:	fee314e3          	bne	t1,a4,288 <vector_memcpy_16strided+0x68>
+ 2a4:	0018d793          	srli	a5,a7,0x1
+ 2a8:	00189893          	slli	a7,a7,0x1
+ 2ac:	011585b3          	add	a1,a1,a7
+ 2b0:	01160633          	add	a2,a2,a7
+ 2b4:	40f50533          	sub	a0,a0,a5
+ 2b8:	fb5ff06f          	j	26c <vector_memcpy_16strided+0x4c>
+
+00000000000002bc <vector_memcpy_32strided>:
+ 2bc:	06050663          	beqz	a0,328 <vector_memcpy_32strided+0x6c>
+ 2c0:	01000813          	li	a6,16
+ 2c4:	0380006f          	j	2fc <vector_memcpy_32strided+0x40>
+ 2c8:	00000713          	li	a4,0
+ 2cc:	0107f8d7          	vsetvli	a7,a5,e32,m1,tu,mu
+ 2d0:	00e588b3          	add	a7,a1,a4
+ 2d4:	0b08e087          	vlse32.v	v1,(a7),a6
+ 2d8:	0107f8d7          	vsetvli	a7,a5,e32,m1,tu,mu
+ 2dc:	00e608b3          	add	a7,a2,a4
+ 2e0:	0b08e0a7          	vsse32.v	v1,(a7),a6
+ 2e4:	00470713          	addi	a4,a4,4
+ 2e8:	ff0712e3          	bne	a4,a6,2cc <vector_memcpy_32strided+0x10>
+ 2ec:	00479793          	slli	a5,a5,0x4
+ 2f0:	00f585b3          	add	a1,a1,a5
+ 2f4:	00f60633          	add	a2,a2,a5
+ 2f8:	40d50533          	sub	a0,a0,a3
+ 2fc:	010577d7          	vsetvli	a5,a0,e32,m1,tu,mu
+ 300:	00279693          	slli	a3,a5,0x2
+ 304:	fca6e2e3          	bltu	a3,a0,2c8 <vector_memcpy_32strided+0xc>
+ 308:	0107f757          	vsetvli	a4,a5,e32,m1,tu,mu
+ 30c:	0205e087          	vle32.v	v1,(a1)
+ 310:	0107f757          	vsetvli	a4,a5,e32,m1,tu,mu
+ 314:	020660a7          	vse32.v	v1,(a2)
+ 318:	00d585b3          	add	a1,a1,a3
+ 31c:	00d60633          	add	a2,a2,a3
+ 320:	40f50533          	sub	a0,a0,a5
+ 324:	fc051ce3          	bnez	a0,2fc <vector_memcpy_32strided+0x40>
+ 328:	00008067          	ret
+
+000000000000032c <vector_memcpy_32m1_wholereg>:
+ 32c:	fff00693          	li	a3,-1
+ 330:	0106f6d7          	vsetvli	a3,a3,e32,m1,tu,mu
+ 334:	02051463          	bnez	a0,35c <vector_memcpy_32m1_wholereg+0x30>
+ 338:	00008067          	ret
+ 33c:	02858087          	vl1r.v	v1,(a1)
+ 340:	9e1030d7          	vmv1r.v	v1,v1
+ 344:	028600a7          	vs1r.v	v1,(a2)
+ 348:	00279713          	slli	a4,a5,0x2
+ 34c:	00e585b3          	add	a1,a1,a4
+ 350:	00e60633          	add	a2,a2,a4
+ 354:	40f50533          	sub	a0,a0,a5
+ 358:	fe0500e3          	beqz	a0,338 <vector_memcpy_32m1_wholereg+0xc>
+ 35c:	010577d7          	vsetvli	a5,a0,e32,m1,tu,mu
+ 360:	fcf68ee3          	beq	a3,a5,33c <vector_memcpy_32m1_wholereg+0x10>
+ 364:	0107f757          	vsetvli	a4,a5,e32,m1,tu,mu
+ 368:	0205e087          	vle32.v	v1,(a1)
+ 36c:	0107f757          	vsetvli	a4,a5,e32,m1,tu,mu
+ 370:	020660a7          	vse32.v	v1,(a2)
+ 374:	fd5ff06f          	j	348 <vector_memcpy_32m1_wholereg+0x1c>
+
+0000000000000378 <vector_memcpy_8m8>:
+ 378:	00251513          	slli	a0,a0,0x2
+ 37c:	02050463          	beqz	a0,3a4 <vector_memcpy_8m8+0x2c>
+ 380:	003577d7          	vsetvli	a5,a0,e8,m8,tu,mu
+ 384:	0037f757          	vsetvli	a4,a5,e8,m8,tu,mu
+ 388:	02058407          	vle8.v	v8,(a1)
+ 38c:	0037f757          	vsetvli	a4,a5,e8,m8,tu,mu
+ 390:	02060427          	vse8.v	v8,(a2)
+ 394:	00f585b3          	add	a1,a1,a5
+ 398:	00f60633          	add	a2,a2,a5
+ 39c:	40f50533          	sub	a0,a0,a5
+ 3a0:	fe0510e3          	bnez	a0,380 <vector_memcpy_8m8+0x8>
+ 3a4:	00008067          	ret
+
+00000000000003a8 <vector_memcpy_16m8>:
+ 3a8:	00000713          	li	a4,0
+ 3ac:	00100813          	li	a6,1
+ 3b0:	02051e63          	bnez	a0,3ec <vector_memcpy_16m8+0x44>
+ 3b4:	00008067          	ret
+ 3b8:	00151793          	slli	a5,a0,0x1
+ 3bc:	00b7f7d7          	vsetvli	a5,a5,e16,m8,tu,mu
+ 3c0:	00078713          	mv	a4,a5
+ 3c4:	00b7f6d7          	vsetvli	a3,a5,e16,m8,tu,mu
+ 3c8:	0205d407          	vle16.v	v8,(a1)
+ 3cc:	00b7f6d7          	vsetvli	a3,a5,e16,m8,tu,mu
+ 3d0:	02065427          	vse16.v	v8,(a2)
+ 3d4:	0017d793          	srli	a5,a5,0x1
+ 3d8:	00279693          	slli	a3,a5,0x2
+ 3dc:	00d585b3          	add	a1,a1,a3
+ 3e0:	00d60633          	add	a2,a2,a3
+ 3e4:	40f50533          	sub	a0,a0,a5
+ 3e8:	00050663          	beqz	a0,3f4 <vector_memcpy_16m8+0x4c>
+ 3ec:	fd0516e3          	bne	a0,a6,3b8 <vector_memcpy_16m8+0x10>
+ 3f0:	fce864e3          	bltu	a6,a4,3b8 <vector_memcpy_16m8+0x10>
+ 3f4:	00008067          	ret
+
+00000000000003f8 <vector_memcpy_32m8>:
+ 3f8:	02050663          	beqz	a0,424 <vector_memcpy_32m8+0x2c>
+ 3fc:	013577d7          	vsetvli	a5,a0,e32,m8,tu,mu
+ 400:	0137f757          	vsetvli	a4,a5,e32,m8,tu,mu
+ 404:	0205e407          	vle32.v	v8,(a1)
+ 408:	0137f757          	vsetvli	a4,a5,e32,m8,tu,mu
+ 40c:	02066427          	vse32.v	v8,(a2)
+ 410:	00279713          	slli	a4,a5,0x2
+ 414:	00e585b3          	add	a1,a1,a4
+ 418:	00e60633          	add	a2,a2,a4
+ 41c:	40f50533          	sub	a0,a0,a5
+ 420:	fc051ee3          	bnez	a0,3fc <vector_memcpy_32m8+0x4>
+ 424:	00008067          	ret
+
+0000000000000428 <memset>:
+ 428:	0ff5f593          	andi	a1,a1,255
+ 42c:	00060c63          	beqz	a2,444 <memset+0x1c>
+ 430:	00050793          	mv	a5,a0
+ 434:	00a60633          	add	a2,a2,a0
+ 438:	00b78023          	sb	a1,0(a5)
+ 43c:	00178793          	addi	a5,a5,1
+ 440:	fec79ce3          	bne	a5,a2,438 <memset+0x10>
+ 444:	00008067          	ret
+
+0000000000000448 <vector_memcpy_harness>:
+ 448:	be010113          	addi	sp,sp,-1056
+ 44c:	40113c23          	sd	ra,1048(sp)
+ 450:	40813823          	sd	s0,1040(sp)
+ 454:	40913423          	sd	s1,1032(sp)
+ 458:	41213023          	sd	s2,1024(sp)
+ 45c:	00050913          	mv	s2,a0
+ 460:	20000613          	li	a2,512
+ 464:	00000593          	li	a1,0
+ 468:	20010513          	addi	a0,sp,512
+ 46c:	fbdff0ef          	jal	ra,428 <memset>
+ 470:	20000613          	li	a2,512
+ 474:	00000593          	li	a1,0
+ 478:	00010513          	mv	a0,sp
+ 47c:	fadff0ef          	jal	ra,428 <memset>
+ 480:	20010413          	addi	s0,sp,512
+ 484:	00040713          	mv	a4,s0
+ 488:	00000793          	li	a5,0
+ 48c:	08000693          	li	a3,128
+ 490:	00f72023          	sw	a5,0(a4)
+ 494:	0017879b          	addiw	a5,a5,1
+ 498:	00470713          	addi	a4,a4,4
+ 49c:	fed79ae3          	bne	a5,a3,490 <vector_memcpy_harness+0x48>
+ 4a0:	00010493          	mv	s1,sp
+ 4a4:	00048613          	mv	a2,s1
+ 4a8:	20010593          	addi	a1,sp,512
+ 4ac:	06700513          	li	a0,103
+ 4b0:	000900e7          	jalr	s2
+ 4b4:	00048593          	mv	a1,s1
+ 4b8:	19c40693          	addi	a3,s0,412
+ 4bc:	00048613          	mv	a2,s1
+ 4c0:	00042703          	lw	a4,0(s0)
+ 4c4:	00062783          	lw	a5,0(a2)
+ 4c8:	02f71863          	bne	a4,a5,4f8 <vector_memcpy_harness+0xb0>
+ 4cc:	00440413          	addi	s0,s0,4
+ 4d0:	00460613          	addi	a2,a2,4
+ 4d4:	fed416e3          	bne	s0,a3,4c0 <vector_memcpy_harness+0x78>
+ 4d8:	19c10793          	addi	a5,sp,412
+ 4dc:	20058693          	addi	a3,a1,512
+ 4e0:	0007a703          	lw	a4,0(a5)
+ 4e4:	02071863          	bnez	a4,514 <vector_memcpy_harness+0xcc>
+ 4e8:	00478793          	addi	a5,a5,4
+ 4ec:	fed79ae3          	bne	a5,a3,4e0 <vector_memcpy_harness+0x98>
+ 4f0:	00100513          	li	a0,1
+ 4f4:	0080006f          	j	4fc <vector_memcpy_harness+0xb4>
+ 4f8:	00000513          	li	a0,0
+ 4fc:	41813083          	ld	ra,1048(sp)
+ 500:	41013403          	ld	s0,1040(sp)
+ 504:	40813483          	ld	s1,1032(sp)
+ 508:	40013903          	ld	s2,1024(sp)
+ 50c:	42010113          	addi	sp,sp,1056
+ 510:	00008067          	ret
+ 514:	00000513          	li	a0,0
+ 518:	fe5ff06f          	j	4fc <vector_memcpy_harness+0xb4>
+
+000000000000051c <vector_memcpy_masked_harness>:
+ 51c:	be010113          	addi	sp,sp,-1056
+ 520:	40113c23          	sd	ra,1048(sp)
+ 524:	40813823          	sd	s0,1040(sp)
+ 528:	40913423          	sd	s1,1032(sp)
+ 52c:	41213023          	sd	s2,1024(sp)
+ 530:	00050913          	mv	s2,a0
+ 534:	20000613          	li	a2,512
+ 538:	00000593          	li	a1,0
+ 53c:	20010513          	addi	a0,sp,512
+ 540:	ee9ff0ef          	jal	ra,428 <memset>
+ 544:	20000613          	li	a2,512
+ 548:	00000593          	li	a1,0
+ 54c:	00010513          	mv	a0,sp
+ 550:	ed9ff0ef          	jal	ra,428 <memset>
+ 554:	20000613          	li	a2,512
+ 558:	0ff00593          	li	a1,255
+ 55c:	00010513          	mv	a0,sp
+ 560:	ec9ff0ef          	jal	ra,428 <memset>
+ 564:	20010493          	addi	s1,sp,512
+ 568:	00048713          	mv	a4,s1
+ 56c:	00000793          	li	a5,0
+ 570:	08000693          	li	a3,128
+ 574:	00f72023          	sw	a5,0(a4)
+ 578:	0017879b          	addiw	a5,a5,1
+ 57c:	00470713          	addi	a4,a4,4
+ 580:	fed79ae3          	bne	a5,a3,574 <vector_memcpy_masked_harness+0x58>
+ 584:	00010413          	mv	s0,sp
+ 588:	00040613          	mv	a2,s0
+ 58c:	20010593          	addi	a1,sp,512
+ 590:	06700513          	li	a0,103
+ 594:	000900e7          	jalr	s2
+ 598:	00040893          	mv	a7,s0
+ 59c:	00040613          	mv	a2,s0
+ 5a0:	00000793          	li	a5,0
+ 5a4:	fff00813          	li	a6,-1
+ 5a8:	06700713          	li	a4,103
+ 5ac:	01c0006f          	j	5c8 <vector_memcpy_masked_harness+0xac>
+ 5b0:	00062683          	lw	a3,0(a2)
+ 5b4:	03069663          	bne	a3,a6,5e0 <vector_memcpy_masked_harness+0xc4>
+ 5b8:	0017879b          	addiw	a5,a5,1
+ 5bc:	00460613          	addi	a2,a2,4
+ 5c0:	00448493          	addi	s1,s1,4
+ 5c4:	02e78a63          	beq	a5,a4,5f8 <vector_memcpy_masked_harness+0xdc>
+ 5c8:	0017f513          	andi	a0,a5,1
+ 5cc:	fe0502e3          	beqz	a0,5b0 <vector_memcpy_masked_harness+0x94>
+ 5d0:	0004a583          	lw	a1,0(s1)
+ 5d4:	00062683          	lw	a3,0(a2)
+ 5d8:	fed580e3          	beq	a1,a3,5b8 <vector_memcpy_masked_harness+0x9c>
+ 5dc:	00000513          	li	a0,0
+ 5e0:	41813083          	ld	ra,1048(sp)
+ 5e4:	41013403          	ld	s0,1040(sp)
+ 5e8:	40813483          	ld	s1,1032(sp)
+ 5ec:	40013903          	ld	s2,1024(sp)
+ 5f0:	42010113          	addi	sp,sp,1056
+ 5f4:	00008067          	ret
+ 5f8:	19c10793          	addi	a5,sp,412
+ 5fc:	20088693          	addi	a3,a7,512
+ 600:	fff00613          	li	a2,-1
+ 604:	0007a703          	lw	a4,0(a5)
+ 608:	00c71a63          	bne	a4,a2,61c <vector_memcpy_masked_harness+0x100>
+ 60c:	00478793          	addi	a5,a5,4
+ 610:	fed79ae3          	bne	a5,a3,604 <vector_memcpy_masked_harness+0xe8>
+ 614:	00100513          	li	a0,1
+ 618:	fc9ff06f          	j	5e0 <vector_memcpy_masked_harness+0xc4>
+ 61c:	00000513          	li	a0,0
+ 620:	fc1ff06f          	j	5e0 <vector_memcpy_masked_harness+0xc4>
+
+0000000000000624 <main>:
+ 624:	fe010113          	addi	sp,sp,-32
+ 628:	00113c23          	sd	ra,24(sp)
+ 62c:	00813823          	sd	s0,16(sp)
+ 630:	00913423          	sd	s1,8(sp)
+ 634:	37800513          	li	a0,888
+ 638:	e11ff0ef          	jal	ra,448 <vector_memcpy_harness>
+ 63c:	00050413          	mv	s0,a0
+ 640:	3a800513          	li	a0,936
+ 644:	e05ff0ef          	jal	ra,448 <vector_memcpy_harness>
+ 648:	00050493          	mv	s1,a0
+ 64c:	3f800513          	li	a0,1016
+ 650:	df9ff0ef          	jal	ra,448 <vector_memcpy_harness>
+ 654:	0014949b          	slliw	s1,s1,0x1
+ 658:	0025151b          	slliw	a0,a0,0x2
+ 65c:	00a4e4b3          	or	s1,s1,a0
+ 660:	00946433          	or	s0,s0,s1
+ 664:	0004041b          	sext.w	s0,s0
+ 668:	19400513          	li	a0,404
+ 66c:	dddff0ef          	jal	ra,448 <vector_memcpy_harness>
+ 670:	0045151b          	slliw	a0,a0,0x4
+ 674:	00a46433          	or	s0,s0,a0
+ 678:	0004041b          	sext.w	s0,s0
+ 67c:	22000513          	li	a0,544
+ 680:	dc9ff0ef          	jal	ra,448 <vector_memcpy_harness>
+ 684:	0055151b          	slliw	a0,a0,0x5
+ 688:	00a46433          	or	s0,s0,a0
+ 68c:	0004041b          	sext.w	s0,s0
+ 690:	2bc00513          	li	a0,700
+ 694:	db5ff0ef          	jal	ra,448 <vector_memcpy_harness>
+ 698:	0065151b          	slliw	a0,a0,0x6
+ 69c:	00a46433          	or	s0,s0,a0
+ 6a0:	0004041b          	sext.w	s0,s0
+ 6a4:	01000513          	li	a0,16
+ 6a8:	da1ff0ef          	jal	ra,448 <vector_memcpy_harness>
+ 6ac:	0075151b          	slliw	a0,a0,0x7
+ 6b0:	00a46433          	or	s0,s0,a0
+ 6b4:	0004041b          	sext.w	s0,s0
+ 6b8:	0d400513          	li	a0,212
+ 6bc:	e61ff0ef          	jal	ra,51c <vector_memcpy_masked_harness>
+ 6c0:	0085151b          	slliw	a0,a0,0x8
+ 6c4:	00a46433          	or	s0,s0,a0
+ 6c8:	0004041b          	sext.w	s0,s0
+ 6cc:	32c00513          	li	a0,812
+ 6d0:	d79ff0ef          	jal	ra,448 <vector_memcpy_harness>
+ 6d4:	00d5151b          	slliw	a0,a0,0xd
+ 6d8:	00a46533          	or	a0,s0,a0
+ 6dc:	0005051b          	sext.w	a0,a0
+ 6e0:	01000737          	lui	a4,0x1000
+ 6e4:	000027b7          	lui	a5,0x2
+ 6e8:	1f778793          	addi	a5,a5,503 # 21f7 <main+0x1bd3>
+ 6ec:	00f72023          	sw	a5,0(a4) # 1000000 <outputAttempted>
+ 6f0:	010007b7          	lui	a5,0x1000
+ 6f4:	00a7a423          	sw	a0,8(a5) # 1000008 <outputSucceeded>
+ 6f8:	01813083          	ld	ra,24(sp)
+ 6fc:	01013403          	ld	s0,16(sp)
+ 700:	00813483          	ld	s1,8(sp)
+ 704:	02010113          	addi	sp,sp,32
+ 708:	00008067          	ret

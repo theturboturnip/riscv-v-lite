@@ -72,10 +72,16 @@ int main(void)
 
   // On pure-capability platforms this is equivalent to *(&outputAttempted) = ran;
   // but on hybrid-capability platforms this tests if capabilities can still be constructed and used.
+  #ifdef __llvm__
   #if __has_feature(capabilities)
   volatile int64_t* __capability data = &outputAttempted;
   *data = ran;
   #else 
+  // LLVM no CHERI
+  *(&outputAttempted) = ran;
+  #endif
+  #else 
+  // GCC
   *(&outputAttempted) = ran;
   #endif
 

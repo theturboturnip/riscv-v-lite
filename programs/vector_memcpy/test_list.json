@@ -1,110 +1,176 @@
 {
     "0": {
-        "test": "vector_memcpy_unit_stride_e8m8"
+        "test": "vector_memcpy_unit_stride_e8m1"
     },
     "1": {
-        "test": "vector_memcpy_unit_stride_e16m8"
+        "test": "vector_memcpy_unit_stride_e16m2"
     },
     "2": {
-        "test": "vector_memcpy_unit_stride_e32m8"
+        "test": "vector_memcpy_unit_stride_e32m4"
     },
     "3": {
-        "test": "vector_memcpy_unit_stride_e32mf2"
+        "test": "vector_memcpy_unit_stride_e64m8"
     },
     "4": {
-        "test": "vector_memcpy_unit_stride_e64m2"
+        "test": "vector_memcpy_unit_stride_e32mf2"
     },
     "5": {
-        "test": "vector_memcpy_strided_e8m8"
+        "test": "vector_memcpy_unit_stride_e16mf4"
     },
     "6": {
-        "test": "vector_memcpy_strided_e16m8"
+        "test": "vector_memcpy_unit_stride_e8mf8"
     },
     "7": {
-        "test": "vector_memcpy_strided_e32m8"
+        "test": "vector_memcpy_strided_e8m1"
     },
     "8": {
-        "test": "vector_memcpy_strided_e32mf2"
+        "test": "vector_memcpy_strided_e16m2"
     },
     "9": {
-        "test": "vector_memcpy_strided_e64m2"
+        "test": "vector_memcpy_strided_e32m4"
     },
     "10": {
-        "test": "vector_memcpy_indexed_e8m8"
+        "test": "vector_memcpy_strided_e64m8"
     },
     "11": {
-        "test": "vector_memcpy_indexed_e16m8"
+        "test": "vector_memcpy_strided_e32mf2"
     },
     "12": {
-        "test": "vector_memcpy_indexed_e32m8"
+        "test": "vector_memcpy_strided_e16mf4"
     },
     "13": {
-        "test": "vector_memcpy_indexed_e32mf2"
+        "test": "vector_memcpy_strided_e8mf8"
     },
     "14": {
-        "test": "vector_memcpy_indexed_e64m2"
+        "test": "vector_memcpy_indexed_e8m1"
     },
     "15": {
-        "test": "vector_memcpy_masked_e32m8"
+        "test": "vector_memcpy_indexed_e16m2"
     },
     "16": {
-        "test": "vector_memcpy_masked_bytemask_load_e32m8"
+        "test": "vector_memcpy_indexed_e32m4"
     },
     "17": {
-        "test": "vector_memcpy_segmented_e8m2"
+        "test": "vector_memcpy_indexed_e64m8"
     },
     "18": {
-        "test": "vector_memcpy_segmented_e16m2"
+        "test": "vector_memcpy_indexed_e32mf2"
     },
     "19": {
-        "test": "vector_memcpy_segmented_e32m2"
+        "test": "vector_memcpy_indexed_e16mf4"
     },
     "20": {
-        "test": "vector_memcpy_segmented_e32mf2"
+        "test": "vector_memcpy_indexed_e8mf8"
     },
     "21": {
-        "test": "vector_memcpy_segmented_e64m2"
+        "test": "vector_memcpy_masked_e8m1"
     },
     "22": {
-        "test": "vector_memcpy_wholereg_e64m1"
+        "test": "vector_memcpy_masked_e16m2"
     },
     "23": {
-        "test": "vector_memcpy_wholereg_e64m2"
+        "test": "vector_memcpy_masked_e32m4"
     },
     "24": {
-        "test": "vector_memcpy_wholereg_e64m4"
+        "test": "vector_memcpy_masked_e64m8"
     },
     "25": {
-        "test": "vector_memcpy_wholereg_e64m8"
+        "test": "vector_memcpy_masked_e32mf2"
     },
     "26": {
-        "test": "vector_memcpy_unit_stride_faultonlyfirst_e8m8"
+        "test": "vector_memcpy_masked_e16mf4"
     },
     "27": {
-        "test": "vector_memcpy_unit_stride_faultonlyfirst_e16m8"
+        "test": "vector_memcpy_masked_e8mf8"
     },
     "28": {
-        "test": "vector_memcpy_unit_stride_faultonlyfirst_e32m8"
+        "test": "vector_memcpy_masked_bytemask_load_e8m1"
     },
     "29": {
-        "test": "vector_memcpy_unit_stride_faultonlyfirst_e32mf2"
+        "test": "vector_memcpy_masked_bytemask_load_e16m2"
     },
     "30": {
-        "test": "vector_memcpy_unit_stride_faultonlyfirst_e64m2"
+        "test": "vector_memcpy_masked_bytemask_load_e32m4"
     },
     "31": {
-        "test": "vector_memcpy_boundary_faultonlyfirst_e8m8"
+        "test": "vector_memcpy_masked_bytemask_load_e64m8"
     },
     "32": {
-        "test": "vector_memcpy_boundary_faultonlyfirst_e16m8"
+        "test": "vector_memcpy_masked_bytemask_load_e32mf2"
     },
     "33": {
-        "test": "vector_memcpy_boundary_faultonlyfirst_e32m8"
+        "test": "vector_memcpy_masked_bytemask_load_e16mf4"
     },
     "34": {
-        "test": "vector_memcpy_boundary_faultonlyfirst_e32mf2"
+        "test": "vector_memcpy_masked_bytemask_load_e8mf8"
     },
     "35": {
-        "test": "vector_memcpy_boundary_faultonlyfirst_e64m2"
+        "test": "vector_memcpy_segmented_e8m2"
+    },
+    "36": {
+        "test": "vector_memcpy_segmented_e16m2"
+    },
+    "37": {
+        "test": "vector_memcpy_segmented_e32m2"
+    },
+    "38": {
+        "test": "vector_memcpy_segmented_e64m2"
+    },
+    "39": {
+        "test": "vector_memcpy_segmented_e32mf2"
+    },
+    "40": {
+        "test": "vector_memcpy_wholereg_e64m1"
+    },
+    "41": {
+        "test": "vector_memcpy_wholereg_e64m2"
+    },
+    "42": {
+        "test": "vector_memcpy_wholereg_e64m4"
+    },
+    "43": {
+        "test": "vector_memcpy_wholereg_e64m8"
+    },
+    "44": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e8m1"
+    },
+    "45": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e16m2"
+    },
+    "46": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e32m4"
+    },
+    "47": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e64m8"
+    },
+    "48": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e32mf2"
+    },
+    "49": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e16mf4"
+    },
+    "50": {
+        "test": "vector_memcpy_unit_stride_faultonlyfirst_e8mf8"
+    },
+    "51": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e8m1"
+    },
+    "52": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e16m2"
+    },
+    "53": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e32m4"
+    },
+    "54": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e64m8"
+    },
+    "55": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e32mf2"
+    },
+    "56": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e16mf4"
+    },
+    "57": {
+        "test": "vector_memcpy_boundary_faultonlyfirst_e8mf8"
     }
 }

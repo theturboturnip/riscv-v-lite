@@ -1,0 +1,188 @@
+
+/media/common/University/Edu/Year4_Masters/Project/riscv-v-lite/programs/build/gcc-rv64imv/hello_world/hello_world.elf:     file format elf64-littleriscv
+
+Contents of section .text.init:
+ 0000 17010100 130101fe ef000018 6f000000  ............o...
+Contents of section .text:
+ 0010 63160500 13051000 67800000 130101ff  c.......g.......
+ 0020 23341100 23308100 13040500 1b05f5ff  #4..#0..........
+ 0030 eff01ffe 3b058502 83308100 03340100  ....;....0...4..
+ 0040 13010101 67800000 130101ff 23341100  ....g.......#4..
+ 0050 1305a000 eff0dffb b7673700 938707f0  .........g7.....
+ 0060 3305f540 13351500 83308100 13010101  3..@.5...0......
+ 0070 67800000 130101fe 233c1100 23388100  g.......#<..#8..
+ 0080 23349100 13040500 63060500 93071000  #4......c.......
+ 0090 631ef500 13050400 83308101 03340101  c........0...4..
+ 00a0 83348100 13010102 67800000 1b05f5ff  .4......g.......
+ 00b0 eff05ffc 93040500 1b05e4ff eff09ffb  .._.............
+ 00c0 3b84a400 6ff01ffd 130101ff 23341100  ;...o.......#4..
+ 00d0 1305a000 eff01ffa 130595fc 13351500  .............5..
+ 00e0 83308100 13010101 67800000 130101f3  .0......g.......
+ 00f0 93078100 13061000 13070000 13081000  ................
+ 0100 93081003 6f004001 23240100 1b071700  ....o.@.#$......
+ 0110 1b061600 93874700 9b060700 e38606fe  ......G.........
+ 0120 638a0603 83a6c7ff 83a587ff bb86b600  c...............
+ 0130 23a0d700 9b060600 e3dad8fc 93172500  #.............%.
+ 0140 1307010d b307f700 03a587f3 1301010d  ................
+ 0150 67800000 23260101 6ff05ffb 130101ff  g...#&..o._.....
+ 0160 23341100 13051002 eff05ff8 b7c73500  #4........_...5.
+ 0170 9387277e 3305f540 13351500 83308100  ..'~3..@.5...0..
+ 0180 13010101 67800000 130101fe 233c1100  ....g.......#<..
+ 0190 23388100 23349100 eff01feb 13040500  #8..#4..........
+ 01a0 eff09ff2 93040500 eff05ffb 9b941400  .........._.....
+ 01b0 1b152500 33e5a400 3365a400 1b050500  ..%.3...3e......
+ 01c0 b7070001 13077000 23b0e700 b7070001  ......p.#.......
+ 01d0 23b4a700 83308101 03340101 83348100  #....0...4...4..
+ 01e0 13010102 67800000                    ....g...        
+Contents of section .riscv.attributes:
+ 0000 41390000 00726973 63760001 2f000000  A9...riscv../...
+ 0010 04100572 76363469 3270305f 6d327030  ...rv64i2p0_m2p0
+ 0020 5f763170 305f7a76 616d6f31 70305f7a  _v1p0_zvamo1p0_z
+ 0030 766c7373 65673170 3000               vlsseg1p0.      
+Contents of section .comment:
+ 0000 4743433a 2028474e 55292031 302e312e  GCC: (GNU) 10.1.
+ 0010 3000                                 0.              
+
+Disassembly of section .text.init:
+
+0000000000000000 <entry>:
+   0:	00010117          	auipc	sp,0x10
+   4:	fe010113          	addi	sp,sp,-32 # ffe0 <main+0xfe58>
+   8:	180000ef          	jal	ra,188 <main>
+
+000000000000000c <end>:
+   c:	0000006f          	j	c <end>
+
+Disassembly of section .text:
+
+0000000000000010 <factorial>:
+  10:	00051663          	bnez	a0,1c <factorial+0xc>
+  14:	00100513          	li	a0,1
+  18:	00008067          	ret
+  1c:	ff010113          	addi	sp,sp,-16
+  20:	00113423          	sd	ra,8(sp)
+  24:	00813023          	sd	s0,0(sp)
+  28:	00050413          	mv	s0,a0
+  2c:	fff5051b          	addiw	a0,a0,-1
+  30:	fe1ff0ef          	jal	ra,10 <factorial>
+  34:	0285053b          	mulw	a0,a0,s0
+  38:	00813083          	ld	ra,8(sp)
+  3c:	00013403          	ld	s0,0(sp)
+  40:	01010113          	addi	sp,sp,16
+  44:	00008067          	ret
+
+0000000000000048 <fac_test>:
+  48:	ff010113          	addi	sp,sp,-16
+  4c:	00113423          	sd	ra,8(sp)
+  50:	00a00513          	li	a0,10
+  54:	fbdff0ef          	jal	ra,10 <factorial>
+  58:	003767b7          	lui	a5,0x376
+  5c:	f0078793          	addi	a5,a5,-256 # 375f00 <ramBoundary+0x350f00>
+  60:	40f50533          	sub	a0,a0,a5
+  64:	00153513          	seqz	a0,a0
+  68:	00813083          	ld	ra,8(sp)
+  6c:	01010113          	addi	sp,sp,16
+  70:	00008067          	ret
+
+0000000000000074 <fibbonacci>:
+  74:	fe010113          	addi	sp,sp,-32
+  78:	00113c23          	sd	ra,24(sp)
+  7c:	00813823          	sd	s0,16(sp)
+  80:	00913423          	sd	s1,8(sp)
+  84:	00050413          	mv	s0,a0
+  88:	00050663          	beqz	a0,94 <fibbonacci+0x20>
+  8c:	00100793          	li	a5,1
+  90:	00f51e63          	bne	a0,a5,ac <fibbonacci+0x38>
+  94:	00040513          	mv	a0,s0
+  98:	01813083          	ld	ra,24(sp)
+  9c:	01013403          	ld	s0,16(sp)
+  a0:	00813483          	ld	s1,8(sp)
+  a4:	02010113          	addi	sp,sp,32
+  a8:	00008067          	ret
+  ac:	fff5051b          	addiw	a0,a0,-1
+  b0:	fc5ff0ef          	jal	ra,74 <fibbonacci>
+  b4:	00050493          	mv	s1,a0
+  b8:	ffe4051b          	addiw	a0,s0,-2
+  bc:	fb9ff0ef          	jal	ra,74 <fibbonacci>
+  c0:	00a4843b          	addw	s0,s1,a0
+  c4:	fd1ff06f          	j	94 <fibbonacci+0x20>
+
+00000000000000c8 <fib_test>:
+  c8:	ff010113          	addi	sp,sp,-16
+  cc:	00113423          	sd	ra,8(sp)
+  d0:	00a00513          	li	a0,10
+  d4:	fa1ff0ef          	jal	ra,74 <fibbonacci>
+  d8:	fc950513          	addi	a0,a0,-55
+  dc:	00153513          	seqz	a0,a0
+  e0:	00813083          	ld	ra,8(sp)
+  e4:	01010113          	addi	sp,sp,16
+  e8:	00008067          	ret
+
+00000000000000ec <fib_memo>:
+  ec:	f3010113          	addi	sp,sp,-208
+  f0:	00810793          	addi	a5,sp,8
+  f4:	00100613          	li	a2,1
+  f8:	00000713          	li	a4,0
+  fc:	00100813          	li	a6,1
+ 100:	03100893          	li	a7,49
+ 104:	0140006f          	j	118 <fib_memo+0x2c>
+ 108:	00012423          	sw	zero,8(sp)
+ 10c:	0017071b          	addiw	a4,a4,1
+ 110:	0016061b          	addiw	a2,a2,1
+ 114:	00478793          	addi	a5,a5,4
+ 118:	0007069b          	sext.w	a3,a4
+ 11c:	fe0686e3          	beqz	a3,108 <fib_memo+0x1c>
+ 120:	03068a63          	beq	a3,a6,154 <fib_memo+0x68>
+ 124:	ffc7a683          	lw	a3,-4(a5)
+ 128:	ff87a583          	lw	a1,-8(a5)
+ 12c:	00b686bb          	addw	a3,a3,a1
+ 130:	00d7a023          	sw	a3,0(a5)
+ 134:	0006069b          	sext.w	a3,a2
+ 138:	fcd8dae3          	bge	a7,a3,10c <fib_memo+0x20>
+ 13c:	00251793          	slli	a5,a0,0x2
+ 140:	0d010713          	addi	a4,sp,208
+ 144:	00f707b3          	add	a5,a4,a5
+ 148:	f387a503          	lw	a0,-200(a5)
+ 14c:	0d010113          	addi	sp,sp,208
+ 150:	00008067          	ret
+ 154:	01012623          	sw	a6,12(sp)
+ 158:	fb5ff06f          	j	10c <fib_memo+0x20>
+
+000000000000015c <fib_memo_test>:
+ 15c:	ff010113          	addi	sp,sp,-16
+ 160:	00113423          	sd	ra,8(sp)
+ 164:	02100513          	li	a0,33
+ 168:	f85ff0ef          	jal	ra,ec <fib_memo>
+ 16c:	0035c7b7          	lui	a5,0x35c
+ 170:	7e278793          	addi	a5,a5,2018 # 35c7e2 <ramBoundary+0x3377e2>
+ 174:	40f50533          	sub	a0,a0,a5
+ 178:	00153513          	seqz	a0,a0
+ 17c:	00813083          	ld	ra,8(sp)
+ 180:	01010113          	addi	sp,sp,16
+ 184:	00008067          	ret
+
+0000000000000188 <main>:
+ 188:	fe010113          	addi	sp,sp,-32
+ 18c:	00113c23          	sd	ra,24(sp)
+ 190:	00813823          	sd	s0,16(sp)
+ 194:	00913423          	sd	s1,8(sp)
+ 198:	eb1ff0ef          	jal	ra,48 <fac_test>
+ 19c:	00050413          	mv	s0,a0
+ 1a0:	f29ff0ef          	jal	ra,c8 <fib_test>
+ 1a4:	00050493          	mv	s1,a0
+ 1a8:	fb5ff0ef          	jal	ra,15c <fib_memo_test>
+ 1ac:	0014949b          	slliw	s1,s1,0x1
+ 1b0:	0025151b          	slliw	a0,a0,0x2
+ 1b4:	00a4e533          	or	a0,s1,a0
+ 1b8:	00a46533          	or	a0,s0,a0
+ 1bc:	0005051b          	sext.w	a0,a0
+ 1c0:	010007b7          	lui	a5,0x1000
+ 1c4:	00700713          	li	a4,7
+ 1c8:	00e7b023          	sd	a4,0(a5) # 1000000 <outputAttempted>
+ 1cc:	010007b7          	lui	a5,0x1000
+ 1d0:	00a7b423          	sd	a0,8(a5) # 1000008 <outputSucceeded>
+ 1d4:	01813083          	ld	ra,24(sp)
+ 1d8:	01013403          	ld	s0,16(sp)
+ 1dc:	00813483          	ld	s1,8(sp)
+ 1e0:	02010113          	addi	sp,sp,32
+ 1e4:	00008067          	ret

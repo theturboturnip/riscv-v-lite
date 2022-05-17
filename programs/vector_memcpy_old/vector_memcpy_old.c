@@ -18,6 +18,7 @@
 #define ENABLE_FAULTONLYFIRST 0
 // it has been tested with the inline asm whole-register loads
 #define ENABLE_ASM_WHOLEREG 1
+#define HAS_CAPABILITIES 0
 #else
 // Clang intrinsics are correct for segmented loads,
 // supports fractional LMUL,
@@ -30,6 +31,7 @@
     #endif
 
     #if __has_feature(capabilities)
+    #define HAS_CAPABILITIES 1
     #define ENABLE_FRAC 1
     #define ENABLE_STRIDED 1
     // These haven't been ported to use CHERI-compatible VEC_INTRIN() wrappers
@@ -41,6 +43,7 @@
     // This *should* work but LLVM complains about "invalid operand for instruction"
     #define ENABLE_ASM_WHOLEREG 0
     #else
+    #define HAS_CAPABILITIES 0
     #define ENABLE_FRAC 1
     #define ENABLE_STRIDED 1
     #define ENABLE_INDEXED 1
@@ -398,7 +401,7 @@ void vector_memcpy_32m1_wholereg(size_t n, const int32_t* __restrict__ in, int32
             // By creating the `data' variable beforehand, we can have the compiler
             // allocate registers for us.
             vint32m1_t data;
-            #if __has_feature(capabilities)
+            #if HAS_CAPABILITIES
             asm volatile(
                 "vl1r.v %0, (%1)" 
                 : "=vr"(data) // output, '=' -> overwrite old value, 'v' -> vector, 'r' -> register

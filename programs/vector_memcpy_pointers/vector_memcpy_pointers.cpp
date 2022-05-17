@@ -32,6 +32,7 @@ void* memcpy(void* dest, const void* src, size_t count) {
 #endif
 
 #define ASM_PREG(val) "r"(val)
+#define HAS_CAPABILITIES 0
 #define CAPABILITY_IF_SUPPORTED
 
 // Patch over differences between GCC, clang, and CHERI-clang
@@ -47,6 +48,8 @@ void* memcpy(void* dest, const void* src, size_t count) {
     #endif
 
     #if __has_feature(capabilities)
+        #undef HAS_CAPABILITIES
+        #define HAS_CAPABILITIES 1
         #if __has_feature(pure_capabilities)
             // Replace the ASM pointer register function to use capability register
             #undef ASM_PREG
@@ -140,7 +143,7 @@ struct Element {
     Base* CAPABILITY_IF_SUPPORTED __attribute__((__aligned__(16))) base_ptr;
 } __attribute__((__aligned__(16)));
 
-#if __has_feature(capabilities)
+#if HAS_CAPABILITIES
 // TODO - something about these checks is broken. They all pass on CHERI Capability and CHERI Integer,
 // but the alignment is still broken unless we have the __attribute__((__aligned__(16)))
 static_assert(alignof(Base* CAPABILITY_IF_SUPPORTED) == 16, "Base* capability should be 128-bit aligned");
@@ -150,9 +153,9 @@ static_assert(offsetof(Element, base_ptr) == 16, "Base* pointer in the element s
 static_assert(sizeof(Element) == 32, "Element should be 8-byte value + 8-byte padding + 16-byte pointer");
 #endif
 
-void vector_memcpy(uint8_t __attribute__((aligned(16)))* dst, const uint8_t __attribute__((aligned(16)))* src, size_t num_bytes) {
+void vector_memcpy(uint8_t* dst, const uint8_t* src, size_t num_bytes) {
     // 128-bit instructions are only present on our modified version of CHERI-Clang
-    #if __has_feature(capabilities)
+    #if HAS_CAPABILITIES
     while (num_bytes >= 16) {
         size_t num_elements = num_bytes / 16;
         size_t copied_128bit_elems_per_iter;
@@ -187,7 +190,7 @@ void vector_memcpy(uint8_t __attribute__((aligned(16)))* dst, const uint8_t __at
     }
 }
 
-#if __has_feature(capabilities)
+#if HAS_CAPABILITIES
 #include <cheri.h>
 
 void vector_memcpy_invalidate(uint8_t __attribute__((aligned(16)))* dst, const uint8_t __attribute__((aligned(16)))* src, size_t num_bytes) {
@@ -303,7 +306,7 @@ int run_base_test(void) {
     return 1;
 }
 
-#if __has_feature(capabilities)
+#if HAS_CAPABILITIES
 int run_invalidate_test(void) {
     // Random numbers
     // 746ef0f2a5b4975a 8ce7e0643a62b4a4 
@@ -381,7 +384,7 @@ int main(void)
     attempted |= 1 << 0;
     result |= run_base_test() << 0;
 
-    #if __has_feature(capabilities)
+    #if HAS_CAPABILITIES
     attempted |= 1 << 1;
     result |= run_invalidate_test() << 1;
     #endif
