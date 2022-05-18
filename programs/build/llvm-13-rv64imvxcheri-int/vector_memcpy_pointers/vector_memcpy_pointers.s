@@ -179,69 +179,69 @@ _Z24vector_memcpy_invalidatePhPKhm:
 	.loc	3 199 41 is_stmt 1
 	srli	a4, a2, 4
 .Ltmp34:
-	.loc	3 204 9
+	.loc	3 203 9
 	#APP
 	vsetvli	a4, a4, e128, m4, tu, mu
 	#NO_APP
 .Ltmp35:
-	.loc	3 205 9
+	.loc	3 204 9
 	#APP
 	vle128.v	v8, (a1)
 	#NO_APP
-	.loc	3 209 9
+	.loc	3 207 9
 	#APP
 	vadd.vi	v8, v8, 0
 	#NO_APP
-	.loc	3 212 9
+	.loc	3 210 9
 	#APP
 	vse128.v	v8, (a0)
 	#NO_APP
-	.loc	3 214 45
+	.loc	3 212 45
 	slli	a4, a4, 4
 .Ltmp36:
-	.loc	3 214 13 is_stmt 0
+	.loc	3 212 13 is_stmt 0
 	add	a1, a1, a4
 .Ltmp37:
-	.loc	3 216 19 is_stmt 1
+	.loc	3 214 19 is_stmt 1
 	sub	a2, a2, a4
 .Ltmp38:
-	.loc	3 215 13
+	.loc	3 213 13
 	add	a0, a0, a4
 .Ltmp39:
 	.loc	3 198 5
 	bltu	a3, a2, .LBB3_2
 .Ltmp40:
 .LBB3_3:
-	.loc	3 220 5
+	.loc	3 218 5
 	beqz	a2, .LBB3_5
 .Ltmp41:
 .LBB3_4:
-	.loc	3 221 34
+	.loc	3 219 34
 	vsetvli	a3, a2, e8, m8, ta, mu
 .Ltmp42:
-	.loc	3 225 9
+	.loc	3 223 9
 	#APP
 	vle8.v	v8, (a1)
 	#NO_APP
 .Ltmp43:
-	.loc	3 226 9
+	.loc	3 224 9
 	#APP
 	vse8.v	v8, (a0)
 	#NO_APP
-	.loc	3 232 13
+	.loc	3 230 13
 	add	a1, a1, a3
 .Ltmp44:
-	.loc	3 234 19
+	.loc	3 232 19
 	sub	a2, a2, a3
 .Ltmp45:
-	.loc	3 233 13
+	.loc	3 231 13
 	add	a0, a0, a3
 .Ltmp46:
-	.loc	3 220 5
+	.loc	3 218 5
 	bnez	a2, .LBB3_4
 .Ltmp47:
 .LBB3_5:
-	.loc	3 236 1
+	.loc	3 234 1
 	ret
 .Ltmp48:
 .Lfunc_end3:
@@ -253,7 +253,7 @@ _Z24vector_memcpy_invalidatePhPKhm:
 	.type	_Z13run_base_testv,@function
 _Z13run_base_testv:
 .Lfunc_begin4:
-	.loc	3 239 0
+	.loc	3 237 0
 	.cfi_startproc
 	addi	sp, sp, -2032
 	.cfi_def_cfa_offset 2032
@@ -265,7 +265,7 @@ _Z13run_base_testv:
 	.cfi_def_cfa_offset 8288
 	mv	a0, zero
 .Ltmp49:
-	.loc	3 243 10 prologue_end
+	.loc	3 241 10 prologue_end
 	lui	a1, 2
 	addiw	a1, a1, 16
 	add	a1, sp, a1
@@ -331,7 +331,7 @@ _Z13run_base_testv:
 	add	a2, sp, a2
 	sd	a1, 0(a2)
 .Ltmp50:
-	.loc	3 272 5
+	.loc	3 270 5
 	lui	a1, 1
 	addiw	a1, a1, 32
 	add	a1, sp, a1
@@ -343,36 +343,36 @@ _Z13run_base_testv:
 	addi	a4, zero, 512
 .Ltmp51:
 .LBB4_1:
-	.loc	3 273 21
+	.loc	3 271 21
 	add	a5, a0, a2
 	lw	a5, 0(a5)
 .Ltmp52:
-	.loc	3 275 36
+	.loc	3 273 36
 	slli	a5, a5, 4
 	add	a5, a6, a5
-	.loc	3 275 49 is_stmt 0
+	.loc	3 273 49 is_stmt 0
 	ld	a3, 0(a5)
-	.loc	3 276 25 is_stmt 1
+	.loc	3 274 25 is_stmt 1
 	cfromptr	ca5, ddc, a5
-	.loc	3 274 25
+	.loc	3 272 25
 	sd	a3, -16(a1)
 	sc	ca5, 0(a1)
 .Ltmp53:
-	.loc	3 272 26
+	.loc	3 270 26
 	addi	a0, a0, 4
 .Ltmp54:
 	addi	a1, a1, 32
 .Ltmp55:
-	.loc	3 272 5 is_stmt 0
+	.loc	3 270 5 is_stmt 0
 	bne	a0, a4, .LBB4_1
 .Ltmp56:
-	.loc	3 280 13 is_stmt 1
+	.loc	3 278 13 is_stmt 1
 	addi	a0, sp, 16
 	lui	a2, 1
 	mv	a1, zero
 	call	memset@plt
 .Ltmp57:
-	.loc	3 286 5
+	.loc	3 284 5
 	addi	a0, sp, 16
 	lui	a1, 1
 	addiw	a1, a1, 16
@@ -383,7 +383,7 @@ _Z13run_base_testv:
 	.loc	3 0 5 is_stmt 0
 	mv	a0, zero
 .Ltmp59:
-	.loc	3 289 5 is_stmt 1
+	.loc	3 287 5 is_stmt 1
 	addi	a1, sp, 32
 	lui	a2, %hi(.L__const._Z19run_invalidate_testv.indices)
 	addi	a2, a2, %lo(.L__const._Z19run_invalidate_testv.indices)
@@ -393,32 +393,32 @@ _Z13run_base_testv:
 	addi	a6, zero, 512
 .Ltmp60:
 .LBB4_3:
-	.loc	3 292 27
+	.loc	3 290 27
 	lc	ca5, 0(a1)
-	.loc	3 292 37 is_stmt 0
+	.loc	3 290 37 is_stmt 0
 	ld.cap	a4, (ca5)
-	.loc	3 292 60
+	.loc	3 290 60
 	ld	a3, -16(a1)
 	bne	a4, a3, .LBB4_7
 .Ltmp61:
-	.loc	3 295 78 is_stmt 1
+	.loc	3 293 78 is_stmt 1
 	add	a3, a0, a2
 	lw	a3, 0(a3)
-	.loc	3 295 72 is_stmt 0
+	.loc	3 293 72 is_stmt 0
 	slli	a3, a3, 4
 	add	a3, a7, a3
-	.loc	3 295 39
+	.loc	3 293 39
 	cfromptr	ca3, ddc, a3
 .Ltmp62:
 	.loc	3 0 39
 	bne	a5, a3, .LBB4_7
 .Ltmp63:
-	.loc	3 289 26 is_stmt 1
+	.loc	3 287 26 is_stmt 1
 	addi	a0, a0, 4
 .Ltmp64:
 	addi	a1, a1, 32
 .Ltmp65:
-	.loc	3 289 5 is_stmt 0
+	.loc	3 287 5 is_stmt 0
 	bne	a0, a6, .LBB4_3
 .Ltmp66:
 	.loc	3 0 5
@@ -429,7 +429,7 @@ _Z13run_base_testv:
 	mv	a0, zero
 .Ltmp68:
 .LBB4_8:
-	.loc	3 300 1 is_stmt 1
+	.loc	3 298 1 is_stmt 1
 	lui	a1, 2
 	addiw	a1, a1, -1936
 	add	sp, sp, a1
@@ -446,7 +446,7 @@ _Z13run_base_testv:
 	.type	_Z19run_invalidate_testv,@function
 _Z19run_invalidate_testv:
 .Lfunc_begin5:
-	.loc	3 303 0
+	.loc	3 301 0
 	.cfi_startproc
 	addi	sp, sp, -2032
 	.cfi_def_cfa_offset 2032
@@ -464,7 +464,7 @@ _Z19run_invalidate_testv:
 	.cfi_def_cfa_offset 8304
 	mv	a0, zero
 .Ltmp70:
-	.loc	3 307 10 prologue_end
+	.loc	3 305 10 prologue_end
 	lui	a1, 2
 	addiw	a1, a1, 16
 	add	a1, sp, a1
@@ -530,7 +530,7 @@ _Z19run_invalidate_testv:
 	add	a2, sp, a2
 	sd	a1, 0(a2)
 .Ltmp71:
-	.loc	3 336 5
+	.loc	3 334 5
 	lui	a1, 1
 	addiw	a1, a1, 32
 	add	a1, sp, a1
@@ -542,36 +542,36 @@ _Z19run_invalidate_testv:
 	addi	a4, zero, 512
 .Ltmp72:
 .LBB5_1:
-	.loc	3 337 21
+	.loc	3 335 21
 	add	a5, a0, a2
 	lw	a5, 0(a5)
 .Ltmp73:
-	.loc	3 339 36
+	.loc	3 337 36
 	slli	a5, a5, 4
 	add	a5, a3, a5
-	.loc	3 339 49 is_stmt 0
+	.loc	3 337 49 is_stmt 0
 	ld	s1, 0(a5)
-	.loc	3 340 25 is_stmt 1
+	.loc	3 338 25 is_stmt 1
 	cfromptr	ca5, ddc, a5
-	.loc	3 338 25
+	.loc	3 336 25
 	sd	s1, -16(a1)
 	sc	ca5, 0(a1)
 .Ltmp74:
-	.loc	3 336 26
+	.loc	3 334 26
 	addi	a0, a0, 4
 .Ltmp75:
 	addi	a1, a1, 32
 .Ltmp76:
-	.loc	3 336 5 is_stmt 0
+	.loc	3 334 5 is_stmt 0
 	bne	a0, a4, .LBB5_1
 .Ltmp77:
-	.loc	3 344 13 is_stmt 1
+	.loc	3 342 13 is_stmt 1
 	addi	a0, sp, 16
 	lui	a2, 1
 	mv	a1, zero
 	call	memset@plt
 .Ltmp78:
-	.loc	3 350 5
+	.loc	3 348 5
 	addi	a0, sp, 16
 	lui	a1, 1
 	addiw	a1, a1, 16
@@ -579,10 +579,10 @@ _Z19run_invalidate_testv:
 	lui	a2, 1
 	call	_Z24vector_memcpy_invalidatePhPKhm
 .Ltmp79:
-	.loc	3 355 59
+	.loc	3 353 59
 	lc	ca0, 32(sp)
 .Ltmp80:
-	.loc	3 356 13
+	.loc	3 354 13
 	call	_ZL13cheri_tag_getU12__capabilityPv
 .Ltmp81:
 	mv	a1, a0
@@ -592,7 +592,7 @@ _Z19run_invalidate_testv:
 	bnez	a1, .LBB5_7
 .Ltmp83:
 	mv	a1, zero
-	.loc	3 353 5 is_stmt 1
+	.loc	3 351 5 is_stmt 1
 	addi	s0, sp, 64
 	addi	s2, zero, 127
 .Ltmp84:
@@ -600,13 +600,13 @@ _Z19run_invalidate_testv:
 	.loc	3 0 5 is_stmt 0
 	mv	s1, a1
 .Ltmp85:
-	.loc	3 353 5
+	.loc	3 351 5
 	beq	a1, s2, .LBB5_6
 .Ltmp86:
-	.loc	3 355 59 is_stmt 1
+	.loc	3 353 59 is_stmt 1
 	lc	ca0, 0(s0)
 .Ltmp87:
-	.loc	3 356 13
+	.loc	3 354 13
 	call	_ZL13cheri_tag_getU12__capabilityPv
 .Ltmp88:
 	.loc	3 0 13 is_stmt 0
@@ -616,11 +616,11 @@ _Z19run_invalidate_testv:
 .Ltmp89:
 .LBB5_6:
 	addi	a0, zero, 126
-	.loc	3 353 26 is_stmt 1
+	.loc	3 351 26 is_stmt 1
 	sltu	a0, a0, s1
 .Ltmp90:
 .LBB5_7:
-	.loc	3 361 1
+	.loc	3 359 1
 	lui	a1, 2
 	addiw	a1, a1, -1920
 	add	sp, sp, a1
@@ -656,7 +656,7 @@ _ZL13cheri_tag_getU12__capabilityPv:
 	.type	main,@function
 main:
 .Lfunc_begin7:
-	.loc	3 374 0
+	.loc	3 372 0
 	.cfi_startproc
 	addi	sp, sp, -16
 	.cfi_def_cfa_offset 16
@@ -667,38 +667,38 @@ main:
 	.cfi_offset ra, -8
 	.cfi_offset s0, -16
 .Ltmp95:
-	.loc	3 379 15
+	.loc	3 377 15
 	call	_Z13run_base_testv
 .Ltmp96:
 	mv	s0, a0
 .Ltmp97:
-	.loc	3 383 15
+	.loc	3 381 15
 	call	_Z19run_invalidate_testv
 .Ltmp98:
-	.loc	3 383 37 is_stmt 0
+	.loc	3 381 37 is_stmt 0
 	slli	a0, a0, 1
-	.loc	3 383 12
+	.loc	3 381 12
 	or	a0, a0, s0
 	slli	a1, a0, 32
 	srli	a1, a1, 32
 .Ltmp99:
-	.loc	3 386 25 is_stmt 1
+	.loc	3 384 25 is_stmt 1
 	lui	a2, %hi(outputAttempted)
 	addi	a3, zero, 3
 	sd	a3, %lo(outputAttempted)(a2)
-	.loc	3 387 25
+	.loc	3 385 25
 	lui	a2, %hi(outputSucceeded)
 	sd	a1, %lo(outputSucceeded)(a2)
-	.loc	3 388 14
+	.loc	3 386 14
 	lui	a1, %hi(finished)
 .Ltmp100:
 	.loc	3 0 14 is_stmt 0
 	addi	a2, zero, 1
-	.loc	3 389 5 is_stmt 1
+	.loc	3 387 5 is_stmt 1
 	sext.w	a0, a0
-	.loc	3 388 14
+	.loc	3 386 14
 	sb	a2, %lo(finished)(a1)
-	.loc	3 389 5
+	.loc	3 387 5
 	ld	s0, 0(sp)
 	ld	ra, 8(sp)
 	addi	sp, sp, 16
@@ -1921,13 +1921,13 @@ main:
 	.word	.Ldebug_loc10
 	.word	.Linfo_string37
 	.byte	3
-	.byte	221
+	.byte	219
 	.word	64
 	.byte	14
 	.word	.Ldebug_loc11
 	.word	.Linfo_string38
 	.byte	3
-	.byte	223
+	.byte	221
 	.word	1309
 	.byte	0
 	.byte	0
@@ -1940,7 +1940,7 @@ main:
 	.word	.Linfo_string16
 	.word	.Linfo_string17
 	.byte	3
-	.byte	239
+	.byte	237
 	.word	1289
 
 	.byte	12
@@ -1949,7 +1949,7 @@ main:
 	.asciz	"\220\300"
 	.word	.Linfo_string42
 	.byte	3
-	.byte	243
+	.byte	241
 	.word	1357
 	.byte	17
 	.byte	3
@@ -1957,7 +1957,7 @@ main:
 	.ascii	"\220 "
 	.word	.Linfo_string43
 	.byte	3
-	.half	271
+	.half	269
 	.word	1369
 	.byte	17
 	.byte	2
@@ -1965,24 +1965,24 @@ main:
 	.byte	16
 	.word	.Linfo_string47
 	.byte	3
-	.half	280
+	.half	278
 	.word	1369
 	.byte	18
 	.word	.Ldebug_loc13
 	.word	.Linfo_string48
 	.byte	3
-	.half	283
+	.half	281
 	.word	1417
 	.byte	18
 	.word	.Ldebug_loc14
 	.word	.Linfo_string49
 	.byte	3
-	.half	282
+	.half	280
 	.word	1417
 	.byte	19
 	.word	.Linfo_string50
 	.byte	3
-	.byte	252
+	.byte	250
 	.word	1422
 	.byte	13
 	.quad	.Ltmp50
@@ -1991,7 +1991,7 @@ main:
 	.word	.Ldebug_loc12
 	.word	.Linfo_string30
 	.byte	3
-	.half	272
+	.half	270
 	.word	64
 	.byte	13
 	.quad	.Ltmp51
@@ -1999,7 +1999,7 @@ main:
 	.byte	20
 	.word	.Linfo_string51
 	.byte	3
-	.half	273
+	.half	271
 	.word	1289
 	.byte	0
 	.byte	0
@@ -2010,7 +2010,7 @@ main:
 	.word	.Ldebug_loc15
 	.word	.Linfo_string30
 	.byte	3
-	.half	289
+	.half	287
 	.word	64
 	.byte	0
 	.byte	21
@@ -2026,7 +2026,7 @@ main:
 	.word	.Linfo_string19
 	.word	.Linfo_string20
 	.byte	3
-	.half	303
+	.half	301
 	.word	1289
 
 	.byte	17
@@ -2035,7 +2035,7 @@ main:
 	.asciz	"\220\300"
 	.word	.Linfo_string42
 	.byte	3
-	.half	307
+	.half	305
 	.word	1357
 	.byte	17
 	.byte	3
@@ -2043,7 +2043,7 @@ main:
 	.ascii	"\220 "
 	.word	.Linfo_string43
 	.byte	3
-	.half	335
+	.half	333
 	.word	1369
 	.byte	17
 	.byte	2
@@ -2051,24 +2051,24 @@ main:
 	.byte	16
 	.word	.Linfo_string47
 	.byte	3
-	.half	344
+	.half	342
 	.word	1369
 	.byte	18
 	.word	.Ldebug_loc17
 	.word	.Linfo_string48
 	.byte	3
-	.half	347
+	.half	345
 	.word	1417
 	.byte	18
 	.word	.Ldebug_loc18
 	.word	.Linfo_string49
 	.byte	3
-	.half	346
+	.half	344
 	.word	1417
 	.byte	20
 	.word	.Linfo_string50
 	.byte	3
-	.half	316
+	.half	314
 	.word	1422
 	.byte	13
 	.quad	.Ltmp71
@@ -2077,7 +2077,7 @@ main:
 	.word	.Ldebug_loc16
 	.word	.Linfo_string30
 	.byte	3
-	.half	336
+	.half	334
 	.word	64
 	.byte	13
 	.quad	.Ltmp72
@@ -2085,7 +2085,7 @@ main:
 	.byte	20
 	.word	.Linfo_string51
 	.byte	3
-	.half	337
+	.half	335
 	.word	1289
 	.byte	0
 	.byte	0
@@ -2096,14 +2096,14 @@ main:
 	.word	.Ldebug_loc19
 	.word	.Linfo_string30
 	.byte	3
-	.half	353
+	.half	351
 	.word	64
 	.byte	23
 	.word	.Ldebug_ranges0
 	.byte	20
 	.word	.Linfo_string52
 	.byte	3
-	.half	355
+	.half	353
 	.word	82
 	.byte	0
 	.byte	0
@@ -2143,20 +2143,20 @@ main:
 
 	.word	.Linfo_string24
 	.byte	3
-	.half	373
+	.half	371
 	.word	1289
 
 	.byte	18
 	.word	.Ldebug_loc21
 	.word	.Linfo_string54
 	.byte	3
-	.half	375
+	.half	373
 	.word	1436
 	.byte	18
 	.word	.Ldebug_loc22
 	.word	.Linfo_string57
 	.byte	3
-	.half	376
+	.half	374
 	.word	1436
 	.byte	21
 	.word	673

@@ -121,12 +121,12 @@ _Z13vector_memcpyPhPKhj:
 	.type	_Z13run_base_testv,@function
 _Z13run_base_testv:
 .Lfunc_begin3:
-	.loc	4 239 0
+	.loc	4 237 0
 	.cfi_startproc
 	addi	sp, sp, -2032
 	.cfi_def_cfa_offset 2032
 .Ltmp21:
-	.loc	4 243 10 prologue_end
+	.loc	4 241 10 prologue_end
 	sw	ra, 2028(sp)
 	sw	s0, 2024(sp)
 	sw	s1, 2020(sp)
@@ -153,7 +153,7 @@ _Z13run_base_testv:
 	mv	a0, zero
 	lui	a1, 476911
 	addi	a1, a1, 242
-	.loc	4 243 10
+	.loc	4 241 10
 	lui	a2, 2
 	addi	a2, a2, 20
 	add	a2, sp, a2
@@ -201,7 +201,7 @@ _Z13run_base_testv:
 	add	a2, sp, a2
 	sw	a1, 0(a2)
 .Ltmp23:
-	.loc	4 272 5 is_stmt 1
+	.loc	4 270 5 is_stmt 1
 	lui	a1, 1
 	addi	a1, a1, 32
 	add	a1, sp, a1
@@ -210,19 +210,19 @@ _Z13run_base_testv:
 	addi	a3, zero, 512
 .Ltmp24:
 .LBB3_1:
-	.loc	4 273 21
+	.loc	4 271 21
 	add	a4, a0, a2
 	lw	a4, 0(a4)
 .Ltmp25:
-	.loc	4 275 36
+	.loc	4 273 36
 	slli	a4, a4, 4
 .Ltmp26:
 	add	a4, s2, a4
-	.loc	4 275 49 is_stmt 0
+	.loc	4 273 49 is_stmt 0
 	ori	a5, a4, 4
 	lw	s0, 0(a4)
 	lw	a5, 0(a5)
-	.loc	4 274 25 is_stmt 1
+	.loc	4 272 25 is_stmt 1
 	sw	s0, -16(a1)
 	sw	a5, -12(a1)
 	lw	a5, 16(sp)
@@ -233,21 +233,21 @@ _Z13run_base_testv:
 	sw	s0, 8(a1)
 	sw	s1, 12(a1)
 .Ltmp27:
-	.loc	4 272 26
+	.loc	4 270 26
 	addi	a0, a0, 4
 .Ltmp28:
 	addi	a1, a1, 32
 .Ltmp29:
-	.loc	4 272 5 is_stmt 0
+	.loc	4 270 5 is_stmt 0
 	bne	a0, a3, .LBB3_1
 .Ltmp30:
-	.loc	4 280 13 is_stmt 1
+	.loc	4 278 13 is_stmt 1
 	addi	a0, sp, 16
 	lui	a2, 1
 	mv	a1, zero
 	call	memset@plt
 .Ltmp31:
-	.loc	4 286 5
+	.loc	4 284 5
 	addi	a0, sp, 16
 	lui	a1, 1
 	addi	a1, a1, 16
@@ -258,7 +258,7 @@ _Z13run_base_testv:
 	.loc	4 0 5 is_stmt 0
 	mv	a0, zero
 .Ltmp33:
-	.loc	4 289 5 is_stmt 1
+	.loc	4 287 5 is_stmt 1
 	addi	a1, sp, 32
 	lui	a2, %hi(.L__const._Z13run_base_testv.indices)
 	addi	a2, a2, %lo(.L__const._Z13run_base_testv.indices)
@@ -268,36 +268,36 @@ _Z13run_base_testv:
 	addi	a6, zero, 512
 .Ltmp34:
 .LBB3_3:
-	.loc	4 292 27
+	.loc	4 290 27
 	lw	a5, 0(a1)
-	.loc	4 292 37 is_stmt 0
+	.loc	4 290 37 is_stmt 0
 	lw	s1, 0(a5)
 	lw	s0, 4(a5)
-	.loc	4 292 60
+	.loc	4 290 60
 	lw	a4, -12(a1)
 	lw	a3, -16(a1)
-	.loc	4 292 43
+	.loc	4 290 43
 	xor	a4, s0, a4
 	xor	a3, s1, a3
 	or	a3, a3, a4
 	bnez	a3, .LBB3_7
 .Ltmp35:
-	.loc	4 295 78 is_stmt 1
+	.loc	4 293 78 is_stmt 1
 	add	a3, a0, a2
 	lw	a3, 0(a3)
-	.loc	4 295 72 is_stmt 0
+	.loc	4 293 72 is_stmt 0
 	slli	a3, a3, 4
 	add	a3, a7, a3
 .Ltmp36:
 	.loc	4 0 72
 	bne	a5, a3, .LBB3_7
 .Ltmp37:
-	.loc	4 289 26 is_stmt 1
+	.loc	4 287 26 is_stmt 1
 	addi	a0, a0, 4
 .Ltmp38:
 	addi	a1, a1, 32
 .Ltmp39:
-	.loc	4 289 5 is_stmt 0
+	.loc	4 287 5 is_stmt 0
 	bne	a0, a6, .LBB3_3
 .Ltmp40:
 	.loc	4 0 5
@@ -308,7 +308,7 @@ _Z13run_base_testv:
 	mv	a0, zero
 .Ltmp42:
 .LBB3_8:
-	.loc	4 300 1 is_stmt 1
+	.loc	4 298 1 is_stmt 1
 	lui	a1, 2
 	addi	a1, a1, -1936
 	add	sp, sp, a1
@@ -328,7 +328,7 @@ _Z13run_base_testv:
 	.type	main,@function
 main:
 .Lfunc_begin4:
-	.loc	4 374 0
+	.loc	4 372 0
 	.cfi_startproc
 	addi	sp, sp, -16
 	.cfi_def_cfa_offset 16
@@ -337,24 +337,24 @@ main:
 	sw	ra, 12(sp)
 	.cfi_offset ra, -4
 .Ltmp45:
-	.loc	4 379 15
+	.loc	4 377 15
 	call	_Z13run_base_testv
 .Ltmp46:
 	.loc	4 0 15 is_stmt 0
 	lui	a1, %hi(outputAttempted)
 .Ltmp47:
-	.loc	4 386 25 is_stmt 1
+	.loc	4 384 25 is_stmt 1
 	sw	zero, %lo(outputAttempted+4)(a1)
 	addi	a2, zero, 1
 	sw	a2, %lo(outputAttempted)(a1)
 	lui	a1, %hi(outputSucceeded)
-	.loc	4 387 25
+	.loc	4 385 25
 	sw	a0, %lo(outputSucceeded)(a1)
 	sw	zero, %lo(outputSucceeded+4)(a1)
-	.loc	4 388 14
+	.loc	4 386 14
 	lui	a1, %hi(finished)
 	sb	a2, %lo(finished)(a1)
-	.loc	4 389 5
+	.loc	4 387 5
 	lw	ra, 12(sp)
 	addi	sp, sp, 16
 	ret
@@ -1316,7 +1316,7 @@ main:
 	.word	.Linfo_string18
 	.word	.Linfo_string19
 	.byte	4
-	.byte	239
+	.byte	237
 	.word	771
 
 	.byte	15
@@ -1325,7 +1325,7 @@ main:
 	.asciz	"\220\300"
 	.word	.Linfo_string34
 	.byte	4
-	.byte	243
+	.byte	241
 	.word	784
 	.byte	20
 	.byte	3
@@ -1333,7 +1333,7 @@ main:
 	.ascii	"\220 "
 	.word	.Linfo_string35
 	.byte	4
-	.half	271
+	.half	269
 	.word	796
 	.byte	20
 	.byte	2
@@ -1341,24 +1341,24 @@ main:
 	.byte	16
 	.word	.Linfo_string39
 	.byte	4
-	.half	280
+	.half	278
 	.word	796
 	.byte	21
 	.word	.Ldebug_loc8
 	.word	.Linfo_string41
 	.byte	4
-	.half	283
+	.half	281
 	.word	844
 	.byte	21
 	.word	.Ldebug_loc9
 	.word	.Linfo_string42
 	.byte	4
-	.half	282
+	.half	280
 	.word	844
 	.byte	22
 	.word	.Linfo_string43
 	.byte	4
-	.byte	252
+	.byte	250
 	.word	849
 	.byte	16
 	.word	.Ltmp23
@@ -1367,7 +1367,7 @@ main:
 	.word	.Ldebug_loc6
 	.word	.Linfo_string27
 	.byte	4
-	.half	272
+	.half	270
 	.word	60
 	.byte	16
 	.word	.Ltmp24
@@ -1376,7 +1376,7 @@ main:
 	.word	.Ldebug_loc7
 	.word	.Linfo_string40
 	.byte	4
-	.half	273
+	.half	271
 	.word	771
 	.byte	0
 	.byte	0
@@ -1387,7 +1387,7 @@ main:
 	.word	.Ldebug_loc10
 	.word	.Linfo_string27
 	.byte	4
-	.half	289
+	.half	287
 	.word	60
 	.byte	0
 	.byte	23
@@ -1402,20 +1402,20 @@ main:
 
 	.word	.Linfo_string21
 	.byte	4
-	.half	373
+	.half	371
 	.word	771
 
 	.byte	21
 	.word	.Ldebug_loc11
 	.word	.Linfo_string44
 	.byte	4
-	.half	375
+	.half	373
 	.word	861
 	.byte	25
 	.byte	1
 	.word	.Linfo_string47
 	.byte	4
-	.half	376
+	.half	374
 	.word	861
 	.byte	23
 	.word	506

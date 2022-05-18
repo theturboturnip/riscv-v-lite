@@ -200,7 +200,6 @@ void vector_memcpy_invalidate(uint8_t __attribute__((aligned(16)))* dst, const u
         size_t copied_128bit_elems_per_iter;
         
         // Do the copy in assembly - didn't have enough time to add intrinsics
-        // Use m4 here so that we can use e64m8 to write all registers out in a single instruction
         asm volatile ("vsetvli %0, %1, e128, m4, tu, mu" : "=r"(copied_128bit_elems_per_iter) : "r"(num_elements));
         asm volatile ("vle128.v v8, (%0)" :: ASM_PREG(src));
 
