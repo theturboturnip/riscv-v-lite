@@ -204,18 +204,10 @@ void vector_memcpy_invalidate(uint8_t __attribute__((aligned(16)))* dst, const u
         asm volatile ("vsetvli %0, %1, e128, m4, tu, mu" : "=r"(copied_128bit_elems_per_iter) : "r"(num_elements));
         asm volatile ("vle128.v v8, (%0)" :: ASM_PREG(src));
 
-        
         // Add 0 to all values in the 128-bit registers, writing to them in integer mode => capabilities are invalidated
-        // Change vtype to e64m8 because we have an insruction for that already - in a proper version we would do this at the 128-bit level
-        // Halving the element size => 2x the elements for the same size
-        size_t num_64bit_elements = 2 * copied_128bit_elems_per_iter;
-        asm volatile ("vsetvli x0, %0, e64, m8, tu, mu" :: "r"(num_64bit_elements));
-        // Add 0
         asm volatile ("vadd.vi v8, v8, 0");
 
         // Now write out the values as 128
-        // Change vtype back without changing vlen
-        asm volatile ("vsetvli x0, x0, e128, m4, tu, mu");
         asm volatile ("vse128.v v8, (%0)" :: ASM_PREG(dst));
 
         src += copied_128bit_elems_per_iter * 16;
