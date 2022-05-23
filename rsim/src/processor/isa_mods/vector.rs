@@ -317,6 +317,7 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
 
     /// Converts a decoded memory operation to the list of accesses it performs.
     fn get_load_store_accesses(&mut self, rd: u8, addr_p: (u64, Provenance), rs2: u8, vm: bool, op: DecodedMemOp) -> Result<Vec<(VectorElem, u64)>> {
+        // Vector of (VectorElem, Address)
         let mut map = vec![];
 
         let (base_addr, _) = addr_p;
@@ -335,8 +336,13 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                         for i_field in 0..nf {
                             // ... perform the access
                             let vec_elem = VectorElem::check_with_lmul(
+                                // Register group start
+                                // For field 0, = rd
+                                // For field 1, = rd + (number of registers/group)
+                                // etc.
                                 rd + (i_field * emul.num_registers_consumed()),
                                 eew, emul,
+                                // Element index within register group
                                 i_segment
                             );
                             map.push((vec_elem, field_addr));
@@ -407,7 +413,9 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
 
                 let mut addr = base_addr;
                 let vl = op.evl();
-                for i in 0..vl {
+                // For element in register set...
+                for i in self.vstart..vl {
+                    // ...perform the access
                     let vec_elem = VectorElem::check_with_num_regs(rd, eew, num_regs, i as u32);
                     map.push((vec_elem, addr));
                     addr += eew.width_in_bytes();
@@ -420,6 +428,8 @@ impl<uXLEN: PossibleXlen, TElem> Rvv<uXLEN, TElem> {
                 }
 
                 let mut addr = base_addr;
+                // evl = number of 8-bit elements required for the mask
+                // self.vstart = in terms of bytes
                 for i in self.vstart..evl {
                     let vec_elem = VectorElem::check_with_lmul(
                         rd,
