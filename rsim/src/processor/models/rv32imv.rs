@@ -1,13 +1,15 @@
 use crate::models::Processor;
 use crate::processor::exceptions::IllegalInstructionException::MiscDecodeException;
-use anyhow::{Context,Result};
+use anyhow::{Context, Result};
 
-use crate::processor::exceptions::{IllegalInstructionException,MemoryException};
 use crate::processor::decode;
 use crate::processor::decode::{decode, InstructionBits};
-use crate::processor::elements::memory::{AggregateMemory,Memory};
+use crate::processor::elements::memory::{AggregateMemory, Memory};
 use crate::processor::elements::registers::RvRegisterFile;
-use crate::processor::isa_mods::{IsaMod, Rv32im, Rv32imConn, Rv32v, IntVectorRegisterFile, Zicsr32, Zicsr32Conn, CSRProvider};
+use crate::processor::exceptions::{IllegalInstructionException, MemoryException};
+use crate::processor::isa_mods::{
+    CSRProvider, IntVectorRegisterFile, IsaMod, Rv32im, Rv32imConn, Rv32v, Zicsr32, Zicsr32Conn,
+};
 
 /// RISC-V Processor Model where XLEN=32-bit. No CHERI support.
 /// Holds scalar registers and configuration, all other configuration stored in [ProcessorModules32]
@@ -22,7 +24,7 @@ pub struct Processor32 {
 pub struct ProcessorModules32 {
     rv32im: Rv32im,
     rvv: Option<Rv32v>,
-    zicsr: Option<Zicsr32>
+    zicsr: Option<Zicsr32>,
 }
 
 struct ProcessorCSRs32 {}
@@ -30,16 +32,27 @@ impl CSRProvider<u32> for ProcessorCSRs32 {
     fn has_csr(&self, _csr: u32) -> bool {
         false
     }
-    fn csr_atomic_read_write(&mut self, _csr: u32, _need_read: bool, _write_val: u32) -> Result<Option<u32>> { todo!() }
-    fn csr_atomic_read_set(&mut self, _csr: u32, _set_bits: Option<u32>) -> Result<u32> { todo!() }
-    fn csr_atomic_read_clear(&mut self, _csr: u32, _clear_bits: Option<u32>) -> Result<u32> { todo!() }
+    fn csr_atomic_read_write(
+        &mut self,
+        _csr: u32,
+        _need_read: bool,
+        _write_val: u32,
+    ) -> Result<Option<u32>> {
+        todo!()
+    }
+    fn csr_atomic_read_set(&mut self, _csr: u32, _set_bits: Option<u32>) -> Result<u32> {
+        todo!()
+    }
+    fn csr_atomic_read_clear(&mut self, _csr: u32, _clear_bits: Option<u32>) -> Result<u32> {
+        todo!()
+    }
 }
 
 impl Processor32 {
     /// Create a new processor and vector unit which operates on given memory.
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `mem` - The memory the processor should hold. Currently a value, not a reference.
     pub fn new(mem: AggregateMemory) -> (Processor32, ProcessorModules32) {
         let mut p = Processor32 {
@@ -47,12 +60,12 @@ impl Processor32 {
             memory: mem,
             pc: 0,
             sreg: RvRegisterFile::<u32>::default(),
-            csrs: ProcessorCSRs32{}
+            csrs: ProcessorCSRs32 {},
         };
         let mut mods = ProcessorModules32 {
-            rv32im: Rv32im{},
+            rv32im: Rv32im {},
             rvv: Some(Rv32v::new(Box::new(IntVectorRegisterFile::default()))),
-            zicsr: Some(Zicsr32::default())
+            zicsr: Some(Zicsr32::default()),
         };
 
         p.reset(&mut mods);
@@ -60,18 +73,24 @@ impl Processor32 {
         (p, mods)
     }
 
-    fn zicsr_conn<'a,'b>(&'a mut self, rvv: &'a mut Option<Rv32v>) -> Zicsr32Conn<'b> where 'a: 'b {
+    fn zicsr_conn<'a, 'b>(&'a mut self, rvv: &'a mut Option<Rv32v>) -> Zicsr32Conn<'b>
+    where
+        'a: 'b,
+    {
         let mut csr_providers = vec![&mut self.csrs as &mut dyn CSRProvider<u32>];
         if let Some(rvv) = rvv.as_mut() {
             csr_providers.push(rvv as &mut dyn CSRProvider<u32>)
         }
         Zicsr32Conn {
             sreg: &mut self.sreg,
-            csr_providers
+            csr_providers,
         }
     }
 
-    fn rv32im_conn<'a,'b>(&'a mut self) -> Rv32imConn<'b> where 'a: 'b {
+    fn rv32im_conn<'a, 'b>(&'a mut self) -> Rv32imConn<'b>
+    where
+        'a: 'b,
+    {
         Rv32imConn {
             pc: self.pc,
             sreg: &mut self.sreg,
@@ -80,18 +99,26 @@ impl Processor32 {
     }
 
     /// Process an instruction, returning the new PC value or any execution error
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
     /// * `inst_bits` - The raw instruction bits
     /// * `opcode` - The major opcode of the decoded instruction
     /// * `inst` - The fields of the decoded instruction
-    fn process_inst(&mut self, mods: &mut ProcessorModules32, inst_bits: u32, opcode: decode::Opcode, inst: InstructionBits) -> Result<u32> {
+    fn process_inst(
+        &mut self,
+        mods: &mut ProcessorModules32,
+        inst_bits: u32,
+        opcode: decode::Opcode,
+        inst: InstructionBits,
+    ) -> Result<u32> {
         let mut next_pc = self.pc + 4;
-        
+
         if mods.rv32im.will_handle(opcode, inst) {
-            let requested_pc = mods.rv32im.execute(opcode, inst, inst_bits, self.rv32im_conn())?;
+            let requested_pc = mods
+                .rv32im
+                .execute(opcode, inst, inst_bits, self.rv32im_conn())?;
             if let Some(requested_pc) = requested_pc {
                 next_pc = requested_pc;
             }
@@ -99,7 +126,8 @@ impl Processor32 {
         }
         if let Some(zicsr) = mods.zicsr.as_mut() {
             if zicsr.will_handle(opcode, inst) {
-                let requested_pc = zicsr.execute(opcode, inst, inst_bits, self.zicsr_conn(&mut mods.rvv))?;
+                let requested_pc =
+                    zicsr.execute(opcode, inst, inst_bits, self.zicsr_conn(&mut mods.rvv))?;
                 if let Some(requested_pc) = requested_pc {
                     next_pc = requested_pc;
                 }
@@ -108,15 +136,14 @@ impl Processor32 {
         }
         if let Some(rvv) = mods.rvv.as_mut() {
             if rvv.will_handle(opcode, inst) {
-                rvv.execute(opcode, inst, inst_bits, (
-                    &mut self.sreg,
-                    &mut self.memory,
-                ))?;
+                rvv.execute(opcode, inst, inst_bits, (&mut self.sreg, &mut self.memory))?;
                 return Ok(next_pc);
             }
         }
 
-        bail!(MiscDecodeException("Unexpected opcode/InstructionBits pair".to_string()))
+        bail!(MiscDecodeException(
+            "Unexpected opcode/InstructionBits pair".to_string()
+        ))
     }
 }
 impl Processor<ProcessorModules32> for Processor32 {
@@ -132,27 +159,39 @@ impl Processor<ProcessorModules32> for Processor32 {
     }
 
     /// Run a fetch-decode-execute step on the processor, executing a single instruction
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `v_unit` - The associated vector unit, which will execute vector instructions if they are found.
     fn exec_step(&mut self, mods: &mut ProcessorModules32) -> Result<()> {
         self.running = true;
 
         let next_pc_res: Result<u32> = {
             // Fetch
-            let inst_bits = self.memory.load_u32(self.pc as u64).context("Couldn't load next instruction")?;
+            let inst_bits = self
+                .memory
+                .load_u32(self.pc as u64)
+                .context("Couldn't load next instruction")?;
 
             // Decode
             let (opcode, inst) = decode(inst_bits)
                 .with_context(|| format!("Failed to decode instruction {:08x}", inst_bits))?;
 
             // Execute
-            let next_pc = self.process_inst(mods, inst_bits, opcode, inst)
-                .with_context(|| format!("Failed to execute decoded instruction {:?} {:x?}", opcode, inst))?;
+            let next_pc = self
+                .process_inst(mods, inst_bits, opcode, inst)
+                .with_context(|| {
+                    format!(
+                        "Failed to execute decoded instruction {:?} {:x?}",
+                        opcode, inst
+                    )
+                })?;
 
             if next_pc % 4 != 0 {
-                Err(MemoryException::JumpMisaligned{addr: next_pc as usize, expected: 4})?
+                Err(MemoryException::JumpMisaligned {
+                    addr: next_pc as usize,
+                    expected: 4,
+                })?
             } else {
                 Ok(next_pc)
             }
@@ -164,14 +203,14 @@ impl Processor<ProcessorModules32> for Processor32 {
                 if let Some(_iie) = err.downcast_ref::<IllegalInstructionException>() {
                     // TODO - trap, return new PC
                     println!("Found Illegal Instruction error");
-                    return Err(err)
+                    return Err(err);
                 } else if let Some(_mem) = err.downcast_ref::<MemoryException>() {
                     // TODO - trap, return new PC
                     println!("Found Memory error");
-                    return Err(err)
+                    return Err(err);
                 } else {
                     println!("Untrappable error");
-                    return Err(err)
+                    return Err(err);
                 }
             }
         };

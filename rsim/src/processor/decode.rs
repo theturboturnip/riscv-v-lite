@@ -1,8 +1,8 @@
 use crate::processor::exceptions::IllegalInstructionException::UnknownOpcode;
-use std::convert::TryInto;
 use anyhow::Result;
+use std::convert::TryInto;
 
-#[derive(Debug,Clone,Copy,PartialEq,Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Opcode {
     Load,
     Store,
@@ -34,7 +34,7 @@ impl TryInto<Opcode> for u8 {
             0b01_001_11 => Opcode::StoreFP,
 
             0b00_011_11 => Opcode::MiscMem,
-            
+
             0b00_100_11 => Opcode::OpImm,
             0b01_100_11 => Opcode::Op,
 
@@ -59,12 +59,12 @@ impl TryInto<Opcode> for u8 {
     }
 }
 
-#[derive(Debug,Clone,Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Imm {
     // Source bits used to generate the immediate
     data: u32,
     // The bit width of the immediate
-    width: u32
+    width: u32,
 }
 impl Imm {
     /// Generates an immediate from data + width
@@ -72,11 +72,11 @@ impl Imm {
         assert!(width <= 32);
         // Check if provided data was too-wide
         assert_eq!(bits!(data, 0:(width as usize - 1)), data);
-        Imm{ data, width }
+        Imm { data, width }
     }
 
     /// Return the immediate data as a u32
-    /// 
+    ///
     /// ```
     /// use rsim::processor::decode::Imm;
     /// let i = Imm::new(0xF0FF, 16);
@@ -87,7 +87,7 @@ impl Imm {
         self.data
     }
     /// Return the immediate data as a u64
-    /// 
+    ///
     /// ```
     /// use rsim::processor::decode::Imm;
     /// let i = Imm::new(0xF0FF, 16);
@@ -98,7 +98,7 @@ impl Imm {
         self.data as u64
     }
     /// Sign-extend the immediate value and return as a u32
-    /// 
+    ///
     /// ```
     /// use rsim::processor::decode::Imm;
     /// let i = Imm::new(0xF0FF, 16);
@@ -111,7 +111,7 @@ impl Imm {
         self.sign_extend_i32() as u32
     }
     /// Sign-extend the immediate value and return as a u64
-    /// 
+    ///
     /// ```
     /// use rsim::processor::decode::Imm;
     /// let i = Imm::new(0xF0FF, 16);
@@ -122,7 +122,7 @@ impl Imm {
         self.sign_extend_i64() as u64
     }
     /// Sign-extend the immediate value and return as a i32
-    /// 
+    ///
     /// ```
     /// use rsim::processor::decode::Imm;
     /// let i = Imm::new(0xFFFF, 16);
@@ -138,7 +138,7 @@ impl Imm {
         }
     }
     /// Sign-extend the immediate value and return as a i64
-    /// 
+    ///
     /// ```
     /// use rsim::processor::decode::Imm;
     /// let i = Imm::new(0xFFFF, 16);
@@ -153,20 +153,20 @@ impl Imm {
 /// TODO - Right now this does sign extension up to 32-bits.
 /// These should really all be 64-bit, now that we could be decoding 32 or 64-bit instructions.
 /// TODO - Make each of these a separate struct? Then we can combine variants in enums, e.g. type ROrIType = (RType, IType).
-#[derive(Debug,Clone,Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum InstructionBits {
     RType {
         rd: u8,
         funct3: u8,
         rs1: u8,
         rs2: u8,
-        funct7: u8
+        funct7: u8,
     },
     IType {
         rd: u8,
         funct3: u8,
         rs1: u8,
-        imm: Imm
+        imm: Imm,
     },
     ROrIType {
         rd: u8,
@@ -178,27 +178,27 @@ pub enum InstructionBits {
         funct7: u8,
 
         // I-Type only
-        imm: Imm
+        imm: Imm,
     },
     SType {
         funct3: u8,
         rs1: u8,
         rs2: u8,
-        imm: Imm
+        imm: Imm,
     },
     UType {
         rd: u8,
-        imm: Imm
+        imm: Imm,
     },
     JType {
         rd: u8,
-        imm: Imm
+        imm: Imm,
     },
     BType {
         funct3: u8,
         rs1: u8,
         rs2: u8,
-        imm: Imm
+        imm: Imm,
     },
     VType {
         funct3: u8,
@@ -212,7 +212,7 @@ pub enum InstructionBits {
 
         // Only for use in configuration
         zimm11: u16,
-        zimm10: u16
+        zimm10: u16,
     },
     FLdStType {
         rd: u8,
@@ -228,7 +228,7 @@ pub enum InstructionBits {
         mew: bool,
         mop: u8,
         nf: u8,
-    }
+    },
 }
 
 impl InstructionBits {
@@ -238,33 +238,33 @@ impl InstructionBits {
 
     pub fn from_r(inst: u32) -> InstructionBits {
         InstructionBits::RType {
-            rd:     ((bits!(inst, 7:11) as u8)),
-            funct3: ((bits!(inst, 12:14) as u8)),
-            rs1:    ((bits!(inst, 15:19) as u8)),
-            rs2:    ((bits!(inst, 20:24) as u8)),
-            funct7: ((bits!(inst, 25:31) as u8)),
+            rd: (bits!(inst, 7:11) as u8),
+            funct3: (bits!(inst, 12:14) as u8),
+            rs1: (bits!(inst, 15:19) as u8),
+            rs2: (bits!(inst, 20:24) as u8),
+            funct7: (bits!(inst, 25:31) as u8),
         }
     }
 
     pub fn from_i(inst: u32) -> InstructionBits {
         InstructionBits::IType {
-            rd:     ((bits!(inst, 7:11) as u8)),
-            funct3: ((bits!(inst, 12:14) as u8)),
-            rs1:    ((bits!(inst, 15:19) as u8)),
-            imm:    Imm::new(bits!(inst, 20:31), 12),
+            rd: (bits!(inst, 7:11) as u8),
+            funct3: (bits!(inst, 12:14) as u8),
+            rs1: (bits!(inst, 15:19) as u8),
+            imm: Imm::new(bits!(inst, 20:31), 12),
         }
     }
 
     pub fn from_r_or_i(inst: u32) -> InstructionBits {
         InstructionBits::ROrIType {
-            rd:     ((bits!(inst, 7:11) as u8)),
-            funct3: ((bits!(inst, 12:14) as u8)),
-            rs1:    ((bits!(inst, 15:19) as u8)),
+            rd: (bits!(inst, 7:11) as u8),
+            funct3: (bits!(inst, 12:14) as u8),
+            rs1: (bits!(inst, 15:19) as u8),
 
-            rs2:    ((bits!(inst, 20:24) as u8)),
-            funct7: ((bits!(inst, 25:31) as u8)),
+            rs2: (bits!(inst, 20:24) as u8),
+            funct7: (bits!(inst, 25:31) as u8),
 
-            imm:    Imm::new(bits!(inst, 20:31), 12),
+            imm: Imm::new(bits!(inst, 20:31), 12),
         }
     }
 
@@ -272,10 +272,10 @@ impl InstructionBits {
         let imm_bits: u32 = (bits!(inst, 7:11) as u32) | ((bits!(inst, 25:31) as u32) << 5);
 
         InstructionBits::SType {
-            funct3: ((bits!(inst, 12:14) as u8)),
-            rs1:    ((bits!(inst, 15:19) as u8)),
-            rs2:    ((bits!(inst, 20:24) as u8)),
-            imm:    Imm::new(imm_bits, 12),
+            funct3: (bits!(inst, 12:14) as u8),
+            rs1: (bits!(inst, 15:19) as u8),
+            rs2: (bits!(inst, 20:24) as u8),
+            imm: Imm::new(imm_bits, 12),
         }
     }
 
@@ -283,48 +283,46 @@ impl InstructionBits {
         let imm_bits = bits!(inst, 12:31);
 
         InstructionBits::UType {
-            rd:     ((bits!(inst, 7:11) as u8)),
-            imm:    Imm::new(imm_bits << 12, 32),
+            rd: (bits!(inst, 7:11) as u8),
+            imm: Imm::new(imm_bits << 12, 32),
         }
     }
 
     pub fn from_j(inst: u32) -> InstructionBits {
-        let imm = 
-            (bits!(inst, 21:30) << 1) |
-            (bits!(inst, 20:20) << 11) |
-            (bits!(inst, 12:19) << 12) |
-            (bits!(inst, 31:31) << 20);
+        let imm = (bits!(inst, 21:30) << 1)
+            | (bits!(inst, 20:20) << 11)
+            | (bits!(inst, 12:19) << 12)
+            | (bits!(inst, 31:31) << 20);
 
         InstructionBits::JType {
-            rd:     ((bits!(inst, 7:11) as u8)),
-            imm:    Imm::new(imm, 21),
+            rd: (bits!(inst, 7:11) as u8),
+            imm: Imm::new(imm, 21),
         }
     }
 
     pub fn from_b(inst: u32) -> InstructionBits {
-        let imm = 
-            (bits!(inst, 8:11) << 1) |
-            (bits!(inst, 25:30) << 5) |
-            (bits!(inst, 7:7) << 11) |
-            (bits!(inst, 31:31) << 12);
+        let imm = (bits!(inst, 8:11) << 1)
+            | (bits!(inst, 25:30) << 5)
+            | (bits!(inst, 7:7) << 11)
+            | (bits!(inst, 31:31) << 12);
 
         InstructionBits::BType {
-            funct3: ((bits!(inst, 12:14) as u8)),
-            rs1:    ((bits!(inst, 15:19) as u8)),
-            rs2:    ((bits!(inst, 20:24) as u8)),
-            imm:    Imm::new(imm, 13),
+            funct3: (bits!(inst, 12:14) as u8),
+            rs1: (bits!(inst, 15:19) as u8),
+            rs2: (bits!(inst, 20:24) as u8),
+            imm: Imm::new(imm, 13),
         }
     }
 
     pub fn from_v(inst: u32) -> InstructionBits {
         InstructionBits::VType {
-            rd:     ((bits!(inst, 7:11) as u8)),
-            funct3: ((bits!(inst, 12:14) as u8)),
-            rs1:    ((bits!(inst, 15:19) as u8)),
-            rs2:    ((bits!(inst, 20:24) as u8)),
+            rd: (bits!(inst, 7:11) as u8),
+            funct3: (bits!(inst, 12:14) as u8),
+            rs1: (bits!(inst, 15:19) as u8),
+            rs2: (bits!(inst, 20:24) as u8),
 
             // arithmetic
-            funct6: ((bits!(inst, 26:31) as u8)),
+            funct6: (bits!(inst, 26:31) as u8),
             vm: bits!(inst, 25:25) == 1,
 
             // configuration
@@ -335,19 +333,19 @@ impl InstructionBits {
 
     pub fn from_f_ld_st(inst: u32) -> InstructionBits {
         InstructionBits::FLdStType {
-            rd:     ((bits!(inst, 7:11) as u8)),
-            width: ((bits!(inst, 12:14) as u8)),
-            rs1:    ((bits!(inst, 15:19) as u8)),
-            rs2:    ((bits!(inst, 20:24) as u8)),
-            
+            rd: (bits!(inst, 7:11) as u8),
+            width: (bits!(inst, 12:14) as u8),
+            rs1: (bits!(inst, 15:19) as u8),
+            rs2: (bits!(inst, 20:24) as u8),
+
             // Float only
-            funct7: ((bits!(inst, 25:31) as u8)),
+            funct7: (bits!(inst, 25:31) as u8),
 
             // Vector only
             vm: bits!(inst, 25:25) == 1,
             mop: bits!(inst, 26:27) as u8,
             mew: bits!(inst, 28:28) == 1,
-            nf: bits!(inst, 29:31) as u8
+            nf: bits!(inst, 29:31) as u8,
         }
     }
 }
@@ -357,23 +355,23 @@ pub fn decode(inst: u32) -> Result<(Opcode, InstructionBits)> {
 
     use Opcode::*;
     let instr = match opcode {
-        Load =>             InstructionBits::from_i(inst),
-        Store =>            InstructionBits::from_s(inst),
-        LoadFP =>           InstructionBits::from_f_ld_st(inst),
-        StoreFP =>          InstructionBits::from_f_ld_st(inst),
-        MiscMem =>          InstructionBits::from_i(inst),
-        OpImm =>            InstructionBits::from_i(inst),
-        Op =>               InstructionBits::from_r(inst),
-        OpImm32 =>          InstructionBits::from_i(inst),
-        Op32 =>             InstructionBits::from_r(inst),
-        AddUpperImmPC =>    InstructionBits::from_u(inst),
-        LoadUpperImm =>     InstructionBits::from_u(inst),
-        JumpAndLink =>      InstructionBits::from_j(inst),
+        Load => InstructionBits::from_i(inst),
+        Store => InstructionBits::from_s(inst),
+        LoadFP => InstructionBits::from_f_ld_st(inst),
+        StoreFP => InstructionBits::from_f_ld_st(inst),
+        MiscMem => InstructionBits::from_i(inst),
+        OpImm => InstructionBits::from_i(inst),
+        Op => InstructionBits::from_r(inst),
+        OpImm32 => InstructionBits::from_i(inst),
+        Op32 => InstructionBits::from_r(inst),
+        AddUpperImmPC => InstructionBits::from_u(inst),
+        LoadUpperImm => InstructionBits::from_u(inst),
+        JumpAndLink => InstructionBits::from_j(inst),
         JumpAndLinkRegister => InstructionBits::from_i(inst),
-        Branch =>           InstructionBits::from_b(inst),
-        Vector =>           InstructionBits::from_v(inst),
-        System =>           InstructionBits::from_i(inst),
-        Custom2CHERI =>     InstructionBits::from_r_or_i(inst),
+        Branch => InstructionBits::from_b(inst),
+        Vector => InstructionBits::from_v(inst),
+        System => InstructionBits::from_i(inst),
+        Custom2CHERI => InstructionBits::from_r_or_i(inst),
     };
 
     Ok((opcode, instr))

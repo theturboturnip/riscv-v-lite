@@ -9,8 +9,8 @@ pub trait Processor<TModules> {
 }
 
 mod rv32imv;
-pub use rv32imv::{Processor32,ProcessorModules32};
+pub use rv32imv::{Processor32, ProcessorModules32};
 mod rv64imv;
-pub use rv64imv::{Rv64imvProcessor,Rv64imvProcessorModules};
+pub use rv64imv::{Rv64imvProcessor, Rv64imvProcessorModules};
 mod rv64imvxcheri;
-pub use rv64imvxcheri::{Rv64imvXCheriProcessor,Rv64imvXCheriProcessorModules,CheriExecMode};
+pub use rv64imvxcheri::{CheriExecMode, Rv64imvXCheriProcessor, Rv64imvXCheriProcessorModules};

@@ -1,6 +1,6 @@
 //! Library for emulating various RISC-V processors.
 //! Supports 32 or 64-bit ISAs, "i", "m", "Zcsr", "v", "xcheri" extensions.
-//! 
+//!
 //! If you're coming from my MPhil project, you probably want to see the [vector documentation](processor::isa_mods::vector)
 
 #[macro_use]
@@ -25,10 +25,10 @@ pub use processor::isa_mods;
 /// Publically exposed memory-related structures.
 /// Includes capability and integer-addressed memory.
 pub mod memory {
-    pub use crate::processor::elements::memory::{AggregateMemory,MemoryBacking,IOMemory};
-    pub use crate::processor::elements::cheri::{CheriAggregateMemory};
+    pub use crate::processor::elements::cheri::CheriAggregateMemory;
+    pub use crate::processor::elements::memory::{AggregateMemory, IOMemory, MemoryBacking};
 }
 
 /// Publically exposed CHERI-related structures.
 /// All pulled from [rust_cheri_compressed_cap].
-pub use crate::processor::elements::cheri::{Cc128,Cc128Cap,CheriRVFuncs,CompressedCapability};
+pub use crate::processor::elements::cheri::{Cc128, Cc128Cap, CheriRVFuncs, CompressedCapability};

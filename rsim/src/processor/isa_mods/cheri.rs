@@ -1,13 +1,16 @@
 use crate::models::CheriExecMode;
-use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
-use crate::processor::isa_mods::*;
-use crate::processor::exceptions::{CapabilityException,CapOrRegister};
-use crate::processor::elements::cheri::{Cc128,CompressedCapability,Cc128Cap,CheriMemory,CheriAggregateMemory,CheriRVFuncs,SafeTaggedCap};
 use crate::processor::elements::cheri::CheriRV64RegisterFile;
+use crate::processor::elements::cheri::{
+    Cc128, Cc128Cap, CheriAggregateMemory, CheriMemory, CheriRVFuncs, CompressedCapability,
+    SafeTaggedCap,
+};
 use crate::processor::elements::registers::RegisterFile;
+use crate::processor::exceptions::IllegalInstructionException::UnsupportedParam;
+use crate::processor::exceptions::{CapOrRegister, CapabilityException};
+use crate::processor::isa_mods::*;
 
 /// Connection to register state for 64-bit CHERI-aware ISA modules.
-/// Used by [XCheri64] and [Rv64imCapabilityMode]. 
+/// Used by [XCheri64] and [Rv64imCapabilityMode].
 pub struct XCheri64Conn<'a> {
     pub pcc: Cc128Cap,
     pub sreg: &'a mut CheriRV64RegisterFile,
@@ -20,15 +23,23 @@ pub struct XCheri64Conn<'a> {
 /// Does not include capability-mode overrides for legacy instructions.
 pub struct XCheri64 {}
 impl XCheri64 {
-    fn handle_cjalr(&mut self, cd: u8, cs1: u8, offset: u64, conn: XCheri64Conn) -> ProcessorResult<Cc128Cap> {
+    fn handle_cjalr(
+        &mut self,
+        cd: u8,
+        cs1: u8,
+        offset: u64,
+        conn: XCheri64Conn,
+    ) -> ProcessorResult<Cc128Cap> {
         let cs1_reg = CapOrRegister::Reg(cs1);
         let cs1_val = conn.sreg.read_maybe_cap(cs1)?;
         match cs1_val {
-            SafeTaggedCap::RawData{..} => bail!(CapabilityException::TagViolation{ cap: cs1_reg }),
+            SafeTaggedCap::RawData { .. } => {
+                bail!(CapabilityException::TagViolation { cap: cs1_reg })
+            }
             SafeTaggedCap::ValidCap(cs1_val) => {
                 // We're jumping to CS1, so it should be a SENTRY
                 if cs1_val.is_sealed() && cs1_val.otype() != Cc128::OTYPE_SENTRY {
-                    bail!(CapabilityException::SealViolation{ cap: cs1_reg });
+                    bail!(CapabilityException::SealViolation { cap: cs1_reg });
                 }
                 // The Sail code does other checks: permission to execute, bounds checks, alignment.
                 // I'm leaving these to be handled by the memory module after the jump completes.
@@ -41,7 +52,8 @@ impl XCheri64 {
                 assert!(!link_cap.is_sealed(), "Link cap should always be unsealed.");
                 let link_cap = Cc128::sealCap(&link_cap, Cc128::OTYPE_SENTRY);
                 assert!(link_cap.tag());
-                conn.sreg.write_maybe_cap(cd, SafeTaggedCap::from_cap(link_cap))?;
+                conn.sreg
+                    .write_maybe_cap(cd, SafeTaggedCap::from_cap(link_cap))?;
 
                 // Zero out bottom bit of the address we're jumping to
                 let mut new_pc = cs1_val.address() & (u64::MAX << 1);
@@ -63,18 +75,32 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
         match (opcode, inst) {
             (Custom2CHERI, _) => true,
             // LC (reuses RV128-LQ, which itself is on top of the Misc-Mem opcode)
-            (MiscMem, InstructionBits::IType{funct3: 0x2, ..}) => true,
+            (MiscMem, InstructionBits::IType { funct3: 0x2, .. }) => true,
             // SC (reuses RV128-Sq, which is an extra instruction in Store)
-            (Store, InstructionBits::SType{funct3: 0x4, ..}) => true,
+            (Store, InstructionBits::SType { funct3: 0x4, .. }) => true,
             // CJALR is under the Custom CHERI opcode
-            _ => false
+            _ => false,
         }
     }
 
-    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, conn: XCheri64Conn) -> ProcessorResult<Option<Self::Pc>> {
+    fn execute(
+        &mut self,
+        opcode: Opcode,
+        inst: InstructionBits,
+        _inst_bits: u32,
+        conn: XCheri64Conn,
+    ) -> ProcessorResult<Option<Self::Pc>> {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
-            (MiscMem, InstructionBits::IType{rd, funct3: 0x2, rs1, imm}) => {
+            (
+                MiscMem,
+                InstructionBits::IType {
+                    rd,
+                    funct3: 0x2,
+                    rs1,
+                    imm,
+                },
+            ) => {
                 // LC = Load Capability
                 /*
                 let offset : xlenbits = EXTS(imm);
@@ -102,8 +128,16 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                 let loaded_cap = conn.memory.load_maybe_cap(origin)?;
                 // Store it into the register file
                 conn.sreg.write_maybe_cap(rd, loaded_cap)?;
-            },
-            (Store, InstructionBits::SType{funct3: 0x4, rs1, rs2, imm}) => {
+            }
+            (
+                Store,
+                InstructionBits::SType {
+                    funct3: 0x4,
+                    rs1,
+                    rs2,
+                    imm,
+                },
+            ) => {
                 // SC = Store Capability
 
                 // The address we store to depends on the mode
@@ -122,10 +156,10 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         cap
                     }
                 };
-                
+
                 let cap_to_store = conn.sreg.read_maybe_cap(rs2)?;
                 conn.memory.store_maybe_cap(destination, cap_to_store)?;
-            },
+            }
             // (JumpAndLinkRegister, InstructionBits::IType{funct3, imm, rd, rs1}) => {
             //     // Vanilla JALR jumps with an immediate offset, unlike CJALR.
             //     // It appears CHERI-Clang emits vanilla JALRs rather than CJALRs, even in capability mode.
@@ -137,7 +171,17 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
             //         bail!("Vanilla nonzero-offset JumpAndLinkRegister in Capability Mode")
             //     }
             // }
-            (Custom2CHERI, InstructionBits::ROrIType{rd, funct3, rs1, rs2, funct7, imm}) => {
+            (
+                Custom2CHERI,
+                InstructionBits::ROrIType {
+                    rd,
+                    funct3,
+                    rs1,
+                    rs2,
+                    funct7,
+                    imm,
+                },
+            ) => {
                 match (funct7, funct3) {
                     (0x1, 0x0) => {
                         // CSpecialRW
@@ -151,17 +195,22 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
 
                         let new_base = cs1_val.address();
                         let new_top = new_base as u128 + rs2_val as u128;
-                       
+
                         if !cs1_val.tag() {
-                            bail!(CapabilityException::TagViolation{ cap: cs1_reg });
+                            bail!(CapabilityException::TagViolation { cap: cs1_reg });
                         } else if cs1_val.is_sealed() {
-                            bail!(CapabilityException::SealViolation{ cap: cs1_reg });
+                            bail!(CapabilityException::SealViolation { cap: cs1_reg });
                         } else if !Cc128::inCapBounds(&cs1_val, new_base, rs2_val as u128) {
-                            bail!(CapabilityException::LengthViolation{ cap: cs1_reg, base: new_base, top: new_top });
+                            bail!(CapabilityException::LengthViolation {
+                                cap: cs1_reg,
+                                base: new_base,
+                                top: new_top
+                            });
                         }
 
                         let (_, new_cap) = Cc128::setCapBounds(&cs1_val, new_base, new_top);
-                        conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
+                        conn.sreg
+                            .write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                     }
                     (0x9, 0x0) => {
                         // CSetBoundsExact
@@ -171,20 +220,25 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
 
                         let new_base = cs1_val.address();
                         let new_top = new_base as u128 + rs2_val as u128;
-                       
+
                         if !cs1_val.tag() {
-                            bail!(CapabilityException::TagViolation{ cap: cs1_reg });
+                            bail!(CapabilityException::TagViolation { cap: cs1_reg });
                         } else if cs1_val.is_sealed() {
-                            bail!(CapabilityException::SealViolation{ cap: cs1_reg });
+                            bail!(CapabilityException::SealViolation { cap: cs1_reg });
                         } else if !Cc128::inCapBounds(&cs1_val, new_base, rs2_val as u128) {
-                            bail!(CapabilityException::LengthViolation{ cap: cs1_reg, base: new_base, top: new_top });
+                            bail!(CapabilityException::LengthViolation {
+                                cap: cs1_reg,
+                                base: new_base,
+                                top: new_top
+                            });
                         }
 
                         let (exact, new_cap) = Cc128::setCapBounds(&cs1_val, new_base, new_top);
                         if !exact {
-                            bail!(CapabilityException::InexactBounds{ cap: cs1_reg });
+                            bail!(CapabilityException::InexactBounds { cap: cs1_reg });
                         }
-                        conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
+                        conn.sreg
+                            .write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                     }
                     (_, 0x2) => {
                         // CSetBoundsImm
@@ -194,17 +248,22 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
 
                         let new_base = cs1_val.address();
                         let new_top = new_base as u128 + imm_val as u128;
-                       
+
                         if !cs1_val.tag() {
-                            bail!(CapabilityException::TagViolation{ cap: cs1_reg });
+                            bail!(CapabilityException::TagViolation { cap: cs1_reg });
                         } else if cs1_val.is_sealed() {
-                            bail!(CapabilityException::SealViolation{ cap: cs1_reg });
+                            bail!(CapabilityException::SealViolation { cap: cs1_reg });
                         } else if !Cc128::inCapBounds(&cs1_val, new_base, imm_val as u128) {
-                            bail!(CapabilityException::LengthViolation{ cap: cs1_reg, base: new_base, top: new_top });
+                            bail!(CapabilityException::LengthViolation {
+                                cap: cs1_reg,
+                                base: new_base,
+                                top: new_top
+                            });
                         }
 
                         let (_, new_cap) = Cc128::setCapBounds(&cs1_val, new_base, new_top);
-                        conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
+                        conn.sreg
+                            .write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                     }
                     (0xb, 0x0) => {
                         // CSeal
@@ -235,26 +294,33 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
                         let rs2_val = conn.sreg.read_u64(rs2)?;
                         if cs1_val.tag() && cs1_val.is_sealed() {
-                            bail!(CapabilityException::SealViolation{ cap: CapOrRegister::Reg(rs1) })
+                            bail!(CapabilityException::SealViolation {
+                                cap: CapOrRegister::Reg(rs1)
+                            })
                         } else {
                             let (success, mut new_cap) = Cc128::incCapOffset(&cs1_val, rs2_val);
                             if !success {
                                 new_cap = Cc128::invalidateCap(&new_cap);
                             }
-                            conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
+                            conn.sreg
+                                .write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                         }
                     }
                     (_, 0x1) => {
                         // CIncOffsetImm
                         let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
                         if cs1_val.tag() && cs1_val.is_sealed() {
-                            bail!(CapabilityException::SealViolation{ cap: CapOrRegister::Reg(rs1) })
+                            bail!(CapabilityException::SealViolation {
+                                cap: CapOrRegister::Reg(rs1)
+                            })
                         } else {
-                            let (success, mut new_cap) = Cc128::incCapOffset(&cs1_val, imm.sign_extend_u64());
+                            let (success, mut new_cap) =
+                                Cc128::incCapOffset(&cs1_val, imm.sign_extend_u64());
                             if !success {
                                 new_cap = Cc128::invalidateCap(&new_cap);
                             }
-                            conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
+                            conn.sreg
+                                .write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                         }
                     }
                     (0x12, 0x0) => {
@@ -263,7 +329,7 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                     }
                     (0x13, 0x0) => {
                         // CFromPtr
-                        
+
                         let cs1_val = if rs1 == 0 {
                             conn.ddc
                         } else {
@@ -274,15 +340,20 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         if rs2_val == 0 {
                             conn.sreg.write_u64(rd, 0)?;
                         } else if !cs1_val.tag() {
-                            bail!(CapabilityException::TagViolation{ cap: CapOrRegister::Reg(rs1) })
+                            bail!(CapabilityException::TagViolation {
+                                cap: CapOrRegister::Reg(rs1)
+                            })
                         } else if cs1_val.is_sealed() {
-                            bail!(CapabilityException::SealViolation{ cap: CapOrRegister::Reg(rs1) })
+                            bail!(CapabilityException::SealViolation {
+                                cap: CapOrRegister::Reg(rs1)
+                            })
                         } else {
                             let (success, mut new_cap) = Cc128::setCapOffset(&cs1_val, rs2_val);
                             if !success {
                                 new_cap = Cc128::invalidateCap(&new_cap);
                             }
-                            conn.sreg.write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
+                            conn.sreg
+                                .write_maybe_cap(rd, SafeTaggedCap::from_cap(new_cap))?;
                         }
                     }
                     (0x14, 0x0) => {
@@ -318,8 +389,13 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                             // CClearTags
                             bail!("Haven't implemented CClearTags")
                         }
-                        _ => bail!("Invalid funct3/funct7/rd combination {:x}/{:x}/{:x}", funct3, funct7, rd)
-                    }
+                        _ => bail!(
+                            "Invalid funct3/funct7/rd combination {:x}/{:x}/{:x}",
+                            funct3,
+                            funct7,
+                            rd
+                        ),
+                    },
                     (0x7f, 0x0) => match rs2 {
                         0x0 => {
                             // CGetPerm
@@ -340,14 +416,7 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         0x4 => {
                             // CGetTag
                             let cs1_val = conn.sreg.read_maybe_cap(rs1)?.to_cap();
-                            conn.sreg.write_u64(
-                                rd,
-                                if cs1_val.tag() {
-                                    1
-                                } else {
-                                    0
-                                }
-                            )?;
+                            conn.sreg.write_u64(rd, if cs1_val.tag() { 1 } else { 0 })?;
                         }
                         0x5 => {
                             // CGetSealed
@@ -381,7 +450,7 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                         0xc => {
                             // CJALR
                             // CJALR doesn't support immediate-offset, so say offset=0
-                            return Ok(Some(self.handle_cjalr(rd, rs1, 0, conn)?))
+                            return Ok(Some(self.handle_cjalr(rd, rs1, 0, conn)?));
                         }
                         0xd => {
                             // Clear
@@ -412,8 +481,11 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                             // See llvm/lib/Target/RISCV/RISCVInstrInfoXCheri.td:389
                             bail!("Haven't implemented CJALR relative to PCC")
                         }
-                        _ => bail!("Invalid rs2 value {:x} for CHERI funct3=0x0,funct7=0x7f", rs2)
-                    }
+                        _ => bail!(
+                            "Invalid rs2 value {:x} for CHERI funct3=0x0,funct7=0x7f",
+                            rs2
+                        ),
+                    },
                     (0x7d, 0) => match rs2 {
                         0xb => {
                             // LC.CAP (RV32??)
@@ -423,8 +495,11 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                             let loaded_cap = conn.memory.load_maybe_cap(cs1_val)?;
                             conn.sreg.write_maybe_cap(rd, loaded_cap)?;
                         }
-                        _ => bail!("Unhandled rs2 value {:x} for CHERI load (funct7=0x7d, funct3=0)", rs2)
-                    }
+                        _ => bail!(
+                            "Unhandled rs2 value {:x} for CHERI load (funct7=0x7d, funct3=0)",
+                            rs2
+                        ),
+                    },
                     (0x7c, 0) => match rd {
                         0xb => {
                             // SD.CAP
@@ -433,13 +508,20 @@ impl IsaMod<XCheri64Conn<'_>> for XCheri64 {
                             let stored_val = conn.sreg.read_u64(rs2)?;
                             conn.memory.store_u64(cs1_val, stored_val)?;
                         }
-                        _ => bail!("Unhandled rd value {:x} for CHERI store (funct7=0x7c, funct3=0)", rd)
-                    }
-                    _ => bail!("Invalid funct3/funct7 combination {:x} {:x}", funct3, funct7)
+                        _ => bail!(
+                            "Unhandled rd value {:x} for CHERI store (funct7=0x7c, funct3=0)",
+                            rd
+                        ),
+                    },
+                    _ => bail!(
+                        "Invalid funct3/funct7 combination {:x} {:x}",
+                        funct3,
+                        funct7
+                    ),
                 }
             }
 
-            _ => bail!("Invalid opcode/instruction pair passed to XCheri64")   
+            _ => bail!("Invalid opcode/instruction pair passed to XCheri64"),
         }
         Ok(None)
     }
@@ -456,14 +538,20 @@ impl IsaMod<XCheri64Conn<'_>> for Rv64imCapabilityMode {
         match opcode {
             Load | Store | AddUpperImmPC => true,
 
-            _ => false
+            _ => false,
         }
     }
 
-    fn execute(&mut self, opcode: Opcode, inst: InstructionBits, _inst_bits: u32, conn: XCheri64Conn) -> ProcessorResult<Option<Self::Pc>> {
+    fn execute(
+        &mut self,
+        opcode: Opcode,
+        inst: InstructionBits,
+        _inst_bits: u32,
+        conn: XCheri64Conn,
+    ) -> ProcessorResult<Option<Self::Pc>> {
         use crate::processor::decode::Opcode::*;
         match (opcode, inst) {
-            (AddUpperImmPC, InstructionBits::UType{rd, imm}) => {
+            (AddUpperImmPC, InstructionBits::UType { rd, imm }) => {
                 let addr = conn.pcc.address().wrapping_add(imm.sign_extend_u64());
                 let (representable, mut new_cap) = Cc128::setCapAddr(&conn.pcc, addr);
                 if !representable {
@@ -471,7 +559,15 @@ impl IsaMod<XCheri64Conn<'_>> for Rv64imCapabilityMode {
                 }
                 conn.sreg.write(rd, SafeTaggedCap::from_cap(new_cap))?;
             }
-            (Load, InstructionBits::IType{rd, funct3, rs1, imm}) => {
+            (
+                Load,
+                InstructionBits::IType {
+                    rd,
+                    funct3,
+                    rs1,
+                    imm,
+                },
+            ) => {
                 let offset = imm.sign_extend_u64();
                 let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
                 cap.set_address_unchecked(cap.address().wrapping_add(offset));
@@ -481,32 +577,49 @@ impl IsaMod<XCheri64Conn<'_>> for Rv64imCapabilityMode {
                     0b000 => (conn.memory.load_u8(cap)? as i8) as i64 as u64, // LB
                     0b001 => (conn.memory.load_u16(cap)? as i16) as i64 as u64, // LH
                     0b010 => (conn.memory.load_u32(cap)? as i32) as i64 as u64, // LW
-                    0b011 => conn.memory.load_u64(cap)? as u64, // LD
+                    0b011 => conn.memory.load_u64(cap)? as u64,               // LD
                     // LBU, LHU, LWU don't sign-extend
                     0b100 => conn.memory.load_u8(cap)? as u64, // LBU
                     0b101 => conn.memory.load_u16(cap)? as u64, // LHU
                     0b110 => conn.memory.load_u32(cap)? as u64, // LWU
 
-                    _ => bail!(UnsupportedParam(format!("Load funct3 {:03b}", funct3)))
+                    _ => bail!(UnsupportedParam(format!("Load funct3 {:03b}", funct3))),
                 };
                 conn.sreg.write(rd, new_val)?;
             }
-            (Store, InstructionBits::SType{funct3, rs1, rs2, imm}) => {
+            (
+                Store,
+                InstructionBits::SType {
+                    funct3,
+                    rs1,
+                    rs2,
+                    imm,
+                },
+            ) => {
                 let offset = imm.sign_extend_u64();
                 let mut cap = conn.sreg.read_maybe_cap(rs1)?.to_cap();
                 cap.set_address_unchecked(cap.address().wrapping_add(offset));
-                
+
                 match funct3 {
-                    0b000 => conn.memory.store_u8(cap, (conn.sreg.read_u64(rs2)? & 0xFF) as u8)?,
-                    0b001 => conn.memory.store_u16(cap, (conn.sreg.read_u64(rs2)? & 0xFFFF) as u16)?,
-                    0b010 => conn.memory.store_u32(cap, (conn.sreg.read_u64(rs2)? & 0xFFFF_FFFF) as u32)?,
-                    0b011 => conn.memory.store_u64(cap, (conn.sreg.read_u64(rs2)? & 0xFFFF_FFFF_FFFF_FFFF) as u64)?,
-                    
-                    _ => bail!(UnsupportedParam(format!("Store funct3 {:03b}", funct3)))
+                    0b000 => conn
+                        .memory
+                        .store_u8(cap, (conn.sreg.read_u64(rs2)? & 0xFF) as u8)?,
+                    0b001 => conn
+                        .memory
+                        .store_u16(cap, (conn.sreg.read_u64(rs2)? & 0xFFFF) as u16)?,
+                    0b010 => conn
+                        .memory
+                        .store_u32(cap, (conn.sreg.read_u64(rs2)? & 0xFFFF_FFFF) as u32)?,
+                    0b011 => conn.memory.store_u64(
+                        cap,
+                        (conn.sreg.read_u64(rs2)? & 0xFFFF_FFFF_FFFF_FFFF) as u64,
+                    )?,
+
+                    _ => bail!(UnsupportedParam(format!("Store funct3 {:03b}", funct3))),
                 };
             }
 
-            _ => bail!("Invalid opcode/instruction pair passed to RV32I")
+            _ => bail!("Invalid opcode/instruction pair passed to RV32I"),
         }
 
         Ok(None)

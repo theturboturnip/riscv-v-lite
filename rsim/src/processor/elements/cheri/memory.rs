@@ -1,24 +1,27 @@
 use crate::processor::elements::cheri::capability::check_capability;
 use std::any::Any;
-use std::ops::Range;
 use std::collections::HashSet;
+use std::ops::Range;
 
-use crate::processor::elements::memory::*;
 use super::capability::*;
+use crate::processor::elements::memory::*;
 
 /// Memory holding tags for capabilities.
 /// Implements MemoryOf<bool>, which checks if the supplied address is a multiple of 16-bytes i.e. the size of a capability.
 pub struct TagMemory {
-    internal_mem: HashSet<u64>
+    internal_mem: HashSet<u64>,
 }
 impl TagMemory {
     pub fn new() -> Self {
         TagMemory {
-            internal_mem: HashSet::default()
+            internal_mem: HashSet::default(),
         }
     }
     pub fn range(&self) -> Range<usize> {
-        Range{ start: 0, end: usize::MAX }
+        Range {
+            start: 0,
+            end: usize::MAX,
+        }
     }
 }
 impl MemoryOf<bool> for TagMemory {
@@ -58,13 +61,13 @@ pub trait CheriMemory<TAddr>: Memory<TAddr> + MemoryOf<SafeTaggedCap, TAddr> {
 /// All other Memory variants clear associated tag bits on write.
 pub struct CheriAggregateMemory {
     base_mem: AggregateMemory,
-    tag_mem: TagMemory
+    tag_mem: TagMemory,
 }
 impl CheriAggregateMemory {
     pub fn from_base(base_mem: AggregateMemory) -> CheriAggregateMemory {
         CheriAggregateMemory {
             base_mem,
-            tag_mem: TagMemory::new()
+            tag_mem: TagMemory::new(),
         }
     }
 
@@ -85,9 +88,9 @@ impl CheriAggregateMemory {
 
         let full_range_cap_base = (full_range.start as u64) & (required_align_mask as u64);
         let full_range_cap = Cc128::make_max_perms_cap(
-            full_range_cap_base, // base
-            full_range_cap_base, // put the address at the base
-            full_range_cap_base as u128 + required_len as u128 // top
+            full_range_cap_base,                                // base
+            full_range_cap_base,                                // put the address at the base
+            full_range_cap_base as u128 + required_len as u128, // top
         );
 
         full_range_cap
@@ -99,7 +102,10 @@ impl CheriAggregateMemory {
 }
 /// Implement MemoryOf<TData> addressed by Cc128Cap, which does all necessary validity checks,
 /// for every TData in {u8,u16,u32,u64}
-impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMemory: MemoryOf<TData, u64> {
+impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory
+where
+    AggregateMemory: MemoryOf<TData, u64>,
+{
     fn read(&mut self, cap: Cc128Cap) -> MemoryResult<TData> {
         check_capability::<TData>(cap, Cc128::PERM_LOAD)?;
 
@@ -120,14 +126,16 @@ impl<TData> MemoryOf<TData, Cc128Cap> for CheriAggregateMemory where AggregateMe
         assert!(std::mem::size_of::<TData>() <= 16);
 
         Ok(())
-    } 
+    }
 }
 /// Now we've defined MemoryOf<u8,u16,u32,u64>, combine them into a single Memory trait
 impl Memory<Cc128Cap> for CheriAggregateMemory {
     fn range(&self) -> Range<usize> {
         self.base_mem.range().clone()
     }
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 /// Combine MemoryOf<u8,u16,u32,u64> with MemoryOf<SafeTaggedCap>
 impl CheriMemory<Cc128Cap> for CheriAggregateMemory {}
@@ -160,15 +168,15 @@ impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
         // TODO - this shouldn't have to be a dyn object, right?
         let base_mem = &mut self.base_mem as &mut dyn MemoryOf<u64>;
         match val {
-            SafeTaggedCap::RawData{ top, bot } => {
+            SafeTaggedCap::RawData { top, bot } => {
                 base_mem.write(addr + 8, top)?;
                 base_mem.write(addr, bot)?;
                 self.tag_mem.write(addr, false)?;
             }
             SafeTaggedCap::ValidCap(cap) => {
                 let cap_pebst = Cc128::compress_mem(&cap);
-                base_mem.write(addr + 8,    cap_pebst)?;
-                base_mem.write(addr,        cap.address())?;
+                base_mem.write(addr + 8, cap_pebst)?;
+                base_mem.write(addr, cap.address())?;
                 self.tag_mem.write(addr, true)?;
             }
         }
@@ -180,20 +188,20 @@ impl MemoryOf<SafeTaggedCap, Cc128Cap> for CheriAggregateMemory {
 /// Exposes MemoryOf<{u8,u16,u32,u64}, TAddr=u64>.
 pub struct IntegerModeCheriAggregateMemory<'a> {
     base_mem: &'a mut CheriAggregateMemory,
-    base_cap: Cc128Cap
+    base_cap: Cc128Cap,
 }
 impl<'a> IntegerModeCheriAggregateMemory<'a> {
     pub fn wrap(base_mem: &'a mut CheriAggregateMemory, base_cap: Cc128Cap) -> Self {
-        IntegerModeCheriAggregateMemory {
-            base_mem,
-            base_cap
-        }
+        IntegerModeCheriAggregateMemory { base_mem, base_cap }
     }
 }
 /// Reimplement basic MemoryOf<TData, TAddr=u64> for the integer mode memory.
 /// Integer addresses are passed to the underlying [CheriAggregateMemory] inside the base capability,
 /// and all checking/security is done inside the [CheriAggregateMemory].
-impl<'a, TData> MemoryOf<TData> for IntegerModeCheriAggregateMemory<'a> where CheriAggregateMemory: MemoryOf<TData, Cc128Cap> {
+impl<'a, TData> MemoryOf<TData> for IntegerModeCheriAggregateMemory<'a>
+where
+    CheriAggregateMemory: MemoryOf<TData, Cc128Cap>,
+{
     fn read(&mut self, addr: u64) -> MemoryResult<TData> {
         self.base_cap.set_address_unchecked(addr);
         self.base_mem.read(self.base_cap)
@@ -207,7 +215,9 @@ impl<'a> Memory for IntegerModeCheriAggregateMemory<'a> {
     fn range(&self) -> Range<usize> {
         self.base_mem.range()
     }
-    fn as_any(&self) -> &dyn Any { unreachable!("Should never try to devirtualize an IntegerMode wrapper") }
+    fn as_any(&self) -> &dyn Any {
+        unreachable!("Should never try to devirtualize an IntegerMode wrapper")
+    }
 }
 /// Combine MemoryOf<u8,u16,u32,u64> with MemoryOf<SafeTaggedCap>
 impl<'a> CheriMemory<u64> for IntegerModeCheriAggregateMemory<'a> {}
